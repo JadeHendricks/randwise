@@ -1,0 +1,20 @@
+@use 'mixins';
+
+// Organism: app footer. Persistent, unobtrusive disclaimer.
+.rw-app-footer {
+  display: block;
+
+  &__bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--rw-space-1) var(--rw-space-5);
+    padding: var(--rw-space-4) 0 var(--rw-space-5);
+    border-top: 1px solid var(--rw-color-border-strong);
+  }
+
+  &__text {
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-sm);
+  }
+}

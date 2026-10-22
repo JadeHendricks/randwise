@@ -1,0 +1,34 @@
+@use 'mixins';
+
+// Molecule: feature placeholder. Themed empty card for routes still to come.
+.rw-feature-placeholder {
+  display: block;
+  max-width: 640px;
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--rw-space-3);
+  }
+
+  &__icon {
+    display: inline-flex;
+    padding: var(--rw-space-4);
+    border-radius: var(--rw-radius-lg);
+    background: var(--rw-color-accent-soft);
+    color: var(--rw-color-accent);
+    box-shadow: 0 0 32px var(--rw-color-glow);
+  }
+
+  &__heading {
+    font-size: var(--rw-text-2xl);
+    line-height: var(--rw-line-tight);
+  }
+
+  &__text {
+    margin-bottom: var(--rw-space-3);
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-lg);
+  }
+}

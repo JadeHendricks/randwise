@@ -1,0 +1,59 @@
+@use 'mixins';
+
+// Molecule: bento tile. Empty-state card linking to a feature route.
+.rw-bento-tile {
+  display: block;
+  min-width: 0;
+
+  &--wide {
+    grid-column: span 2;
+
+    @include mixins.below(mobile) {
+      grid-column: span 1;
+    }
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--rw-space-2);
+    height: 100%;
+
+    @include mixins.motion-safe {
+      transition:
+        transform var(--rw-duration-base) var(--rw-ease-out),
+        box-shadow var(--rw-duration-base) var(--rw-ease-out);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--rw-shadow-glow);
+      }
+    }
+  }
+
+  &__icon {
+    display: inline-flex;
+    padding: var(--rw-space-3);
+    border-radius: var(--rw-radius-md);
+    background: var(--rw-color-accent-soft);
+    color: var(--rw-color-accent);
+  }
+
+  &__heading {
+    margin-top: var(--rw-space-2);
+    font-size: var(--rw-text-lg);
+    line-height: var(--rw-line-tight);
+  }
+
+  &__text {
+    flex: 1;
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-sm);
+  }
+
+  &__link {
+    margin-top: var(--rw-space-3);
+    margin-left: calc(var(--rw-space-4) * -1);
+  }
+}

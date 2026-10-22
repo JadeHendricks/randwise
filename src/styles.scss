@@ -8,3 +8,14 @@
 @use 'atoms/amount-field';
 @use 'atoms/chip';
 @use 'atoms/money';
+
+// Molecules
+@use 'molecules/theme-toggle';
+@use 'molecules/bento-tile';
+@use 'molecules/feature-placeholder';
+
+// Organisms
+@use 'organisms/app-shell';
+@use 'organisms/icon-rail';
+@use 'organisms/app-header';
+@use 'organisms/app-footer';

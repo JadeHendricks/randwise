@@ -1,0 +1,22 @@
+<section class="dashboard" aria-label="Overview">
+  <rw-card class="dashboard__hero" variant="hero-yellow" padding="lg">
+    <p class="dashboard__eyebrow">Take-home pay</p>
+    <rw-money class="dashboard__figure" [value]="0" size="hero" />
+    <p class="dashboard__lead">Start with your salary and see what you actually keep each month.</p>
+    <a rw-button size="lg" routerLink="/pay" class="dashboard__cta">
+      Start with your salary
+      <rw-icon name="arrow-right" size="sm" />
+    </a>
+  </rw-card>
+
+  @for (item of tiles; track item.path) {
+    <rw-bento-tile [item]="item" />
+  }
+
+  <rw-card class="dashboard__privacy" variant="dark">
+    <h2 class="dashboard__privacy-title">Nothing is saved</h2>
+    <p class="dashboard__privacy-text">
+      Randwise runs on your device. Your numbers stay in this tab and disappear when you close it.
+    </p>
+  </rw-card>
+</section>
