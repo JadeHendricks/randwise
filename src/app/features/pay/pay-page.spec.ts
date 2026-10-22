@@ -227,6 +227,29 @@ describe('PayPage', () => {
     expect(root.querySelector('.pay__note')).toBeNull();
   });
 
+  it('offers Send to with Retirement annuity enabled and three Coming soon targets', async () => {
+    const { root } = await render();
+    const sendTo = root.querySelector('.pay__hero ~ .pay__card rw-send-to');
+    expect(sendTo).not.toBeNull();
+    expect(text(sendTo?.querySelector('h2'))).toBe('Use these figures');
+    expect(sendTo?.querySelectorAll('.rw-send-to__soon').length).toBe(3);
+    expect(sendTo?.querySelectorAll('[aria-disabled=true]').length).toBe(3);
+    expect(text(sendTo)).toContain('Retirement annuity');
+  });
+
+  it('hides Send to in the alert and unavailable states', async () => {
+    const { fixture, root } = await render();
+    TestBed.inject(SalaryInputsStore).update({ basis: 'net', amount: 5e9 });
+    await fixture.whenStable();
+    expect(root.querySelector('[role=alert]')).not.toBeNull();
+    expect(root.querySelector('rw-send-to')).toBeNull();
+
+    TestBed.resetTestingModule();
+    const noData = await render(false);
+    expect(noData.root.querySelector('.pay__unavailable')).not.toBeNull();
+    expect(noData.root.querySelector('rw-send-to')).toBeNull();
+  });
+
   it('gives every input an accessible label', async () => {
     const { root } = await render();
     const inputs = Array.from(root.querySelectorAll('input'));

@@ -115,6 +115,10 @@
         }
       </rw-card>
 
+      <rw-card class="pay__card" padding="lg">
+        <rw-send-to heading="Use these figures" (sendTo)="sendTo($event)" />
+      </rw-card>
+
       <div class="pay__stats">
         <rw-stat-card
           label="PAYE"
