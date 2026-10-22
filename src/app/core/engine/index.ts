@@ -16,3 +16,5 @@ export { medicalCredit, medicalCreditMonthly } from './medical-credit';
 export { retirementDeduction } from './retirement';
 export type { RetirementDeductionInput, RetirementDeductionResult } from './retirement';
 export { uifMonthly } from './uif';
+export { payslip } from './payslip';
+export type { PayPeriod, Payslip, PayslipAmounts, PayslipInput, RetirementLine } from './payslip';
