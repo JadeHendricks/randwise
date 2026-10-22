@@ -1,0 +1,48 @@
+@use 'mixins';
+
+// Zero-specificity reset so single-class rules always win.
+:where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
+:where(body, h1, h2, h3, p, ul, ol, fieldset, figure) {
+  margin: 0;
+}
+
+:where(ul, ol) {
+  padding: 0;
+  list-style: none;
+}
+
+:where(fieldset) {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+:where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+
+:where(svg) {
+  display: block;
+}
+
+:where(a) {
+  color: inherit;
+}
+
+.rw-page {
+  min-height: 100dvh;
+  background: linear-gradient(160deg, var(--rw-color-bg-start), var(--rw-color-bg-end)) fixed;
+  color: var(--rw-color-text);
+  font-family: var(--rw-font-family);
+  font-size: var(--rw-text-md);
+  line-height: var(--rw-line-base);
+  -webkit-font-smoothing: antialiased;
+}
+
+.rw-visually-hidden {
+  @include mixins.visually-hidden;
+}
