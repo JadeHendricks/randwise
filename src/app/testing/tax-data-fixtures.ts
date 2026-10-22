@@ -1,5 +1,8 @@
+import { Provider } from '@angular/core';
+
+import { DATA_SOURCE, DataFile, DataSource, TODAY } from '../core/data/data-source';
 import { RatesFile } from '../core/data/rates.schema';
-import { taxYearPeriod } from '../core/data/tax-calendar';
+import { IsoDate, parseIsoDate, taxYearPeriod } from '../core/data/tax-calendar';
 import { BracketRow, Field, TaxYearData } from '../core/data/tax-year.schema';
 
 /** Lets specs break a fixture in place without casts on every line. */
@@ -79,6 +82,28 @@ export function makeTaxYear(
     earliestRaRetirementAge: field(50),
   };
   return { ...base, ...patch } as DeepMutable<TaxYearData>;
+}
+
+export interface TestDataOptions {
+  /** Defaults to one valid 2027.json fixture. */
+  taxYears?: readonly DataFile[];
+  /** Defaults to a valid rates.json fixture. */
+  rates?: DataFile;
+  /** The pretend current day: an ISO date (local midnight) or a Date. */
+  today: IsoDate | Date;
+}
+
+/** Providers that replace the bundled data and the clock, so specs do not depend on real data or dates. */
+export function provideTestData(options: TestDataOptions): Provider[] {
+  const source: DataSource = {
+    taxYears: options.taxYears ?? [{ fileName: '2027.json', data: makeTaxYear(2027) }],
+    rates: options.rates ?? { fileName: 'rates.json', data: makeRates() },
+  };
+  const today = typeof options.today === 'string' ? parseIsoDate(options.today) : options.today;
+  return [
+    { provide: DATA_SOURCE, useValue: source },
+    { provide: TODAY, useValue: () => new Date(today) },
+  ];
 }
 
 /** A fresh, valid rates snapshot (test values). */
