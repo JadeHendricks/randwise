@@ -1,4 +1,5 @@
 import type { Assumptions } from '../data/assumptions';
+import { MAX_RA_RETIREMENT_AGE } from '../engine';
 import type { RaHandoffValues } from '../plan/plan-profile';
 import { SALARY_LIMITS } from '../salary/salary-inputs';
 
@@ -24,8 +25,8 @@ export const RA_LIMITS = {
   age: SALARY_LIMITS.age,
   medicalMembers: SALARY_LIMITS.medicalMembers,
   // Why 40: the field has to reach below the earliest payout age (55) so the "too early" warning
-  // can show. The 80 maximum is a product cap and matches the engine's MAX_RA_RETIREMENT_AGE.
-  retirementAge: { min: 40, max: 80 },
+  // can show. The maximum is the engine's product cap.
+  retirementAge: { min: 40, max: MAX_RA_RETIREMENT_AGE },
   escalationPercent: { min: 0, max: 20 },
   returnPercent: { min: 0, max: 20 },
   inflationPercent: { min: 0, max: 15 },
