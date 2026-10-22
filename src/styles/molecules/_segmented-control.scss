@@ -58,6 +58,14 @@
     }
   }
 
+  // Forced-colours mode replaces the active background, so mark the selection with a border.
+  @media (forced-colors: active) {
+    &__option--active {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+
   // The real radio stays focusable and in the accessibility tree.
   &__input {
     @include mixins.visually-hidden;

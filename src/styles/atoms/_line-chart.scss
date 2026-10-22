@@ -87,6 +87,31 @@
     text-align: center;
   }
 
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rw-space-2) var(--rw-space-4);
+    margin-block-start: var(--rw-space-3);
+  }
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rw-space-2);
+    font-size: var(--rw-text-sm);
+  }
+
+  // A short line sample in the series colour; the second one is dashed like its line.
+  &__swatch {
+    width: var(--rw-space-5);
+    height: 0;
+    border-block-start: 3px solid var(--rw-chart-accent);
+  }
+
+  &__swatch--secondary {
+    border-block-start: 2px dashed var(--rw-chart-muted);
+  }
+
   &__note {
     margin-block-start: var(--rw-space-2);
     font-size: var(--rw-text-sm);

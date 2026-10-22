@@ -37,6 +37,7 @@
       [max]="amountMax()"
       [step]="step"
       [value]="inputs().amount"
+      hint="Typed amounts are rounded to the nearest rand."
       (valueChange)="set('amount', $event)"
     />
     <rw-amount-field
@@ -90,6 +91,8 @@
   </rw-card>
 
   <section class="pay__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
     @if (estimator.estimate() === null) {
       <rw-card class="pay__unavailable" padding="lg">
         <p>Tax data is unavailable, so tax figures cannot be shown.</p>

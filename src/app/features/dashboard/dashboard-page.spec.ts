@@ -70,6 +70,26 @@ describe('DashboardPage', () => {
     expect(hero(root).querySelector('.rw-dot-matrix .rw-visually-hidden table')).not.toBeNull();
   });
 
+  it('names the dot matrix columns in a visible caption', async () => {
+    const root = (await render()).nativeElement as HTMLElement;
+    expect(normaliseSpaces(root.querySelector('.dashboard__caption')?.textContent)).toBe(
+      'Net pay (highlighted), PAYE, UIF, Retirement (RA), Other deductions',
+    );
+  });
+
+  it('shows the estimator message instead of a figure when the estimate fails', async () => {
+    const fixture = await render();
+    TestBed.inject(SalaryInputsStore).update({ basis: 'net', amount: 5e9 });
+    await fixture.whenStable();
+    const card = hero(fixture.nativeElement as HTMLElement);
+    expect(normaliseSpaces(card.querySelector('.dashboard__lead')?.textContent)).toBe(
+      'That take-home amount is too high to work back to a salary. Try a smaller amount.',
+    );
+    expect(card.querySelector('.rw-money__figure')).toBeNull();
+    expect(card.querySelector('.rw-dot-matrix')).toBeNull();
+    expect(card.querySelector('.dashboard__caption')).toBeNull();
+  });
+
   it('keeps one figure and no currency in the other tiles', async () => {
     const root = (await render()).nativeElement as HTMLElement;
     expect(root.querySelectorAll('.rw-money__figure').length).toBe(1);

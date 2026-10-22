@@ -30,6 +30,12 @@ interface Tick {
   readonly text: string;
 }
 
+interface LegendItem {
+  readonly name: string;
+  /** Solid swatch for the first series, dashed for the second. */
+  readonly kind: 'primary' | 'secondary';
+}
+
 interface SeriesTable {
   readonly name: string;
   readonly rows: readonly { readonly x: string; readonly y: string }[];
@@ -53,6 +59,8 @@ const TICKS = 5;
  * Axis tick labels and titles are HTML rather than SVG text so they keep a
  * readable size when the chart shrinks on a phone. The svg label summarises
  * the data and a visually hidden table per series holds the exact numbers.
+ * A visible (aria-hidden) legend names each drawn series, so the dashed line
+ * is never unexplained for sighted users.
  */
 @Component({
   selector: 'rw-line-chart',
@@ -120,6 +128,16 @@ const TICKS = 5;
     </div>
     @if (xLabel() && !view().empty) {
       <p class="rw-line-chart__title rw-line-chart__title--x" aria-hidden="true">{{ xLabel() }}</p>
+    }
+    @if (view().legend.length > 0) {
+      <ul class="rw-line-chart__legend" aria-hidden="true">
+        @for (item of view().legend; track $index) {
+          <li class="rw-line-chart__item">
+            <span class="rw-line-chart__swatch rw-line-chart__swatch--{{ item.kind }}"></span>
+            <span class="rw-line-chart__name">{{ item.name }}</span>
+          </li>
+        }
+      </ul>
     }
     @if (view().marker; as m) {
       <p class="rw-line-chart__note" aria-hidden="true">{{ m.label }}</p>
@@ -199,6 +217,7 @@ export class LineChart {
         secondPath: '',
         marker: null as { x: number; y: number; label: string } | null,
         summary: '',
+        legend: [] as LegendItem[],
       };
     }
 
@@ -250,6 +269,11 @@ export class LineChart {
       secondPath: second.length >= 2 ? toPath(second) : '',
       marker: showMarker ? { x: px(m.x), y: Math.min(HEIGHT, Math.max(0, py(m.y))), label: m.label } : null,
       summary,
+      // Only a second series that is actually drawn gets a legend entry.
+      legend: [
+        { name: this.series().name, kind: 'primary' },
+        ...(secondInput && second.length >= 2 ? [{ name: secondInput.name, kind: 'secondary' }] : []),
+      ] as LegendItem[],
     };
   });
 

@@ -48,6 +48,13 @@ export class DashboardPage {
       : [];
   });
 
+  // Columns run left to right in breakdown order, with the highlighted first column marked.
+  protected readonly splitCaption = computed(() =>
+    this.split()
+      .map((column, i) => (i === 0 ? `${column.label} (highlighted)` : column.label))
+      .join(', '),
+  );
+
   // Why: the estimator returns null for "no tax data" and a message for a failed estimate.
   protected readonly unavailable = computed(() => {
     const estimate = this.estimator.estimate();

@@ -258,6 +258,26 @@ describe('PayPage', () => {
     );
   });
 
+  it('names both lines of the net-vs-gross chart in a visible legend', async () => {
+    const { root } = await render();
+    const items = Array.from(root.querySelectorAll('rw-line-chart .rw-line-chart__item')).map((i) =>
+      text(i),
+    );
+    expect(items).toEqual(['Net pay', 'Gross pay']);
+  });
+
+  it('announces the result politely and says typed amounts are rounded to the rand', async () => {
+    const { fixture, root } = await render();
+    const live = root.querySelector('[aria-live=polite]') as HTMLElement;
+    expect(live.classList).toContain('rw-visually-hidden');
+    expect(text(live)).toBe('Net pay R 25 141,88 a month, PAYE R 4 681,00 a month.');
+    await type(fixture, 'Age at the end of the tax year', 65);
+    expect(text(live)).toBe('Net pay R 25 955,63 a month, PAYE R 3 867,25 a month.');
+    expect(text(root.querySelector('rw-amount-field .rw-amount-field__hint'))).toBe(
+      'Typed amounts are rounded to the nearest rand.',
+    );
+  });
+
   it('has a monthly and annual table with scoped headers', async () => {
     const { root } = await render();
     const table = root.querySelector('.pay__table') as HTMLTableElement;

@@ -11,6 +11,8 @@
         [columns]="split()"
         [highlight]="0"
       />
+      <!-- Names the dot columns for sighted users; the svg already carries the full text. -->
+      <p class="dashboard__caption" aria-hidden="true">{{ splitCaption() }}</p>
       <p class="dashboard__lead">
         {{ summary() }}
         @if (store.isExample()) {

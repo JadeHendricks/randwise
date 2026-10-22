@@ -174,6 +174,12 @@ export class PayPage {
     };
   });
 
+  // Read out politely after each edit; empty while there is no result (the alert covers errors).
+  protected readonly announcement = computed(() => {
+    const r = this.result();
+    return r ? `Net pay ${formatRand(r.net.monthly)} a month, PAYE ${formatRand(r.paye.monthly)} a month.` : '';
+  });
+
   protected readonly chart = computed(() => {
     const curve = this.estimator.curve();
     const result = this.result();
