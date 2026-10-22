@@ -1,0 +1,12 @@
+﻿node_modules/
+dist/
+.angular/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+.idea/
+scripts/tax-season/last-report.md
