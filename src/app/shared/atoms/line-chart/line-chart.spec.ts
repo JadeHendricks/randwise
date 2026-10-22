@@ -189,6 +189,22 @@ describe('LineChart', () => {
     );
   });
 
+  it('uses the tick formatters for axis text only', async () => {
+    const tick = (n: number) => `t${n}`;
+    const ticks = (el: HTMLElement, axis: string) =>
+      Array.from(el.querySelectorAll(`.rw-line-chart__${axis}-axis .rw-line-chart__tick`)).map((t) =>
+        normaliseSpaces(t.textContent),
+      );
+    const plainTicks = await create(NET);
+    expect(ticks(plainTicks, 'x')[4]).toBe('R 30 000,00');
+
+    const el = await create(NET, { formatXTick: tick, formatYTick: tick });
+    expect(ticks(el, 'x')).toEqual(['t0', 't7500', 't15000', 't22500', 't30000']);
+    expect(ticks(el, 'y')[0]).toBe('t50000');
+    expect(rowsOf(tables(el)[0])[2]).toEqual(['R 30 000,00', 'R 25 141,88']);
+    expect(ariaLabel(el)).toContain('R 25 141,88 at R 30 000,00');
+  });
+
   it('omits the area path when area is false', async () => {
     expect((await create(NET)).querySelector('.rw-line-chart__area')).not.toBeNull();
     expect((await create(NET, { area: false })).querySelector('.rw-line-chart__area')).toBeNull();

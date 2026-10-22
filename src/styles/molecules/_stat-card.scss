@@ -1,0 +1,41 @@
+// Molecule: stat card. One labelled figure with an optional second line and hint.
+.rw-stat-card {
+  display: block;
+  min-width: 0;
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rw-space-1);
+    height: 100%;
+  }
+
+  &__label {
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__money {
+    overflow-wrap: anywhere;
+  }
+
+  &__text {
+    font-size: var(--rw-text-xl);
+    font-weight: var(--rw-weight-bold);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--rw-line-tight);
+  }
+
+  &__secondary {
+    font-size: var(--rw-text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__hint {
+    margin-top: auto;
+    padding-top: var(--rw-space-1);
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-xs);
+  }
+}
