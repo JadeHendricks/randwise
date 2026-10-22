@@ -24,7 +24,7 @@ npm run build    # production build into dist/
 
 ## Folder layout
 
-- `src/app/core`: services, stores and navigation data. `core/engine` is reserved for pure TypeScript finance maths (no Angular imports) and is added with the first calculator.
+- `src/app/core`: services, stores and navigation data. `core/engine` holds the pure TypeScript tax engine (no Angular or RxJS imports, enforced by lint).
 - `src/app/features`: one lazy folder per route.
 - `src/app/shared`: `atoms`, `molecules` and `organisms`.
 - `src/app/testing`: fakes and helpers for specs.
@@ -42,6 +42,15 @@ Tax rules and interest rates are plain JSON, checked at startup. Nothing is fetc
 - `TaxYearService` picks the file that covers today, or the nearest year when none does. `RatesService` holds the SARB snapshot. `ratesAsOf` is the day that snapshot was taken (`fetchedOn`); each rate also has its own `asOf` date.
 - Default planning assumptions are derived from the rates: inflation is CPI, cash return is the repo rate, and the growth portfolio is CPI plus 5 percentage points. They are labelled as assumptions and listed read-only in the badge panel.
 - The header badge shows the tax year, when it was verified and the rates date, with a status chip (Verified, Verified (auto), Draft or Unavailable). It opens a panel with the period, sources, carried-forward fields, rates and assumptions. The banner under the header warns about invalid data (alert), draft data and an ended tax year (status). Dismissing a notice lasts until the page reloads.
+
+## Tax engine
+
+`src/app/core/engine` (public API in `index.ts`) works out a salaried employee's tax. It is not wired into a page yet.
+
+- It computes income tax from the brackets, age rebates (65 and 75), the s6A medical scheme fees credit, the s11F retirement deduction (with employer contributions taxed as a fringe benefit that also counts toward the deduction, and the excess and headroom reported), employee UIF, a monthly and annual `payslip` with marginal and effective rates, and `grossFromNet`, which finds the gross for a target net pay.
+- Every figure comes from the tax-year file through `toTaxTables(file)`. The engine itself holds no tax numbers.
+- Simplifications: PAYE uses the annual-equivalent method (monthly PAYE = annual tax / 12, so it can differ from SARS's monthly tables by cents). The s6B additional medical credit is ignored, as PAYE does. UIF is on cash salary only. The marginal rate is 0 while no tax is due after rebates.
+- Rounding: everything is full precision inside the engine. Round once, at display, with `roundRand` (to cents, half away from zero).
 
 ## Styling rules
 
