@@ -8,6 +8,10 @@
 @use 'atoms/amount-field';
 @use 'atoms/chip';
 @use 'atoms/money';
+@use 'atoms/breakdown-bar';
+@use 'atoms/ring-gauge';
+@use 'atoms/line-chart';
+@use 'atoms/dot-matrix';
 
 // Molecules
 @use 'molecules/theme-toggle';

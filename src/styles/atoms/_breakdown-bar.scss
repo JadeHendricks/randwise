@@ -1,0 +1,92 @@
+@use 'mixins';
+
+$tones: accent, sun, sky, rose, violet, muted;
+
+@keyframes rw-breakdown-bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+// Atom: breakdown bar. Stacked horizontal bar plus legend.
+.rw-breakdown-bar {
+  position: relative;
+  display: block;
+  width: 100%;
+
+  &__svg {
+    width: 100%;
+    height: var(--rw-space-5);
+    border-radius: var(--rw-radius-pill);
+    overflow: hidden;
+  }
+
+  &__track {
+    fill: var(--rw-color-track);
+  }
+
+  // A 2px surface-coloured stroke separates neighbours so colour is never the
+  // only divider. non-scaling-stroke keeps it 2px despite the stretched viewBox.
+  &__segment {
+    stroke: var(--rw-color-surface-solid);
+    stroke-width: 2px;
+    vector-effect: non-scaling-stroke;
+
+    @include mixins.motion-safe {
+      transform-box: fill-box;
+      transform-origin: left center;
+      animation: rw-breakdown-bar-grow var(--rw-duration-slow) var(--rw-ease-out) both;
+    }
+  }
+
+  @each $tone in $tones {
+    &__segment--#{$tone} {
+      fill: var(--rw-chart-#{$tone});
+    }
+
+    &__swatch--#{$tone} {
+      background: var(--rw-chart-#{$tone});
+    }
+  }
+
+  &__legend {
+    display: grid;
+    gap: var(--rw-space-2);
+    margin-block-start: var(--rw-space-3);
+  }
+
+  &__item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--rw-space-2);
+    font-size: var(--rw-text-sm);
+  }
+
+  &__swatch {
+    width: var(--rw-space-3);
+    height: var(--rw-space-3);
+    border-radius: var(--rw-radius-pill);
+  }
+
+  &__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  &__value {
+    font-weight: var(--rw-weight-bold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__percent {
+    min-width: 3.5ch;
+    color: var(--rw-color-text-muted);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+}
