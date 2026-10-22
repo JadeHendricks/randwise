@@ -188,6 +188,42 @@ describe('PlanContextStore', () => {
     });
   });
 
+  describe('RA estimate and outputs', () => {
+    it('publishes headroom and tax saving for the default example', () => {
+      const { plan } = setup();
+      const { ra } = plan.outputs();
+      expect(ra?.headroomAnnual).toBeCloseTo(99_000, 2);
+      expect(ra?.headroomMonthly).toBeCloseTo(8_250, 2);
+      expect(ra?.taxSavingAnnual).toBeCloseTo(6_240, 2);
+      expect(plan.raRules()?.earliestRetirementAge).toBe(55);
+    });
+
+    it('follows the Salary profile while not overridden', () => {
+      const { plan, salary } = setup();
+      salary.update({ amount: 40_000 });
+      // 0.275 x 480 000 = 132 000; 24 000 at 31% = 7 440.
+      expect(plan.outputs().ra?.headroomAnnual).toBeCloseTo(132_000, 2);
+      expect(plan.outputs().ra?.taxSavingAnnual).toBeCloseTo(7_440, 2);
+    });
+
+    it('has no RA outputs when the estimate fails', () => {
+      const { plan } = setup();
+      plan.updateRa({ grossMonthly: Number.MAX_VALUE });
+      expect(plan.raEstimate()?.ok).toBe(false);
+      expect(plan.outputs()).toEqual({ ra: null });
+    });
+
+    it('has no estimate, rules or outputs without tax data', () => {
+      TestBed.configureTestingModule({
+        providers: provideTestData({ taxYears: [], today: TODAY_PINNED }),
+      });
+      const plan = TestBed.inject(PlanContextStore);
+      expect(plan.raRules()).toBeNull();
+      expect(plan.raEstimate()).toBeNull();
+      expect(plan.outputs()).toEqual({ ra: null });
+    });
+  });
+
   it('touches no storage and is one root instance', () => {
     const calls = [
       vi.spyOn(Storage.prototype, 'getItem'),

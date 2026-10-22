@@ -1,5 +1,8 @@
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { RatesService } from '../data/rates.service';
+import { TaxYearService } from '../data/tax-year.service';
+import { type RaRules, toRaRules } from '../engine';
+import { type RaEstimate, estimateRa } from '../ra/estimate-ra';
 import type { RaInputs } from '../ra/ra-inputs';
 import { raPlanDefaults } from '../ra/ra-inputs';
 import {
@@ -21,6 +24,18 @@ import type {
 } from './handoff';
 import { type PlanProfile, profileFromSalary, raHandoffFrom } from './plan-profile';
 
+/** What other calculators (the dashboard now, Journey later) read from the RA. Full precision. */
+export interface RaOutputs {
+  readonly headroomAnnual: number;
+  readonly headroomMonthly: number;
+  readonly taxSavingAnnual: number;
+}
+
+/** One key per calculator that publishes figures; null when it has nothing to show. */
+export interface PlanOutputs {
+  readonly ra: RaOutputs | null;
+}
+
 type Handoffs = { readonly [T in HandoffTarget]?: Handoff<T> };
 
 /**
@@ -32,6 +47,7 @@ type Handoffs = { readonly [T in HandoffTarget]?: Handoff<T> };
 export class PlanContextStore {
   private readonly salary = inject(SalaryInputsStore);
   private readonly estimator = inject(SalaryEstimator);
+  private readonly taxYears = inject(TaxYearService);
   // Read once: the bundled rates never change while the app runs.
   private readonly raPlanDefaults = raPlanDefaults(inject(RatesService).assumptions());
 
@@ -62,6 +78,33 @@ export class PlanContextStore {
   readonly raIsExample = computed(() => {
     const slice = this.raSlice();
     return !slice.planEdited && slice.profile === null && slice.from === null;
+  });
+
+  /** Two-pot split and earliest payout age from the selected tax year; null without tax data. */
+  readonly raRules = computed<RaRules | null>(() => {
+    const data = this.taxYears.taxYear();
+    return data ? toRaRules(data) : null;
+  });
+
+  /** Null only when there is no tax data; a figure the engine rejects comes back as `ok: false`. */
+  readonly raEstimate = computed<RaEstimate | null>(() => {
+    const tables = this.estimator.tables();
+    const rules = this.raRules();
+    return tables && rules ? estimateRa(this.ra(), tables, rules) : null;
+  });
+
+  /** Figures other calculators and the dashboard can show. Full precision; round at the edge. */
+  readonly outputs = computed<PlanOutputs>(() => {
+    const estimate = this.raEstimate();
+    if (!estimate?.ok) return { ra: null };
+    const { headroom, taxSaving } = estimate.result;
+    return {
+      ra: {
+        headroomAnnual: headroom.headroom,
+        headroomMonthly: headroom.headroomMonthly,
+        taxSavingAnnual: taxSaving.saving,
+      },
+    };
   });
 
   /** Sends figures to a calculator. Each call is a new handoff, even with identical values. */
