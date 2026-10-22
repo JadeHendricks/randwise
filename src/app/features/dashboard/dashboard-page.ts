@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { roundRand } from '../../core/engine';
 import { NAV_ITEMS } from '../../core/navigation/nav-items';
+import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { SalaryEstimator } from '../../core/salary/salary-estimator';
 import { SalaryInputsStore } from '../../core/salary/salary-inputs.store';
 import { Button } from '../../shared/atoms/button/button';
@@ -9,10 +11,17 @@ import { Card } from '../../shared/atoms/card/card';
 import { DotMatrix, type DotColumn } from '../../shared/atoms/dot-matrix/dot-matrix';
 import { Icon } from '../../shared/atoms/icon/icon';
 import { Money } from '../../shared/atoms/money/money';
+import { formatRand } from '../../shared/format/format-rand';
 import { BentoTile } from '../../shared/molecules/bento-tile/bento-tile';
 
 // Whole rands where possible ("R30 000"); cents only when the amount has them.
 const AMOUNT = new Intl.NumberFormat('en-ZA', { maximumFractionDigits: 2 });
+// The RA contribution is a whole-rand input, so it reads "R 2 000" like the plan text.
+const WHOLE_RAND = new Intl.NumberFormat('en-ZA', {
+  style: 'currency',
+  currency: 'ZAR',
+  maximumFractionDigits: 0,
+});
 
 @Component({
   selector: 'rw-dashboard-page',
@@ -26,6 +35,7 @@ export class DashboardPage {
   protected readonly tiles = NAV_ITEMS.filter((item) => item.path !== '' && item.path !== 'pay');
 
   protected readonly store = inject(SalaryInputsStore);
+  protected readonly context = inject(PlanContextStore);
   private readonly estimator = inject(SalaryEstimator);
 
   // Null when there is no tax data or the engine rejected the figures.
@@ -54,6 +64,18 @@ export class DashboardPage {
       .map((column, i) => (i === 0 ? `${column.label} (highlighted)` : column.label))
       .join(', '),
   );
+
+  // Plain text, not rw-money: the dashboard keeps exactly one money figure (the hero).
+  protected readonly raFigures = computed(() => {
+    const ra = this.context.outputs().ra;
+    if (!ra) return null;
+    return {
+      headroomAnnual: formatRand(roundRand(ra.headroomAnnual)),
+      headroomMonthly: formatRand(roundRand(ra.headroomMonthly)),
+      saving: formatRand(roundRand(ra.taxSavingAnnual)),
+      contribution: WHOLE_RAND.format(this.context.ra().contributionMonthly),
+    };
+  });
 
   // Why: the estimator returns null for "no tax data" and a message for a failed estimate.
   protected readonly unavailable = computed(() => {

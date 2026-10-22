@@ -95,7 +95,34 @@ describe('DashboardPage', () => {
     expect(root.querySelectorAll('.rw-money__figure').length).toBe(1);
     const clone = root.cloneNode(true) as HTMLElement;
     clone.querySelector('.dashboard__hero')?.remove();
+    // The RA tile is live now, so this covers the placeholder tiles only.
+    clone.querySelector('.dashboard__ra')?.remove();
     expect(normaliseSpaces(clone.textContent)).not.toMatch(/R\s?\d/);
+  });
+
+  const raTile = (root: HTMLElement) => normaliseSpaces(root.querySelector('.dashboard__ra')?.textContent);
+
+  it('shows a live illustrative RA tile with headroom and tax saving', async () => {
+    const root = (await render()).nativeElement as HTMLElement;
+    const tile = raTile(root);
+    expect(tile).toContain('Illustrative RA');
+    expect(tile).toContain('R 99 000,00 a year (R 8 250,00 a month) of tax-deductible room');
+    expect(tile).toContain('R 2 000 a month saves about R 6 240,00 tax a year');
+    // The text sits between the description and the link.
+    const card = root.querySelector('.dashboard__ra .rw-bento-tile__card') as HTMLElement;
+    const order = Array.from(card.children).map((c) => c.className);
+    expect(order.indexOf('rw-bento-tile__text')).toBeLessThan(
+      order.findIndex((c) => c.includes('dashboard__ra-label')),
+    );
+  });
+
+  it('lets the RA tile follow the Salary amount', async () => {
+    const fixture = await render();
+    TestBed.inject(SalaryInputsStore).update({ amount: 40_000 });
+    await fixture.whenStable();
+    const tile = raTile(fixture.nativeElement as HTMLElement);
+    expect(tile).toContain('R 132 000,00');
+    expect(tile).toContain('R 7 440,00');
   });
 
   it('links to every other lazy route and keeps the privacy card', async () => {
@@ -127,6 +154,9 @@ describe('DashboardPage without tax data', () => {
     expect(root.querySelector('.rw-dot-matrix')).toBeNull();
     expect(root.querySelector('.dashboard__hero')?.textContent).toContain(
       'Tax data is unavailable',
+    );
+    expect(normaliseSpaces(root.querySelector('.dashboard__ra')?.textContent)).toContain(
+      'Tax data is unavailable.',
     );
   });
 });
