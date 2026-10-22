@@ -27,6 +27,10 @@
     margin-top: auto;
   }
 
+  &__split {
+    max-width: 14rem;
+  }
+
   &__lead {
     max-width: 32ch;
     font-size: var(--rw-text-lg);
