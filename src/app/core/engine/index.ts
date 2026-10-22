@@ -18,3 +18,5 @@ export type { RetirementDeductionInput, RetirementDeductionResult } from './reti
 export { uifMonthly } from './uif';
 export { payslip } from './payslip';
 export type { PayPeriod, Payslip, PayslipAmounts, PayslipInput, RetirementLine } from './payslip';
+export { grossFromNet } from './gross-from-net';
+export type { GrossFromNetInputs } from './gross-from-net';
