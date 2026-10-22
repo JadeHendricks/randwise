@@ -1,0 +1,129 @@
+@use 'mixins';
+
+// Molecule: data badge. A glass pill button that names the tax year and rates in
+// use, plus a disclosure panel with sources, carried-forward values and rates.
+.rw-data-badge {
+  position: relative;
+  display: block;
+  min-width: 0;
+
+  &__toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--rw-space-2);
+    max-width: 100%;
+    min-height: 44px;
+    padding: var(--rw-space-1) var(--rw-space-4);
+    border-radius: var(--rw-radius-pill);
+    @include mixins.glass-surface;
+    box-shadow: var(--rw-shadow-sm);
+    color: var(--rw-color-text);
+    font-size: var(--rw-text-sm);
+    text-align: left;
+    cursor: pointer;
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+
+    @include mixins.below(mobile) {
+      width: 100%;
+      border-radius: var(--rw-radius-sm);
+    }
+  }
+
+  &__summary {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--rw-space-2);
+    min-width: 0;
+  }
+
+  &__part {
+    font-weight: var(--rw-weight-medium);
+    white-space: nowrap;
+  }
+
+  &__separator {
+    color: var(--rw-color-text-muted);
+  }
+
+  &__chevron {
+    flex: none;
+
+    @include mixins.motion-safe {
+      transition: transform var(--rw-duration-base) var(--rw-ease-out);
+    }
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  // Solid, not glass: it floats over page content, so the text behind must not show through.
+  &__panel {
+    position: absolute;
+    top: calc(100% + var(--rw-space-2));
+    left: 0;
+    z-index: 10;
+    width: min(40rem, 100%);
+    max-height: 70dvh;
+    padding: var(--rw-space-4) var(--rw-space-5);
+    overflow-y: auto;
+    // text-muted, not border-strong: the soft glass border is only 1.85:1 on this surface.
+    border: 1px solid var(--rw-color-text-muted);
+    border-radius: var(--rw-radius-md);
+    background: var(--rw-color-surface-solid);
+    box-shadow: var(--rw-shadow-md);
+    color: var(--rw-color-text);
+    font-size: var(--rw-text-sm);
+  }
+
+  &__status {
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__text {
+    margin-top: var(--rw-space-1);
+    color: var(--rw-color-text-muted);
+  }
+
+  &__heading {
+    margin-top: var(--rw-space-4);
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+    letter-spacing: 0.02em;
+  }
+
+  &__list {
+    display: grid;
+    gap: var(--rw-space-1);
+    margin-top: var(--rw-space-1);
+  }
+
+  &__item {
+    overflow-wrap: anywhere;
+    color: var(--rw-color-text-muted);
+  }
+
+  &__item-title {
+    display: block;
+    color: var(--rw-color-text);
+  }
+
+  &__item-note {
+    display: block;
+  }
+
+  &__link {
+    color: var(--rw-color-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+  }
+}

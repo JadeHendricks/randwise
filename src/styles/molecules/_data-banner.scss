@@ -1,0 +1,83 @@
+@use 'mixins';
+
+// Molecule: data banner. Notices under the header about draft, out-of-date or
+// invalid tax data. Empty means no space is taken.
+.rw-data-banner {
+  display: block;
+
+  &__notice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--rw-space-3);
+    margin-top: var(--rw-space-3);
+    padding: var(--rw-space-3) var(--rw-space-3) var(--rw-space-3) var(--rw-space-4);
+    border: 1px solid transparent;
+    border-radius: var(--rw-radius-md);
+    font-size: var(--rw-text-sm);
+
+    &--warning {
+      border-color: var(--rw-color-warning-border);
+      background: var(--rw-color-warning-surface);
+      color: var(--rw-color-warning-text);
+    }
+
+    &--danger {
+      border-color: var(--rw-color-danger-border);
+      background: var(--rw-color-danger-surface);
+      color: var(--rw-color-danger-text);
+    }
+  }
+
+  &__icon {
+    flex: none;
+    margin-top: var(--rw-space-2);
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+    padding-top: var(--rw-space-2);
+    overflow-wrap: anywhere;
+  }
+
+  &__title {
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__text {
+    margin-top: var(--rw-space-1);
+  }
+
+  &__list {
+    margin-top: var(--rw-space-1);
+    padding-left: var(--rw-space-4);
+    list-style: disc;
+  }
+
+  &__item {
+    margin-top: var(--rw-space-1);
+  }
+
+  &__dismiss {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--rw-radius-pill);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--rw-color-accent-soft);
+    }
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+  }
+}

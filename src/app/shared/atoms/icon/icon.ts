@@ -13,7 +13,11 @@ export type IconName =
   | 'moon'
   | 'system'
   | 'close'
-  | 'arrow-right';
+  | 'arrow-right'
+  | 'info'
+  | 'warning'
+  | 'check'
+  | 'chevron-down';
 
 export type IconSize = 'sm' | 'md' | 'lg';
 
@@ -50,6 +54,10 @@ const PATHS: Record<IconName, readonly string[]> = {
   system: ['M3 5h18v11H3z', 'M8 20h8', 'M12 16v4'],
   close: ['M6 6l12 12', 'M18 6L6 18'],
   'arrow-right': ['M5 12h14', 'M13 6l6 6-6 6'],
+  info: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', 'M12 11v5', 'M12 8h.01'],
+  warning: ['M12 3l10 18H2z', 'M12 10v5', 'M12 18h.01'],
+  check: ['M5 12.5l4.5 4.5L19 7.5'],
+  'chevron-down': ['M6 9l6 6 6-6'],
 };
 
 @Component({
