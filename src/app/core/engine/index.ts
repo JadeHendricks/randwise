@@ -12,3 +12,7 @@ export type {
 } from './tax-tables';
 export { findBracket, incomeTax } from './income-tax';
 export { rebates, taxAfterRebates } from './rebates';
+export { medicalCredit, medicalCreditMonthly } from './medical-credit';
+export { retirementDeduction } from './retirement';
+export type { RetirementDeductionInput, RetirementDeductionResult } from './retirement';
+export { uifMonthly } from './uif';
