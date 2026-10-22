@@ -10,3 +10,16 @@ coverage/
 Thumbs.db
 .idea/
 scripts/tax-season/last-report.md
+
+# Angular scaffold
+/out-tsc
+/tmp
+/bazel-out
+.sass-cache/
+/connect.lock
+/libpeerconnection.log
+testem.log
+/typings
+__screenshots__/
+.vscode/
+.agents/

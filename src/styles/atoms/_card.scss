@@ -1,0 +1,46 @@
+@use 'mixins';
+
+// Atom: card. Rounded surfaces: glass (default), hero-yellow, dark, plain.
+.rw-card {
+  display: block;
+  min-width: 0;
+  border-radius: var(--rw-radius-lg);
+  color: var(--rw-color-text);
+
+  &--pad-md {
+    padding: var(--rw-space-5);
+  }
+
+  &--pad-lg {
+    padding: var(--rw-space-6);
+    border-radius: var(--rw-radius-xl);
+
+    @include mixins.below(mobile) {
+      padding: var(--rw-space-5);
+    }
+  }
+
+  &--glass {
+    @include mixins.glass-surface;
+  }
+
+  &--plain {
+    background: var(--rw-color-surface-solid);
+    border: 1px solid var(--rw-color-border-glass);
+    box-shadow: var(--rw-shadow-sm);
+  }
+
+  &--hero-yellow {
+    background: linear-gradient(145deg, var(--rw-color-hero), var(--rw-color-hero-end));
+    color: var(--rw-color-on-hero);
+    border: 1px solid var(--rw-color-border-glass);
+    box-shadow: var(--rw-shadow-glow);
+  }
+
+  &--dark {
+    background: var(--rw-color-card-dark);
+    color: var(--rw-color-on-card-dark);
+    border: 1px solid var(--rw-color-border-glass);
+    box-shadow: var(--rw-shadow-md);
+  }
+}

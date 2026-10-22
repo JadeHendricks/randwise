@@ -1,0 +1,130 @@
+@use 'mixins';
+
+// Organism: icon rail. Floating glass rail on desktop, bottom bar on mobile.
+.rw-icon-rail {
+  position: fixed;
+  top: var(--rw-space-4);
+  bottom: var(--rw-space-4);
+  left: var(--rw-space-4);
+  z-index: 10;
+  display: block;
+  width: calc(var(--rw-rail-width) - var(--rw-space-4));
+  border-radius: var(--rw-radius-xl);
+  @include mixins.glass-surface;
+
+  @include mixins.below(mobile) {
+    inset: auto 0 0;
+    width: auto;
+    height: calc(var(--rw-bottom-bar-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-radius: var(--rw-radius-lg) var(--rw-radius-lg) 0 0;
+  }
+
+  &__nav {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--rw-space-4);
+    height: 100%;
+    padding: var(--rw-space-4) var(--rw-space-1);
+    overflow-y: auto;
+
+    @include mixins.below(mobile) {
+      flex-direction: row;
+      gap: 0;
+      padding: 0 var(--rw-space-1);
+      overflow: auto hidden;
+    }
+  }
+
+  &__brand {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--rw-radius-md);
+    background: var(--rw-color-hero);
+    color: var(--rw-color-on-hero);
+    box-shadow: 0 0 20px var(--rw-color-glow);
+    font-size: var(--rw-text-lg);
+    font-weight: var(--rw-weight-bold);
+
+    @include mixins.below(mobile) {
+      display: none;
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rw-space-1);
+    width: 100%;
+
+    @include mixins.below(mobile) {
+      flex-direction: row;
+      align-items: center;
+      height: 100%;
+    }
+  }
+
+  &__item {
+    display: block;
+
+    @include mixins.below(mobile) {
+      flex: 1 0 auto;
+    }
+  }
+
+  &__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--rw-space-1);
+    padding: var(--rw-space-2) var(--rw-space-1);
+    border-radius: var(--rw-radius-md);
+    color: var(--rw-color-text-muted);
+    font-size: 0.6875rem;
+    font-weight: var(--rw-weight-bold);
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+
+    @include mixins.motion-safe {
+      transition:
+        background-color var(--rw-duration-base) var(--rw-ease-out),
+        color var(--rw-duration-base) var(--rw-ease-out);
+    }
+
+    @include mixins.below(mobile) {
+      min-width: 60px;
+      padding: var(--rw-space-2);
+    }
+
+    &:hover {
+      background: var(--rw-color-accent-soft);
+      color: var(--rw-color-text);
+    }
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+
+    &--active {
+      background: var(--rw-color-ink);
+      color: var(--rw-color-on-ink);
+      box-shadow: 0 0 18px var(--rw-color-glow);
+
+      &:hover {
+        background: var(--rw-color-ink);
+        color: var(--rw-color-on-ink);
+      }
+    }
+  }
+
+  &__label {
+    display: block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}

@@ -1,0 +1,70 @@
+@use 'mixins';
+
+// Route-only styles for the dashboard bento grid (4 / 2 / 1 columns).
+.dashboard {
+  @include mixins.bento-columns(4, 2, 1);
+  grid-auto-flow: dense;
+
+  &__hero {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--rw-space-4);
+    grid-column: span 2;
+    grid-row: span 2;
+    min-height: 340px;
+  }
+
+  &__eyebrow {
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__figure {
+    margin-top: auto;
+  }
+
+  &__lead {
+    max-width: 32ch;
+    font-size: var(--rw-text-lg);
+  }
+
+  &__cta {
+    margin-top: var(--rw-space-2);
+  }
+
+  &__privacy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--rw-space-2);
+    grid-column: span 2;
+  }
+
+  &__privacy-title {
+    font-size: var(--rw-text-lg);
+  }
+
+  &__privacy-text {
+    max-width: 48ch;
+    font-size: var(--rw-text-sm);
+    opacity: 0.85;
+  }
+}
+
+@include mixins.below(mobile) {
+  .dashboard {
+    &__hero,
+    &__privacy {
+      grid-column: span 1;
+      grid-row: auto;
+    }
+
+    &__hero {
+      min-height: 0;
+    }
+  }
+}

@@ -1,0 +1,56 @@
+@use 'mixins';
+
+// Molecule: theme toggle. Segmented pill over native radios.
+.rw-theme-toggle {
+  display: inline-block;
+
+  &__group {
+    display: inline-flex;
+    gap: var(--rw-space-1);
+    padding: var(--rw-space-1);
+    border-radius: var(--rw-radius-pill);
+    @include mixins.glass-surface;
+    box-shadow: var(--rw-shadow-sm);
+  }
+
+  &__option {
+    position: relative;
+    display: inline-flex;
+    border-radius: var(--rw-radius-pill);
+    cursor: pointer;
+
+    &:has(:focus-visible) {
+      @include mixins.focus-ring;
+    }
+
+    &--active {
+      background: var(--rw-color-ink);
+      color: var(--rw-color-on-ink);
+    }
+  }
+
+  // The real radio stays focusable and in the accessibility tree.
+  &__input {
+    @include mixins.visually-hidden;
+  }
+
+  &__face {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rw-space-2);
+    min-height: 36px;
+    padding: 0 var(--rw-space-3);
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+
+    @include mixins.motion-safe {
+      transition: color var(--rw-duration-base) var(--rw-ease-out);
+    }
+  }
+
+  &__text {
+    @include mixins.below(mobile) {
+      @include mixins.visually-hidden;
+    }
+  }
+}

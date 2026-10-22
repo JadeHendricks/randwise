@@ -1,0 +1,55 @@
+@use 'mixins';
+
+// Organism: app shell. Rail on the left, header / main / footer in a column.
+.rw-app-shell {
+  display: block;
+  min-height: 100dvh;
+  padding-left: calc(var(--rw-rail-width) + var(--rw-space-4));
+
+  @include mixins.below(mobile) {
+    padding-left: 0;
+    padding-bottom: calc(var(--rw-bottom-bar-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 var(--rw-space-6);
+
+    @include mixins.below(tablet) {
+      padding: 0 var(--rw-space-4);
+    }
+  }
+
+  &__main {
+    flex: 1;
+    padding: var(--rw-space-4) 0 var(--rw-space-6);
+
+    // Focus lands here from the skip link; it is not an interactive control.
+    &:focus {
+      outline: none;
+    }
+  }
+}
+
+.rw-skip-link {
+  position: fixed;
+  top: var(--rw-space-3);
+  left: var(--rw-space-3);
+  z-index: 100;
+  padding: var(--rw-space-3) var(--rw-space-5);
+  border-radius: var(--rw-radius-pill);
+  background: var(--rw-color-ink);
+  color: var(--rw-color-on-ink);
+  font-weight: var(--rw-weight-bold);
+  text-decoration: none;
+  transform: translateY(-200%);
+
+  &:focus {
+    transform: translateY(0);
+    @include mixins.focus-ring;
+  }
+}

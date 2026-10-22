@@ -1,0 +1,42 @@
+@use 'mixins';
+
+// Atom: chip. Small pill label with an optional dismiss button.
+.rw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rw-space-1);
+  min-height: 28px;
+  padding: 0 var(--rw-space-3);
+  border: 1px solid var(--rw-color-border-strong);
+  border-radius: var(--rw-radius-pill);
+  background: var(--rw-color-accent-soft);
+  color: var(--rw-color-text);
+  font-size: var(--rw-text-xs);
+  font-weight: var(--rw-weight-bold);
+  letter-spacing: 0.02em;
+
+  &--dismissible {
+    padding-right: var(--rw-space-1);
+  }
+
+  &__dismiss {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--rw-radius-pill);
+    background: transparent;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--rw-color-accent-soft);
+    }
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+  }
+}
