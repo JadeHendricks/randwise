@@ -29,7 +29,11 @@ export function assertAmount(name: string, value: number): void {
 }
 
 /** Throws a RangeError naming the field unless `value` is a whole number from 0 to `max`. */
-export function assertWholeNumber(name: string, value: number, max = Number.MAX_SAFE_INTEGER): void {
+export function assertWholeNumber(
+  name: string,
+  value: number,
+  max = Number.MAX_SAFE_INTEGER,
+): void {
   if (!Number.isInteger(value) || value < 0 || value > max) {
     throw new RangeError(`${name} must be a whole number from 0 to ${max}, got ${value}`);
   }
