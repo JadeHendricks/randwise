@@ -1,5 +1,5 @@
 /** Public API of the pure tax engine. No Angular imports anywhere under core/engine (lint enforced). */
-export { roundRand } from './money';
+export { MONTHS_PER_YEAR, roundRand } from './money';
 export { toTaxTables } from './tax-tables';
 export type {
   MedicalCreditRates,
