@@ -23,6 +23,18 @@
   --rw-color-glow: transparent;
   --rw-color-track: rgb(15 26 21 / 18%);
 
+  // Status colours are opaque so contrast can be measured exactly. Each tone
+  // is a surface, the text on it and a border (>= 3:1 against both).
+  --rw-color-success-surface: #d7f3e3;
+  --rw-color-success-text: #0a5a3c;
+  --rw-color-success-border: #2f7d5b;
+  --rw-color-warning-surface: #fff1c2;
+  --rw-color-warning-text: #6b4a00;
+  --rw-color-warning-border: #8f6a00;
+  --rw-color-danger-surface: #fde2e1;
+  --rw-color-danger-text: #8a1c17;
+  --rw-color-danger-border: #b3403a;
+
   // Radius
   --rw-radius-sm: 12px;
   --rw-radius-md: 20px;
@@ -94,6 +106,15 @@
   --rw-color-focus: #a7f3d0;
   --rw-color-glow: rgb(52 211 153 / 35%);
   --rw-color-track: rgb(167 243 208 / 22%);
+  --rw-color-success-surface: #0f3b2a;
+  --rw-color-success-text: #a7f3d0;
+  --rw-color-success-border: #34a275;
+  --rw-color-warning-surface: #3d2f07;
+  --rw-color-warning-text: #fcd977;
+  --rw-color-warning-border: #b8902a;
+  --rw-color-danger-surface: #3f1513;
+  --rw-color-danger-text: #fecaca;
+  --rw-color-danger-border: #d4635c;
   --rw-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
   --rw-shadow-md: 0 12px 32px rgb(0 0 0 / 45%);
   --rw-shadow-glow: 0 0 36px rgb(52 211 153 / 28%), 0 12px 32px rgb(0 0 0 / 45%);

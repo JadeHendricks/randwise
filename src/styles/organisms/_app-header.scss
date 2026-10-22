@@ -1,6 +1,6 @@
 @use 'mixins';
 
-// Organism: app header. Title, reserved data badge region, theme toggle.
+// Organism: app header. Title, data badge region, theme toggle.
 .rw-app-header {
   display: block;
 
@@ -18,9 +18,10 @@
     letter-spacing: -0.02em;
   }
 
-  // Reserved for a future data badge; empty regions take no space.
+  // Holds the data badge; it takes the free space between the title and the toggle.
+  // The basis makes it wrap onto its own row on narrow screens instead of being squeezed.
   &__data-badge {
-    flex: 1;
+    flex: 1 1 20rem;
     min-width: 0;
   }
 }

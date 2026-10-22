@@ -3,18 +3,23 @@ import { Router, provideRouter } from '@angular/router';
 
 import { NAV_ITEMS } from './core/navigation/nav-items';
 import { FakeMatchMedia, installFakeMatchMedia } from './testing/fake-match-media';
+import { provideTestData } from './testing/tax-data-fixtures';
 import { App } from './app';
 import { routes } from './app.routes';
 
 describe('App shell', () => {
   let fake: FakeMatchMedia;
 
-  beforeEach(async () => {
-    fake = installFakeMatchMedia({ reducedMotion: true });
+  // A fixed day inside tax year 2026/27 keeps these specs independent of the real date.
+  async function configure(today: string) {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(routes)],
+      providers: [provideRouter(routes), provideTestData({ today })],
     }).compileComponents();
+  }
+
+  beforeEach(() => {
+    fake = installFakeMatchMedia({ reducedMotion: true });
   });
 
   afterEach(() => {
@@ -22,7 +27,8 @@ describe('App shell', () => {
     document.documentElement.removeAttribute('data-theme');
   });
 
-  async function setup() {
+  async function setup(today = '2026-10-22') {
+    await configure(today);
     const fixture = TestBed.createComponent(App);
     await TestBed.inject(Router).navigateByUrl('/');
     await fixture.whenStable();
@@ -66,6 +72,21 @@ describe('App shell', () => {
     expect(document.activeElement).toBe(root.querySelector('main'));
     expect(TestBed.inject(Router).url).toBe('/');
     root.remove();
+  });
+
+  it('shows the data badge in the header and no banner when the data is current', async () => {
+    const { root } = await setup();
+    expect(root.querySelector('header rw-data-badge button')?.textContent).toContain('Tax year 2026/27');
+    expect(root.querySelectorAll('.rw-data-banner__notice').length).toBe(0);
+  });
+
+  it('shows the stale banner between the header and main after the tax year ends', async () => {
+    const { root } = await setup('2027-03-15');
+    const notice = root.querySelector('rw-data-banner [role=status]') as HTMLElement;
+    expect(notice.textContent).toContain('Tax year 2026/27 ended on 28 February 2027.');
+    const banner = root.querySelector('rw-data-banner') as HTMLElement;
+    expect(banner.previousElementSibling?.tagName).toBe('RW-APP-HEADER');
+    expect(banner.nextElementSibling?.tagName).toBe('MAIN');
   });
 
   it('updates the heading on navigation', async () => {

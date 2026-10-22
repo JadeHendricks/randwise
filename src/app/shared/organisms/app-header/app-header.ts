@@ -1,18 +1,20 @@
 import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 
+import { DataBadge } from '../../molecules/data-badge/data-badge';
 import { ThemeToggle } from '../../molecules/theme-toggle/theme-toggle';
 
 @Component({
   selector: 'rw-app-header',
-  imports: [ThemeToggle],
+  imports: [DataBadge, ThemeToggle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: { class: 'rw-app-header' },
   template: `
     <header class="rw-app-header__bar">
       <h1 class="rw-app-header__title">{{ heading() }}</h1>
-      <!-- Reserved for a future data badge. Intentionally empty: no fake data. -->
-      <div class="rw-app-header__data-badge" role="status" aria-label="Tax data status"></div>
+      <div class="rw-app-header__data-badge">
+        <rw-data-badge />
+      </div>
       <rw-theme-toggle />
     </header>
   `,

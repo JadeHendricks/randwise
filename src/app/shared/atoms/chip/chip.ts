@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, ViewEncapsulation, input, output } 
 
 import { Icon } from '../icon/icon';
 
+export type ChipTone = 'neutral' | 'success' | 'warning' | 'danger';
+
 @Component({
   selector: 'rw-chip',
   imports: [Icon],
@@ -10,6 +12,9 @@ import { Icon } from '../icon/icon';
   host: {
     class: 'rw-chip',
     '[class.rw-chip--dismissible]': 'dismissible()',
+    '[class.rw-chip--success]': "tone() === 'success'",
+    '[class.rw-chip--warning]': "tone() === 'warning'",
+    '[class.rw-chip--danger]': "tone() === 'danger'",
   },
   template: `
     <span class="rw-chip__label">{{ label() }}</span>
@@ -27,6 +32,8 @@ import { Icon } from '../icon/icon';
 })
 export class Chip {
   readonly label = input.required<string>();
+  /** Status colour. The label must still say the status in words; colour is never the only signal. */
+  readonly tone = input<ChipTone>('neutral');
   readonly dismissible = input(false);
   readonly dismiss = output<void>();
 }

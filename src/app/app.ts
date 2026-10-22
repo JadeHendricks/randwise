@@ -10,6 +10,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 
+import { DataBanner } from './shared/molecules/data-banner/data-banner';
 import { AppFooter } from './shared/organisms/app-footer/app-footer';
 import { AppHeader } from './shared/organisms/app-header/app-header';
 import { IconRail } from './shared/organisms/icon-rail/icon-rail';
@@ -24,7 +25,7 @@ function deepestHeading(snapshot: ActivatedRouteSnapshot): string {
 
 @Component({
   selector: 'rw-root',
-  imports: [RouterOutlet, IconRail, AppHeader, AppFooter],
+  imports: [RouterOutlet, IconRail, AppHeader, DataBanner, AppFooter],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // Layout styles live in the global app-shell partial, not here.
   encapsulation: ViewEncapsulation.None,

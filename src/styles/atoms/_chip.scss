@@ -19,6 +19,24 @@
     padding-right: var(--rw-space-1);
   }
 
+  &--success {
+    border-color: var(--rw-color-success-border);
+    background: var(--rw-color-success-surface);
+    color: var(--rw-color-success-text);
+  }
+
+  &--warning {
+    border-color: var(--rw-color-warning-border);
+    background: var(--rw-color-warning-surface);
+    color: var(--rw-color-warning-text);
+  }
+
+  &--danger {
+    border-color: var(--rw-color-danger-border);
+    background: var(--rw-color-danger-surface);
+    color: var(--rw-color-danger-text);
+  }
+
   &__dismiss {
     display: inline-flex;
     align-items: center;

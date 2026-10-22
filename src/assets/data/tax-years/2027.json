@@ -1,0 +1,123 @@
+{
+  "taxYear": 2027,
+  "period": { "start": "2026-03-01", "end": "2027-02-28" },
+  "status": "draft",
+  "verifiedOn": "2026-10-22",
+  "sources": [
+    "https://www.sars.gov.za/tax-rates/income-tax/rates-of-tax-for-individuals/",
+    "https://www.sars.gov.za/tax-rates/medical-tax-credit-rates/",
+    "https://www.sars.gov.za/types-of-tax/unemployment-insurance-fund/",
+    "https://www.sars.gov.za/wp-content/uploads/Docs/Budget/Budget2026/Budget-tax-guide-2026-online-version-for-printing.pdf",
+    "https://www.sars.gov.za/types-of-tax/personal-income-tax/tax-free-investments/",
+    "https://www.sars.gov.za/tax-rates/income-tax/retirement-lump-sum-benefits/",
+    "https://www.sars.gov.za/latest-news/tax-directives-enhancements-and-tax-implications-of-the-two-pot-retirement-system/",
+    "https://www.sars.gov.za/latest-news/tax-directives-legislative-changes-and-system-enhancements/",
+    "https://www.gov.za/sites/default/files/gcis_document/201409/32005290.pdf",
+    "https://www.sars.gov.za/tax-rates/income-tax/interest-and-dividends/",
+    "https://www.sars.gov.za/tax-rates/income-tax/capital-gains-tax-cgt/",
+    "https://www.sars.gov.za/types-of-tax/capital-gains-tax/proceeds/calculation-of-taxable-capital-gains-and-assessed-capital-losses/inclusion-rate/"
+  ],
+  "incomeTaxBrackets": {
+    "value": [
+      { "above": 0, "upTo": 245100, "base": 0, "rate": 0.18 },
+      { "above": 245100, "upTo": 383100, "base": 44118, "rate": 0.26 },
+      { "above": 383100, "upTo": 530200, "base": 79998, "rate": 0.31 },
+      { "above": 530200, "upTo": 695800, "base": 125599, "rate": 0.36 },
+      { "above": 695800, "upTo": 887000, "base": 185215, "rate": 0.39 },
+      { "above": 887000, "upTo": 1878600, "base": 259783, "rate": 0.41 },
+      { "above": 1878600, "upTo": null, "base": 666339, "rate": 0.45 }
+    ],
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/tax-rates/income-tax/rates-of-tax-for-individuals/"
+  },
+  "rebates": {
+    "value": { "primary": 17820, "secondary": 9765, "tertiary": 3249 },
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/tax-rates/income-tax/rates-of-tax-for-individuals/"
+  },
+  "thresholds": {
+    "value": { "under65": 99000, "age65to74": 153250, "age75plus": 171300 },
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/tax-rates/income-tax/rates-of-tax-for-individuals/"
+  },
+  "medicalCredits": {
+    "value": { "mainMember": 376, "firstDependant": 376, "additionalDependant": 254 },
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/tax-rates/medical-tax-credit-rates/"
+  },
+  "uif": {
+    "value": { "employeeRate": 0.01, "monthlyEarningsCeiling": 17712 },
+    "carriedForward": true,
+    "source": "https://www.sars.gov.za/types-of-tax/unemployment-insurance-fund/"
+  },
+  "retirementDeduction": {
+    "value": { "rate": 0.275, "annualCap": 430000 },
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/wp-content/uploads/Docs/Budget/Budget2026/Budget-tax-guide-2026-online-version-for-printing.pdf"
+  },
+  "tfsa": {
+    "value": { "annualLimit": 46000, "lifetimeLimit": 500000, "excessPenaltyRate": 0.4 },
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/types-of-tax/personal-income-tax/tax-free-investments/"
+  },
+  "retirementLumpSum": {
+    "value": [
+      { "above": 0, "upTo": 550000, "base": 0, "rate": 0 },
+      { "above": 550000, "upTo": 770000, "base": 0, "rate": 0.18 },
+      { "above": 770000, "upTo": 1155000, "base": 39600, "rate": 0.27 },
+      { "above": 1155000, "upTo": null, "base": 143550, "rate": 0.36 }
+    ],
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/tax-rates/income-tax/retirement-lump-sum-benefits/"
+  },
+  "withdrawalLumpSum": {
+    "value": [
+      { "above": 0, "upTo": 27500, "base": 0, "rate": 0 },
+      { "above": 27500, "upTo": 726000, "base": 0, "rate": 0.18 },
+      { "above": 726000, "upTo": 1089000, "base": 125730, "rate": 0.27 },
+      { "above": 1089000, "upTo": null, "base": 223740, "rate": 0.36 }
+    ],
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/tax-rates/income-tax/retirement-lump-sum-benefits/"
+  },
+  "twoPot": {
+    "value": {
+      "savingsShare": 0.3333333333333333,
+      "retirementShare": 0.6666666666666666,
+      "minimumWithdrawal": 2000,
+      "withdrawalsPerTaxYear": 1
+    },
+    "carriedForward": true,
+    "source": "https://www.sars.gov.za/latest-news/tax-directives-enhancements-and-tax-implications-of-the-two-pot-retirement-system/"
+  },
+  "annuitisationDeMinimis": {
+    "value": 360000,
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/latest-news/tax-directives-legislative-changes-and-system-enhancements/"
+  },
+  "livingAnnuityDrawdown": {
+    "value": { "minRate": 0.025, "maxRate": 0.175 },
+    "carriedForward": true,
+    "source": "https://www.gov.za/sites/default/files/gcis_document/201409/32005290.pdf"
+  },
+  "interestExemption": {
+    "value": { "under65": 23800, "age65plus": 34500 },
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/tax-rates/income-tax/interest-and-dividends/"
+  },
+  "cgt": {
+    "value": { "annualExclusion": 50000, "inclusionRate": 0.4 },
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/tax-rates/income-tax/capital-gains-tax-cgt/"
+  },
+  "dividendsWithholdingRate": {
+    "value": 0.2,
+    "carriedForward": false,
+    "source": "https://www.sars.gov.za/wp-content/uploads/Docs/Budget/Budget2026/Budget-tax-guide-2026-online-version-for-printing.pdf"
+  },
+  "earliestRaRetirementAge": {
+    "value": 55,
+    "carriedForward": true,
+    "source": "https://www.sars.gov.za/wp-content/uploads/Docs/Budget/Budget2026/Budget-tax-guide-2026-online-version-for-printing.pdf"
+  }
+}
