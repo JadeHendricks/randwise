@@ -1,0 +1,40 @@
+// Molecule: send-to. A row of targets for carrying figures to another calculator.
+.rw-send-to {
+  display: block;
+  min-width: 0;
+
+  &__heading {
+    margin-bottom: var(--rw-space-2);
+    font-size: var(--rw-text-md);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rw-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    min-width: 0;
+  }
+
+  &__target {
+    max-width: 100%;
+    gap: var(--rw-space-2);
+  }
+
+  // A target that is not built yet: dashed and muted, still focusable and announced.
+  &__target--soon {
+    border: 1px dashed var(--rw-color-border-strong);
+    color: var(--rw-color-text-muted);
+    cursor: not-allowed;
+  }
+
+  &__soon {
+    font-size: var(--rw-text-xs);
+  }
+}
