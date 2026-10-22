@@ -1,0 +1,42 @@
+{
+  "source": "https://custom.resbank.co.za/SarbWebApi/WebIndicators/HomePageRates",
+  "fetchedOn": "2026-10-22",
+  "rates": {
+    "repo": {
+      "label": "SARB Policy Rate",
+      "valuePercent": 7.25,
+      "asOf": "2026-10-22",
+      "seriesCode": "MMRD002A"
+    },
+    "prime": {
+      "label": "Prime lending rate",
+      "valuePercent": 10.75,
+      "asOf": "2026-10-22",
+      "seriesCode": "MMRD000A"
+    },
+    "cpi": {
+      "label": "CPI",
+      "valuePercent": 4.5,
+      "asOf": "2026-09-30",
+      "seriesCode": "CPI1000F"
+    },
+    "r2030": {
+      "label": "8.00% 2030 (R2030) (closing yields)",
+      "valuePercent": 8.04,
+      "asOf": "2026-10-21",
+      "seriesCode": "MMRD708A"
+    },
+    "r209": {
+      "label": "6.25% 2036 (R209) (closing yields)",
+      "valuePercent": 8.725,
+      "asOf": "2026-10-21",
+      "seriesCode": "MMRD709A"
+    },
+    "zaronia": {
+      "label": "Zaronia",
+      "valuePercent": 7.102,
+      "asOf": "2026-10-21",
+      "seriesCode": "MMRD855A"
+    }
+  }
+}
