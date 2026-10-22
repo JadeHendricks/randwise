@@ -1,0 +1,25 @@
+// Atom: money. Big confident tabular numerals.
+.rw-money {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--rw-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: var(--rw-line-tight);
+
+  &--sm {
+    font-size: var(--rw-text-md);
+  }
+
+  &--md {
+    font-size: var(--rw-text-xl);
+  }
+
+  &--lg {
+    font-size: var(--rw-text-2xl);
+  }
+
+  &--hero {
+    font-size: var(--rw-text-display);
+    letter-spacing: -0.03em;
+  }
+}

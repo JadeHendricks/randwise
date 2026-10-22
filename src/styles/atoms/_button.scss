@@ -1,0 +1,69 @@
+@use 'mixins';
+
+// Atom: button. Black pill primary, glass secondary, ghost.
+.rw-button {
+  @include mixins.pill-button-base;
+
+  &:focus-visible {
+    @include mixins.focus-ring;
+  }
+
+  &--sm {
+    min-height: 36px;
+    padding: 0 var(--rw-space-4);
+    font-size: var(--rw-text-sm);
+  }
+
+  &--md {
+    min-height: 44px;
+    padding: 0 var(--rw-space-5);
+    font-size: var(--rw-text-md);
+  }
+
+  &--lg {
+    min-height: 56px;
+    padding: 0 var(--rw-space-6);
+    font-size: var(--rw-text-lg);
+  }
+
+  &--primary {
+    background: var(--rw-color-ink);
+    color: var(--rw-color-on-ink);
+    box-shadow: var(--rw-shadow-sm);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--rw-shadow-md);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &--secondary {
+    @include mixins.glass-surface;
+    color: var(--rw-color-text);
+    border-color: var(--rw-color-border-strong);
+    box-shadow: var(--rw-shadow-sm);
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: var(--rw-color-text);
+
+    &:hover {
+      background: var(--rw-color-accent-soft);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+}

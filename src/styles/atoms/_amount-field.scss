@@ -1,0 +1,117 @@
+@use 'mixins';
+
+// Atom: amount field. Labelled number input and range slider side by side.
+.rw-amount-field {
+  display: block;
+
+  &__label {
+    display: block;
+    margin-bottom: var(--rw-space-2);
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--rw-space-4);
+
+    @include mixins.below(mobile) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  &__control {
+    display: flex;
+    align-items: center;
+    gap: var(--rw-space-2);
+    min-height: 48px;
+    padding: 0 var(--rw-space-4);
+    border: 1px solid var(--rw-color-border-strong);
+    border-radius: var(--rw-radius-md);
+    background: var(--rw-color-surface-solid);
+
+    &:focus-within {
+      @include mixins.focus-ring;
+    }
+  }
+
+  &__affix {
+    color: var(--rw-color-text-muted);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__number {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: var(--rw-text-lg);
+    font-weight: var(--rw-weight-bold);
+    font-variant-numeric: tabular-nums;
+    outline: 0;
+    appearance: textfield;
+  }
+
+  &__slider {
+    width: 100%;
+    height: 28px;
+    margin: 0;
+    background: transparent;
+    accent-color: var(--rw-color-ink);
+    appearance: none;
+    cursor: pointer;
+
+    &::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: var(--rw-radius-pill);
+      background: linear-gradient(
+        to right,
+        var(--rw-color-ink) var(--rw-amount-fill, 0%),
+        var(--rw-color-track) var(--rw-amount-fill, 0%)
+      );
+    }
+
+    &::-moz-range-track {
+      height: 8px;
+      border-radius: var(--rw-radius-pill);
+      background: linear-gradient(
+        to right,
+        var(--rw-color-ink) var(--rw-amount-fill, 0%),
+        var(--rw-color-track) var(--rw-amount-fill, 0%)
+      );
+    }
+
+    &::-webkit-slider-thumb {
+      width: 24px;
+      height: 24px;
+      margin-top: -8px;
+      border: 3px solid var(--rw-color-surface-solid);
+      border-radius: 50%;
+      background: var(--rw-color-ink);
+      box-shadow: var(--rw-shadow-glow);
+      appearance: none;
+    }
+
+    &::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: 3px solid var(--rw-color-surface-solid);
+      border-radius: 50%;
+      background: var(--rw-color-ink);
+      box-shadow: var(--rw-shadow-glow);
+    }
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+  }
+
+  &__hint {
+    margin-top: var(--rw-space-2);
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-sm);
+  }
+}
