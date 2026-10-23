@@ -21,7 +21,7 @@
   &__column {
     @include mixins.motion-safe {
       animation: rw-dot-matrix-in var(--rw-duration-slow) var(--rw-ease-out) both;
-      animation-delay: calc(var(--rw-dot-column, 0) * 40ms);
+      animation-delay: calc(var(--rw-dot-column, 0) * var(--rw-stagger-step));
     }
   }
 

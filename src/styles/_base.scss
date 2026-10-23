@@ -42,6 +42,15 @@
   color: inherit;
 }
 
+@include mixins.reduced-motion {
+  :where(*, *::before, *::after) {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 .rw-page {
   min-height: 100dvh;
   background: linear-gradient(160deg, var(--rw-color-bg-start), var(--rw-color-bg-end));

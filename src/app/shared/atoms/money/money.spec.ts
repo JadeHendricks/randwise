@@ -85,4 +85,25 @@ describe('Money', () => {
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).classList).toContain('rw-money--hero');
   });
+
+  it('cancels the count-up and shows final value when preference changes to reduced motion mid-animation', async () => {
+    fake = installFakeMatchMedia({ reducedMotion: false });
+    const fixture = create(1000);
+    await fixture.whenStable();
+    expect(figure(fixture.nativeElement)).toBe('R 0,00');
+
+    flush(0);
+    flush(300);
+    await fixture.whenStable();
+    const mid = figure(fixture.nativeElement);
+    expect(mid).not.toBe('R 0,00');
+    expect(mid).not.toBe('R 1 000,00');
+
+    // Switch to reduced motion while animating
+    fake.setReducedMotion(true);
+    await fixture.whenStable();
+
+    // Should show the final value immediately
+    expect(figure(fixture.nativeElement)).toBe('R 1 000,00');
+  });
 });

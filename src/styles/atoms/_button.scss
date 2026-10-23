@@ -39,12 +39,16 @@
     box-shadow: var(--rw-shadow-sm);
 
     &:hover {
-      transform: translateY(-1px);
+      @include mixins.motion-safe {
+        transform: translateY(-1px);
+      }
       box-shadow: var(--rw-shadow-md);
     }
 
     &:active {
-      transform: translateY(0);
+      @include mixins.motion-safe {
+        transform: translateY(0);
+      }
     }
   }
 
@@ -55,7 +59,9 @@
     box-shadow: var(--rw-shadow-sm);
 
     &:hover {
-      transform: translateY(-1px);
+      @include mixins.motion-safe {
+        transform: translateY(-1px);
+      }
     }
   }
 

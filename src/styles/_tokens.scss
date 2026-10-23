@@ -1,3 +1,5 @@
+@use 'mixins';
+
 // Design tokens. Light is the default; dark overrides via the single
 // [data-theme='dark'] attribute selector on <html>.
 :root {
@@ -93,6 +95,8 @@
   --rw-duration-fast: 120ms;
   --rw-duration-base: 240ms;
   --rw-duration-slow: 600ms;
+  --rw-duration-spin: 0.8s;
+  --rw-stagger-step: 40ms;
   --rw-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --rw-blur: 18px;
 
@@ -149,4 +153,14 @@
   --rw-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
   --rw-shadow-md: 0 12px 32px rgb(0 0 0 / 45%);
   --rw-shadow-glow: 0 0 36px rgb(52 211 153 / 28%), 0 12px 32px rgb(0 0 0 / 45%);
+}
+
+@include mixins.reduced-motion {
+  :root {
+    --rw-duration-fast: 0.01ms;
+    --rw-duration-base: 0.01ms;
+    --rw-duration-slow: 0.01ms;
+    --rw-duration-spin: 0.01ms;
+    --rw-stagger-step: 0ms;
+  }
 }
