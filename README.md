@@ -64,7 +64,7 @@ Tax rules and interest rates are plain JSON, checked at startup. Nothing is fetc
 
 ## How the data updates each tax season
 
-The app never fetches data itself. Two Node scripts in `scripts/tax-season` update the local JSON files for you. Every statement here matches the scripts, so read the [privacy](#privacy-1) section first if the automation concerns you.
+The app never fetches data itself. Two Node scripts in `scripts/tax-season` update the local JSON files for you. Every statement here matches the scripts, so read the [privacy](#privacy) section first if the automation concerns you.
 
 ### On `npm start`
 
