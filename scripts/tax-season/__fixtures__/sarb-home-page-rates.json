@@ -1,0 +1,101 @@
+[
+  {
+    "Name": "CPI",
+    "SectionId": 1,
+    "SectionName": "Inflation",
+    "TimeseriesCode": "CPI1000F",
+    "Date": "2026-09-30",
+    "Value": 4.5,
+    "UpDown": 1,
+    "FormatNumber": "0.0",
+    "FormatDate": "MMM, yyyy"
+  },
+  {
+    "Name": "PPI",
+    "SectionId": 1,
+    "SectionName": "Inflation",
+    "TimeseriesCode": "PPI1000F",
+    "Date": "2026-09-30",
+    "Value": 3.1,
+    "UpDown": -1,
+    "FormatNumber": "0.0",
+    "FormatDate": "MMM, yyyy"
+  },
+  {
+    "Name": "SARB Policy Rate",
+    "SectionId": 2,
+    "SectionName": "Interest rates",
+    "TimeseriesCode": "MMRD002A",
+    "Date": "2026-10-23",
+    "Value": 7.25,
+    "UpDown": 0,
+    "FormatNumber": "0.00",
+    "FormatDate": "dd MMM yyyy"
+  },
+  {
+    "Name": "Prime lending rate",
+    "SectionId": 2,
+    "SectionName": "Interest rates",
+    "TimeseriesCode": "MMRD000A",
+    "Date": "2026-10-23",
+    "Value": 10.75,
+    "UpDown": 0,
+    "FormatNumber": "0.00",
+    "FormatDate": "dd MMM yyyy"
+  },
+  {
+    "Name": "Sabor",
+    "SectionId": 2,
+    "SectionName": "Interest rates",
+    "TimeseriesCode": "MMRD006A",
+    "Date": "2026-10-22",
+    "Value": 7.101,
+    "UpDown": 1,
+    "FormatNumber": "0.000",
+    "FormatDate": "dd MMM yyyy"
+  },
+  {
+    "Name": "Zaronia",
+    "SectionId": 2,
+    "SectionName": "Interest rates",
+    "TimeseriesCode": "MMRD855A",
+    "Date": "2026-10-22",
+    "Value": 7.104,
+    "UpDown": 1,
+    "FormatNumber": "0.000",
+    "FormatDate": "dd MMM yyyy"
+  },
+  {
+    "Name": "8.00% 2030 (R2030) (closing yields)",
+    "SectionId": 3,
+    "SectionName": "Bond yields",
+    "TimeseriesCode": "MMRD708A",
+    "Date": "2026-10-22",
+    "Value": 8.035,
+    "UpDown": -1,
+    "FormatNumber": "0.000",
+    "FormatDate": "dd MMM yyyy"
+  },
+  {
+    "Name": "6.25% 2036 (R209) (closing yields)",
+    "SectionId": 3,
+    "SectionName": "Bond yields",
+    "TimeseriesCode": "MMRD709A",
+    "Date": "2026-10-22",
+    "Value": 8.745,
+    "UpDown": 1,
+    "FormatNumber": "0.000",
+    "FormatDate": "dd MMM yyyy"
+  },
+  {
+    "Name": "Rand per US dollar",
+    "SectionId": 4,
+    "SectionName": "Exchange rates",
+    "TimeseriesCode": "EXCX135D",
+    "Date": "2026-10-23",
+    "Value": 17.9,
+    "UpDown": -1,
+    "FormatNumber": "0.0000",
+    "FormatDate": "dd MMM yyyy"
+  }
+]

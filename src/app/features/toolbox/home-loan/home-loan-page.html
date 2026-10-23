@@ -1,0 +1,282 @@
+<div class="tool">
+  <rw-card class="tool__inputs" padding="lg">
+    <a rw-button variant="ghost" size="sm" routerLink="/toolbox">Back to Toolbox</a>
+    <div class="tool__head">
+      <h2 class="tool__title">Your home loan</h2>
+      @if (store.homeLoanIsExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button
+          rw-button
+          variant="secondary"
+          size="sm"
+          type="button"
+          (click)="store.resetHomeLoan()"
+        >
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (store.homeLoanIsExample()) {
+      <p class="tool__text">{{ intro() }}</p>
+    }
+
+    <rw-segmented-control
+      legend="What do you want to work out"
+      [options]="modeOptions"
+      [value]="inputs().mode"
+      (valueChange)="setMode($event)"
+    />
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">Income and debt</h3>
+      <rw-amount-field
+        label="Gross pay per month"
+        prefix="R"
+        [min]="0"
+        [max]="grossMax"
+        [step]="step"
+        [value]="inputs().grossMonthly"
+        hint="Starts at the gross pay on the Pay page. Changes here only affect this page."
+        (valueChange)="set('grossMonthly', $event)"
+      />
+      <rw-amount-field
+        label="Other debt repayments per month"
+        prefix="R"
+        [min]="0"
+        [max]="debtMax"
+        [step]="step"
+        [value]="inputs().existingDebtMonthly"
+        hint="Car, credit card, student loan and other instalments you already pay."
+        (valueChange)="set('existingDebtMonthly', $event)"
+      />
+    </div>
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">The bond</h3>
+      @if (inputs().mode === 'price') {
+        <rw-amount-field
+          label="Purchase price"
+          prefix="R"
+          [min]="0"
+          [max]="priceMax"
+          [step]="step"
+          [value]="inputs().purchasePrice"
+          (valueChange)="set('purchasePrice', $event)"
+        />
+      }
+      <rw-amount-field
+        label="Deposit"
+        prefix="R"
+        [min]="0"
+        [max]="depositMax"
+        [step]="step"
+        [value]="inputs().deposit"
+        (valueChange)="set('deposit', $event)"
+      />
+      <rw-amount-field
+        label="Bond interest rate per year"
+        suffix="%"
+        [min]="limits.ratePercent.min"
+        [max]="limits.ratePercent.max"
+        [step]="percentStep"
+        [value]="inputs().ratePercent"
+        [hint]="rateHint()"
+        (valueChange)="set('ratePercent', $event)"
+      />
+      @if (store.prime() !== null) {
+        <rw-amount-field
+          label="Margin to prime"
+          suffix="%"
+          [min]="margin.min"
+          [max]="margin.max"
+          [step]="percentStep"
+          [value]="marginValue() ?? 0"
+          hint="How far your rate is above prime. A negative margin is below prime."
+          (valueChange)="setMargin($event)"
+        />
+      }
+      <rw-amount-field
+        label="Bond term in years"
+        [min]="limits.termYears.min"
+        [max]="limits.termYears.max"
+        [step]="1"
+        [value]="inputs().termYears"
+        (valueChange)="set('termYears', $event)"
+      />
+    </div>
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">Running costs</h3>
+      <rw-amount-field
+        label="Rates and levies per month"
+        prefix="R"
+        [min]="0"
+        [max]="runningCostMax"
+        [step]="step"
+        [value]="inputs().ratesAndLeviesMonthly"
+        hint="Shown in the monthly cost, not counted against the rule of thumb."
+        (valueChange)="set('ratesAndLeviesMonthly', $event)"
+      />
+      <rw-amount-field
+        label="Home insurance per month"
+        prefix="R"
+        [min]="0"
+        [max]="runningCostMax"
+        [step]="step"
+        [value]="inputs().insuranceMonthly"
+        hint="Shown in the monthly cost, not counted against the rule of thumb."
+        (valueChange)="set('insuranceMonthly', $event)"
+      />
+    </div>
+  </rw-card>
+
+  <section class="tool__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <rw-live-region [text]="announcement()" />
+    @if (store.homeLoanEstimate() === null) {
+      <rw-card class="tool__unavailable" padding="lg">
+        <p>Tax data is unavailable, so take-home pay cannot be worked out.</p>
+      </rw-card>
+    } @else if (failure(); as message) {
+      <p class="tool__error" role="alert">{{ message }}</p>
+    } @else if (result(); as r) {
+      <rw-card class="tool__hero" variant="hero-yellow" padding="lg">
+        <h2 class="tool__eyebrow">{{ r.eyebrow }}</h2>
+        <p class="tool__figure">
+          <rw-money [value]="r.figure" size="hero" />
+        </p>
+        <p class="tool__lead">{{ r.lead }}</p>
+      </rw-card>
+
+      <rw-download-pdf class="tool__download" [report]="report()" />
+
+      <div class="tool__warnings" role="status">
+        @for (warning of r.warnings; track warning) {
+          <p class="tool__warning">
+            <rw-icon name="warning" size="sm" />
+            <span>{{ warning }}</span>
+          </p>
+        }
+      </div>
+
+      <div class="tool__stats">
+        <rw-stat-card label="Loan amount" [value]="r.loan" />
+        <rw-stat-card
+          label="Monthly repayment"
+          [value]="r.repayment"
+          [secondary]="r.repaymentSecondary"
+        />
+        <rw-stat-card label="Total interest" [value]="r.interest" [secondary]="r.totalPaid" />
+        <rw-stat-card
+          label="Total monthly cost"
+          [value]="r.monthlyCost"
+          hint="Repayment plus rates and levies and insurance."
+        />
+      </div>
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">{{ ruleTitle }}</h2>
+        <div class="tool__track">
+          <rw-ring-gauge
+            class="tool__ring"
+            label="Debt repayments as a share of gross pay"
+            [value]="r.ringPercent"
+            caption="of gross pay"
+            [centreLabel]="r.ringCentre"
+          />
+          <p class="tool__text">{{ r.ruleText }}</p>
+        </div>
+      </rw-card>
+
+      @if (r.hasBreakdown) {
+        <rw-card class="tool__card" padding="lg">
+          <h2 class="tool__title">Your first year of repayments</h2>
+          <rw-breakdown-bar
+            data-pdf-chart="home-loan-first-year"
+            label="Capital and interest in the first year of the bond"
+            [segments]="r.firstYearSegments"
+          />
+          <p class="tool__text">
+            Early on most of each instalment is interest. The balance falls faster later in the
+            term.
+          </p>
+        </rw-card>
+      }
+
+      @if (r.hasChart) {
+        <rw-card class="tool__card" padding="lg">
+          <h2 class="tool__title">What you still owe</h2>
+          <rw-line-chart
+            data-pdf-chart="home-loan-balance"
+            label="Bond balance over the term"
+            [series]="r.balance"
+            [formatX]="yearText"
+            [formatXTick]="plain"
+            [formatYTick]="compactRand"
+            xLabel="Year"
+            yLabel="Balance"
+          />
+        </rw-card>
+
+        <rw-card class="tool__card" padding="lg">
+          <details>
+            <summary class="tool-table__summary">Year by year</summary>
+            <div
+              class="tool-table__scroll"
+              role="region"
+              tabindex="0"
+              aria-label="Your bond, one row for each year"
+            >
+              <table class="tool-table__table">
+                <caption class="tool-table__caption">
+                  Your bond, one row for each year
+                </caption>
+                <thead>
+                  <tr>
+                    <th class="tool-table__cell tool-table__cell--label" scope="col">Year</th>
+                    <th class="tool-table__cell" scope="col">Owed at the start</th>
+                    <th class="tool-table__cell" scope="col">Interest</th>
+                    <th class="tool-table__cell" scope="col">Capital repaid</th>
+                    <th class="tool-table__cell" scope="col">Owed at the end</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of r.rows; track row.year) {
+                    <tr>
+                      <th class="tool-table__cell tool-table__cell--label" scope="row">
+                        {{ row.year }}
+                      </th>
+                      <td class="tool-table__cell">{{ row.opening }}</td>
+                      <td class="tool-table__cell">{{ row.interest }}</td>
+                      <td class="tool-table__cell">{{ row.principal }}</td>
+                      <td class="tool-table__cell">{{ row.closing }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </rw-card>
+      }
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">See how it fits</h2>
+        <div class="tool__links">
+          <a rw-button variant="secondary" size="sm" routerLink="/pay">
+            Change your salary on the Pay page
+          </a>
+          <a rw-button variant="secondary" size="sm" routerLink="/budget">
+            See how this fits your Budget
+          </a>
+        </div>
+      </rw-card>
+    }
+
+    <p class="tool__note">
+      Estimates only. The bond rate is a yearly rate paid monthly (divided by 12). Banks run their
+      own affordability checks and may count rates, levies and insurance, which this rule of thumb
+      does not. Nothing is saved.
+    </p>
+  </section>
+</div>

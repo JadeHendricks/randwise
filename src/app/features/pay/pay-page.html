@@ -1,0 +1,262 @@
+<div class="pay">
+  <rw-card class="pay__inputs" padding="lg">
+    <div class="pay__head">
+      <h2 class="pay__title">Your salary</h2>
+      @if (store.isExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button rw-button variant="secondary" size="sm" type="button" (click)="store.reset()">
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (store.isExample()) {
+      <p class="pay__intro">
+        This is an example salary of R30 000 a month. Change any value to see your own numbers;
+        nothing is saved.
+      </p>
+    }
+
+    <rw-segmented-control
+      legend="Amount is"
+      [options]="basisOptions"
+      [value]="inputs().basis"
+      (valueChange)="estimator.switchBasis($event)"
+    />
+    <rw-segmented-control
+      legend="Show amounts"
+      [options]="periodOptions"
+      [value]="inputs().period"
+      (valueChange)="store.setPeriod($event)"
+    />
+
+    <rw-amount-field
+      [label]="amountLabel()"
+      prefix="R"
+      [min]="0"
+      [max]="amountMax()"
+      [step]="step"
+      [value]="inputs().amount"
+      hint="Typed amounts are rounded to the nearest rand."
+      (valueChange)="set('amount', $event)"
+    />
+    <rw-amount-field
+      label="Age at the end of the tax year"
+      [min]="limits.age.min"
+      [max]="limits.age.max"
+      [step]="1"
+      [value]="inputs().age"
+      hint="From 65 a second rebate applies and from 75 a third, so PAYE drops."
+      (valueChange)="set('age', $event)"
+    />
+    <rw-amount-field
+      label="People on your medical aid"
+      [min]="limits.medicalMembers.min"
+      [max]="limits.medicalMembers.max"
+      [step]="1"
+      [value]="inputs().medicalMembers"
+      hint="You plus dependants. 0 = no medical aid, 1 = just you, 2 = you and one dependant, and so on."
+      (valueChange)="set('medicalMembers', $event)"
+    />
+    <rw-amount-field
+      label="Your retirement contributions per month"
+      prefix="R"
+      [min]="0"
+      [max]="retirementMax"
+      [step]="step"
+      [value]="inputs().employeeRetirementMonthly"
+      hint="Retirement annuity (RA), pension or provident fund contributions you pay."
+      (valueChange)="set('employeeRetirementMonthly', $event)"
+    />
+    <rw-amount-field
+      label="Employer retirement contributions per month"
+      prefix="R"
+      [min]="0"
+      [max]="retirementMax"
+      [step]="step"
+      [value]="inputs().employerRetirementMonthly"
+      hint="Taxed as a benefit but counts toward your retirement deduction."
+      (valueChange)="set('employerRetirementMonthly', $event)"
+    />
+    <rw-amount-field
+      label="Other deductions per month"
+      prefix="R"
+      [min]="0"
+      [max]="otherMax"
+      [step]="step"
+      [value]="inputs().otherDeductionsMonthly"
+      hint="Taken after tax, such as medical aid premiums or union fees."
+      (valueChange)="set('otherDeductionsMonthly', $event)"
+    />
+  </rw-card>
+
+  <section class="pay__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <rw-live-region [text]="announcement()" />
+    @if (estimator.estimate() === null) {
+      <rw-card class="pay__unavailable" padding="lg">
+        <p>Tax data is unavailable, so tax figures cannot be shown.</p>
+      </rw-card>
+    } @else if (failure(); as message) {
+      <p class="pay__error" role="alert">{{ message }}</p>
+    } @else if (result(); as r) {
+      <rw-card class="pay__hero" variant="hero-yellow" padding="lg">
+        <h2 class="pay__eyebrow">Net pay</h2>
+        <p class="pay__figure">
+          <rw-money [value]="r.net.monthly" size="hero" />
+          <span class="pay__unit">a month</span>
+        </p>
+        <p class="pay__figure">
+          <rw-money [value]="r.net.annual" size="md" />
+          <span class="pay__unit">a year</span>
+        </p>
+        @if (inputs().basis === 'net') {
+          <p class="pay__needed">Gross pay needed: {{ rand(r.gross.monthly) }} a month</p>
+        }
+      </rw-card>
+
+      <rw-download-pdf class="pay__download" [report]="report()" />
+
+      <rw-card class="pay__card" padding="lg">
+        <rw-send-to heading="Use these figures" (sendTo)="sendTo($event)" />
+      </rw-card>
+
+      <div class="pay__stats">
+        <rw-stat-card
+          label="PAYE"
+          [value]="r.paye.monthly"
+          [secondary]="'a month, ' + rand(r.paye.annual) + ' a year'"
+        />
+        <rw-stat-card
+          label="UIF"
+          [value]="r.uif.monthly"
+          [secondary]="'a month, ' + rand(r.uif.annual) + ' a year'"
+        />
+        <rw-stat-card
+          label="Medical credit"
+          [value]="r.medicalCredit.monthly"
+          [secondary]="'a month, ' + rand(r.medicalCredit.annual) + ' a year'"
+          [hint]="medicalWords()"
+        />
+        <rw-stat-card
+          label="Taxable income"
+          [value]="r.taxableIncome.monthly"
+          [secondary]="'a month, ' + rand(r.taxableIncome.annual) + ' a year'"
+        />
+        <rw-stat-card
+          label="Marginal rate"
+          [text]="r.marginalRate"
+          hint="Tax on your next rand of income"
+        />
+        <rw-stat-card
+          label="Effective rate"
+          [text]="r.effectiveRate"
+          hint="PAYE as a share of gross pay"
+        />
+      </div>
+
+      <rw-card class="pay__card" padding="lg">
+        <div class="pay__head">
+          <h2 class="pay__title">Retirement deduction</h2>
+          @if (r.overLimit) {
+            <rw-chip label="Over the limit" tone="warning" />
+          }
+        </div>
+        <div class="pay__retirement">
+          <rw-ring-gauge
+            class="pay__ring"
+            label="Share of this year's retirement deduction limit used"
+            [value]="r.usedPercent"
+            caption="used"
+          />
+          <dl class="pay__facts">
+            <div class="pay__fact">
+              <dt class="pay__fact-label">Deductible this year</dt>
+              <dd class="pay__fact-value">
+                <rw-money [value]="r.retirement.deductible.annual" size="sm" />
+                <span class="pay__fact-note">{{ rand(r.retirement.deductible.monthly) }} a month</span>
+              </dd>
+            </div>
+            <div class="pay__fact">
+              <dt class="pay__fact-label">Excess carried forward</dt>
+              <dd class="pay__fact-value">
+                <rw-money [value]="r.retirement.excess.annual" size="sm" />
+                <span class="pay__fact-note">{{ rand(r.retirement.excess.monthly) }} a month</span>
+              </dd>
+            </div>
+            <div class="pay__fact">
+              <dt class="pay__fact-label">Remaining headroom</dt>
+              <dd class="pay__fact-value">
+                <rw-money [value]="r.retirement.headroom.annual" size="sm" />
+                <span class="pay__fact-note">{{ rand(r.retirement.headroom.monthly) }} a month</span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+        @if (r.overLimit) {
+          <p class="pay__text">
+            You contribute more than this year's limit. The excess is not taxed now; it carries
+            forward to later years.
+          </p>
+        }
+      </rw-card>
+
+      <rw-card class="pay__card" padding="lg">
+        <h2 class="pay__title">Where your gross pay goes each month</h2>
+        <rw-breakdown-bar
+          data-pdf-chart="pay-breakdown"
+          label="Where your gross pay goes each month"
+          [segments]="r.segments"
+        />
+      </rw-card>
+
+      @if (chart(); as c) {
+        <rw-card class="pay__card" padding="lg">
+          <h2 class="pay__title">Net pay by gross pay, per month</h2>
+          <rw-line-chart
+            data-pdf-chart="pay-net-by-gross"
+            label="Net pay by gross pay, per month"
+            [series]="c.series"
+            [secondSeries]="c.reference"
+            [marker]="c.marker"
+            [formatXTick]="compactRand"
+            [formatYTick]="compactRand"
+            xLabel="Gross pay per month"
+            yLabel="Net pay per month"
+          />
+        </rw-card>
+      }
+
+      <rw-card class="pay__card" padding="lg">
+        <div class="pay__scroll" role="region" tabindex="0" aria-label="Monthly and annual values">
+          <table class="pay__table">
+            <caption class="pay__caption">Monthly and annual values</caption>
+            <thead>
+              <tr>
+                <th class="pay__cell pay__cell--label" scope="col">Item</th>
+                <th class="pay__cell" scope="col">Per month</th>
+                <th class="pay__cell" scope="col">Per year</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of r.rows; track row.label) {
+                <tr [class.pay__row--total]="row.total">
+                  <th class="pay__cell pay__cell--label" scope="row">{{ row.label }}</th>
+                  <td class="pay__cell">{{ row.monthly }}</td>
+                  <td class="pay__cell">{{ row.annual }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </rw-card>
+    }
+
+    @if (taxNote(); as note) {
+      <p class="pay__note">
+        {{ note }} PAYE uses the annual-equivalent method, so it can differ from your payslip by a
+        few cents. Estimates only.
+      </p>
+    }
+  </section>
+</div>

@@ -1,0 +1,97 @@
+@use 'mixins';
+
+// Molecule: plan step. A numbered card: badge on the left, then title, why, key figure,
+// supporting numbers, caveats and the calculator button.
+.rw-plan-step {
+  display: block;
+  min-width: 0;
+
+  &__card {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--rw-space-4);
+
+    @include mixins.below(mobile) {
+      gap: var(--rw-space-3);
+    }
+  }
+
+  &__badge {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--rw-radius-pill);
+    background: var(--rw-color-ink);
+    color: var(--rw-color-on-ink);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__body {
+    display: grid;
+    flex: 1;
+    gap: var(--rw-space-3);
+    justify-items: start;
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: var(--rw-text-lg);
+    line-height: var(--rw-line-tight);
+  }
+
+  &__why,
+  &__note {
+    font-size: var(--rw-text-sm);
+    color: var(--rw-color-text-muted);
+  }
+
+  &__key {
+    display: grid;
+    gap: var(--rw-space-1);
+  }
+
+  &__key-label {
+    font-size: var(--rw-text-sm);
+    color: var(--rw-color-text-muted);
+  }
+
+  &__key-value {
+    font-size: var(--rw-text-xl);
+    line-height: var(--rw-line-tight);
+  }
+
+  &__details {
+    display: grid;
+    gap: var(--rw-space-2);
+    width: 100%;
+    margin: 0;
+  }
+
+  &__detail {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--rw-space-1) var(--rw-space-4);
+    font-size: var(--rw-text-sm);
+  }
+
+  &__term {
+    color: var(--rw-color-text-muted);
+  }
+
+  &__value {
+    margin: 0;
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__notes {
+    display: grid;
+    gap: var(--rw-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}

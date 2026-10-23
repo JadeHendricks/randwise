@@ -11,10 +11,10 @@ import {
 } from '@angular/core';
 
 import { MediaQueries } from '../../../core/services/media-queries';
+import { formatRand } from '../../format/format-rand';
 
 export type MoneySize = 'sm' | 'md' | 'lg' | 'hero';
 
-const ZAR = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' });
 const COUNT_UP_MS = 600;
 
 @Component({
@@ -55,7 +55,7 @@ export class Money {
   }
 
   protected format(amount: number): string {
-    return ZAR.format(amount);
+    return formatRand(amount);
   }
 
   private moveTo(target: number, animated: boolean): void {

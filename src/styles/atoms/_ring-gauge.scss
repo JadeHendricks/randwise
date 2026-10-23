@@ -1,0 +1,72 @@
+@use 'mixins';
+
+$tones: accent, sun, sky, rose, violet, muted;
+
+// Only `from` is given so the animation ends on the dasharray attribute.
+@keyframes rw-ring-gauge-fill {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+// Atom: ring gauge. Circular percentage with an HTML text overlay.
+.rw-ring-gauge {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-inline-size: 12rem;
+
+  &__figure {
+    position: relative;
+    aspect-ratio: 1;
+  }
+
+  &__svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  &__track {
+    fill: none;
+    stroke: var(--rw-color-track);
+    stroke-width: 10;
+  }
+
+  &__value {
+    fill: none;
+    stroke-width: 10;
+
+    @include mixins.motion-safe {
+      animation: rw-ring-gauge-fill var(--rw-duration-slow) var(--rw-ease-out) both;
+    }
+  }
+
+  @each $tone in $tones {
+    &__value--#{$tone} {
+      stroke: var(--rw-chart-#{$tone});
+    }
+  }
+
+  &__text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--rw-space-5);
+    text-align: center;
+  }
+
+  &__centre {
+    font-size: var(--rw-text-xl);
+    font-weight: var(--rw-weight-bold);
+    line-height: var(--rw-line-tight);
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__caption {
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-xs);
+  }
+}

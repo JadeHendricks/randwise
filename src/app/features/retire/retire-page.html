@@ -1,0 +1,403 @@
+<div class="retire">
+  <rw-card class="retire__inputs" padding="lg">
+    <div class="retire__head">
+      <h2 class="retire__title">Your retirement</h2>
+      @if (context.retireIsExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button
+          rw-button
+          variant="secondary"
+          size="sm"
+          type="button"
+          (click)="context.resetRetire()"
+        >
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (fromLabel(); as source) {
+      <rw-handoff-chip [source]="source" (undo)="context.undoRetire()" />
+    }
+    @if (context.retireIsExample()) {
+      <p class="retire__intro">{{ intro() }}</p>
+    }
+
+    <rw-amount-field
+      label="Monthly income you want in retirement (today's money)"
+      prefix="R"
+      [min]="0"
+      [max]="goalMax"
+      [step]="step"
+      [value]="inputs().goalNetMonthly"
+      hint="After tax, in today's money. It is raised with inflation to the day you retire."
+      (valueChange)="set('goalNetMonthly', $event)"
+    />
+    <rw-amount-field
+      label="Current age"
+      [min]="limits.age.min"
+      [max]="limits.age.max"
+      [step]="1"
+      [value]="inputs().age"
+      (valueChange)="set('age', $event)"
+    />
+    <rw-amount-field
+      label="Retirement age"
+      [min]="limits.retirementAge.min"
+      [max]="limits.retirementAge.max"
+      [step]="1"
+      [value]="inputs().retirementAge"
+      [hint]="retirementAgeHint()"
+      (valueChange)="set('retirementAge', $event)"
+    />
+    <rw-amount-field
+      label="Inflation per year"
+      suffix="%"
+      [min]="limits.inflationPercent.min"
+      [max]="limits.inflationPercent.max"
+      [step]="percentStep"
+      [value]="inputs().inflationPercent"
+      [hint]="inflationHint()"
+      (valueChange)="set('inflationPercent', $event)"
+    />
+    <rw-amount-field
+      label="Return before retirement per year"
+      suffix="%"
+      [min]="limits.returnPercent.min"
+      [max]="limits.returnPercent.max"
+      [step]="percentStep"
+      [value]="inputs().returnPercent"
+      [hint]="growthHint()"
+      (valueChange)="set('returnPercent', $event)"
+    />
+    <rw-amount-field
+      label="Return in retirement per year"
+      suffix="%"
+      [min]="limits.retirementReturnPercent.min"
+      [max]="limits.retirementReturnPercent.max"
+      [step]="percentStep"
+      [value]="inputs().retirementReturnPercent"
+      [hint]="retirementReturnHint()"
+      (valueChange)="set('retirementReturnPercent', $event)"
+    />
+    <rw-amount-field
+      label="Living annuity drawdown per year"
+      suffix="%"
+      [min]="limits.drawdownPercent.min"
+      [max]="limits.drawdownPercent.max"
+      [step]="percentStep"
+      [value]="inputs().drawdownPercent"
+      [hint]="drawdownHint()"
+      (valueChange)="set('drawdownPercent', $event)"
+    />
+    <rw-segmented-control
+      legend="Take a one-third lump sum at retirement"
+      [options]="lumpOptions"
+      [value]="lumpChoice()"
+      (valueChange)="setLump($event)"
+    />
+
+    <div class="retire__block">
+      <h3 class="retire__subtitle">Your RA today</h3>
+      <rw-amount-field
+        label="RA balance today"
+        prefix="R"
+        [min]="0"
+        [max]="balanceMax"
+        [step]="step"
+        [value]="inputs().startingBalance"
+        (valueChange)="set('startingBalance', $event)"
+      />
+      <rw-amount-field
+        label="Monthly RA contribution now"
+        prefix="R"
+        [min]="0"
+        [max]="contributionMax"
+        [step]="step"
+        [value]="inputs().contributionMonthly"
+        hint="On top of any retirement contributions you already make through work."
+        (valueChange)="set('contributionMonthly', $event)"
+      />
+      <rw-amount-field
+        label="Yearly increase in contributions"
+        suffix="%"
+        [min]="limits.escalationPercent.min"
+        [max]="limits.escalationPercent.max"
+        [step]="percentStep"
+        [value]="inputs().escalationPercent"
+        (valueChange)="set('escalationPercent', $event)"
+      />
+    </div>
+
+    <div class="retire__block">
+      <h3 class="retire__subtitle">Assumptions you can change</h3>
+      @if (assumptions(); as a) {
+        <ul class="retire__assumptions">
+          <li>{{ a.inflation.description }}</li>
+          <li>{{ a.growthReturn.description }}</li>
+          <li>{{ retirementReturnText() }}</li>
+        </ul>
+      } @else {
+        <p class="retire__text">Rates are unavailable, so enter your own inflation and returns.</p>
+      }
+    </div>
+
+    <div class="retire__block">
+      <h3 class="retire__subtitle">Your salary (used for tax)</h3>
+      <p class="retire__text">Changes here only affect this page.</p>
+      <rw-amount-field
+        label="Gross pay per month"
+        prefix="R"
+        [min]="0"
+        [max]="grossMax"
+        [step]="step"
+        [value]="inputs().grossMonthly"
+        (valueChange)="set('grossMonthly', $event)"
+      />
+      <rw-amount-field
+        label="People on your medical aid"
+        [min]="limits.medicalMembers.min"
+        [max]="limits.medicalMembers.max"
+        [step]="1"
+        [value]="inputs().medicalMembers"
+        hint="You plus dependants. 0 = no medical aid, 1 = just you. Also used for the medical credit in retirement."
+        (valueChange)="set('medicalMembers', $event)"
+      />
+      <rw-amount-field
+        label="Retirement contributions you already make per month"
+        prefix="R"
+        [min]="0"
+        [max]="retirementMax"
+        [step]="step"
+        [value]="inputs().employeeRetirementMonthly"
+        (valueChange)="set('employeeRetirementMonthly', $event)"
+      />
+      <rw-amount-field
+        label="Employer retirement contributions per month"
+        prefix="R"
+        [min]="0"
+        [max]="retirementMax"
+        [step]="step"
+        [value]="inputs().employerRetirementMonthly"
+        (valueChange)="set('employerRetirementMonthly', $event)"
+      />
+    </div>
+  </rw-card>
+
+  <section class="retire__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <rw-live-region [text]="announcement()" />
+    @if (context.retireEstimate() === null) {
+      <rw-card class="retire__unavailable" padding="lg">
+        <p>Tax data is unavailable, so retirement figures cannot be shown.</p>
+      </rw-card>
+    } @else if (problems(); as messages) {
+      <div class="retire__error" role="alert">
+        @for (message of messages; track message) {
+          <p>{{ message }}</p>
+        }
+      </div>
+    } @else if (result(); as r) {
+      <rw-card class="retire__hero" variant="hero-yellow" padding="lg">
+        <h2 class="retire__eyebrow">Required monthly contribution</h2>
+        <p class="retire__figure">
+          <rw-money [value]="r.requiredMonthly" size="hero" />
+        </p>
+        <p class="retire__text">{{ r.goalSentence }}</p>
+        <p class="retire__text">{{ r.returnSentence }}</p>
+      </rw-card>
+
+      <rw-download-pdf class="retire__download" [report]="report()" />
+
+      @if (r.warnings.length > 0) {
+        <div class="retire__warnings">
+          @for (warning of r.warnings; track warning) {
+            <p class="retire__warning">
+              <rw-icon name="warning" size="sm" />
+              <span>{{ warning }}</span>
+            </p>
+          }
+        </div>
+      }
+
+      <rw-card class="retire__card" padding="lg">
+        <h2 class="retire__title">On track</h2>
+        <div class="retire__track">
+          <rw-ring-gauge
+            class="retire__ring"
+            label="Share of the capital you need that your current contribution builds"
+            [value]="r.ringPercent"
+            caption="on track"
+            [centreLabel]="r.ringCentre"
+          />
+          <dl class="retire__facts">
+            <div class="retire__fact">
+              <dt class="retire__fact-label">
+                Projected at {{ r.retirementAge }} at your current contribution
+              </dt>
+              <dd class="retire__fact-value">
+                <rw-money [value]="r.projectedNominal" size="sm" />
+                <span class="retire__fact-note">{{ r.projectedReal }} in today's money</span>
+              </dd>
+            </div>
+            <div class="retire__fact">
+              <dt class="retire__fact-label">
+                {{ r.surplus ? "Surplus in today's money" : "Shortfall in today's money" }}
+              </dt>
+              <dd class="retire__fact-value">
+                <rw-money [value]="r.gapAmount" size="sm" />
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </rw-card>
+
+      <rw-card class="retire__card" padding="lg">
+        <h2 class="retire__title">Capital you need at {{ r.retirementAge }}</h2>
+        <dl class="retire__facts">
+          <div class="retire__fact">
+            <dt class="retire__fact-label">In future money</dt>
+            <dd class="retire__fact-value"><rw-money [value]="r.capitalTotal" size="sm" /></dd>
+          </div>
+          <div class="retire__fact">
+            <dt class="retire__fact-label">In today's money</dt>
+            <dd class="retire__fact-value"><rw-money [value]="r.capitalToday" size="sm" /></dd>
+          </div>
+          <div class="retire__fact">
+            <dt class="retire__fact-label">Income before tax at {{ r.retirementAge }}</dt>
+            <dd class="retire__fact-value">
+              <rw-money [value]="r.incomeBeforeMonthly" size="sm" />
+              <span class="retire__fact-note">a month</span>
+            </dd>
+          </div>
+          <div class="retire__fact">
+            <dt class="retire__fact-label">Tax on that income</dt>
+            <dd class="retire__fact-value">
+              <rw-money [value]="r.incomeTaxMonthly" size="sm" />
+              <span class="retire__fact-note">a month</span>
+            </dd>
+          </div>
+          <div class="retire__fact">
+            <dt class="retire__fact-label">Income after tax at {{ r.retirementAge }}</dt>
+            <dd class="retire__fact-value">
+              <rw-money [value]="r.incomeAfterMonthly" size="sm" />
+              <span class="retire__fact-note">a month</span>
+            </dd>
+          </div>
+        </dl>
+        <p class="retire__text">{{ r.drawdownSentence }}</p>
+      </rw-card>
+
+      <rw-card class="retire__card" padding="lg">
+        <div class="retire__scroll" role="region" tabindex="0" aria-label="Your income in retirement">
+          <table class="retire__table">
+            <caption class="retire__caption">
+              Your income in retirement
+            </caption>
+            <thead>
+              <tr>
+                <th class="retire__cell retire__cell--label" scope="col">Age</th>
+                <th class="retire__cell" scope="col">Before tax a month</th>
+                <th class="retire__cell" scope="col">Tax a month</th>
+                <th class="retire__cell" scope="col">After tax a month</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of r.incomeRows; track row.age) {
+                <tr>
+                  <th class="retire__cell retire__cell--label" scope="row">{{ row.age }}</th>
+                  <td class="retire__cell">{{ row.before }}</td>
+                  <td class="retire__cell">{{ row.tax }}</td>
+                  <td class="retire__cell">{{ row.after }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="retire__text">
+          Income rises with inflation each year. From 65 and again from 75 extra age rebates lower
+          the tax.
+        </p>
+      </rw-card>
+
+      @if (r.takeLumpSum) {
+        <rw-card class="retire__card" padding="lg">
+          <h2 class="retire__title">One-third lump sum</h2>
+          <dl class="retire__facts">
+            <div class="retire__fact">
+              <dt class="retire__fact-label">Lump sum</dt>
+              <dd class="retire__fact-value"><rw-money [value]="r.lumpGross" size="sm" /></dd>
+            </div>
+            <div class="retire__fact">
+              <dt class="retire__fact-label">Tax on the lump sum</dt>
+              <dd class="retire__fact-value"><rw-money [value]="r.lumpTax" size="sm" /></dd>
+            </div>
+            <div class="retire__fact">
+              <dt class="retire__fact-label">Lump sum after tax</dt>
+              <dd class="retire__fact-value"><rw-money [value]="r.lumpNet" size="sm" /></dd>
+            </div>
+            <div class="retire__fact">
+              <dt class="retire__fact-label">Left to buy the living annuity</dt>
+              <dd class="retire__fact-value">
+                <rw-money [value]="r.annuityCapital" size="sm" />
+              </dd>
+            </div>
+          </dl>
+          <p class="retire__text">
+            The tax comes from the lifetime lump-sum table and assumes this is the only lump sum you
+            take at or before retirement. Earlier lump sums would raise the tax.
+          </p>
+        </rw-card>
+      } @else {
+        <p class="retire__text">
+          You can take up to one third of your RA as a cash lump sum at retirement, taxed on a
+          sliding scale. Choose Yes above to see what it does to the plan.
+        </p>
+      }
+
+      <div class="retire__stats">
+        <rw-stat-card
+          label="Cost after tax"
+          [value]="r.netCostMonthly"
+          secondary="a month in the first year"
+        />
+        <rw-stat-card
+          label="Money lasts until"
+          [text]="r.lastsText"
+          [secondary]="r.lastsCurrentText"
+        />
+        <rw-stat-card label="Return needed at your current contribution" [text]="r.neededReturn" />
+      </div>
+
+      <rw-card class="retire__card" padding="lg">
+        <h2 class="retire__title">Your balance over time</h2>
+        <rw-line-chart
+          data-pdf-chart="retire-balance"
+          label="Your balance over time"
+          [series]="r.planSeries"
+          [secondSeries]="r.currentSeries"
+          [marker]="r.marker"
+          [formatX]="ageText"
+          [formatXTick]="plain"
+          [formatYTick]="compactRand"
+          xLabel="Age"
+          yLabel="Balance in today's money"
+        />
+      </rw-card>
+      <rw-card class="retire__card" padding="lg">
+        <rw-send-to [exclude]="'retire'" (sendTo)="sendTo($event)" />
+      </rw-card>
+    }
+
+    @if (taxNote(); as note) {
+      <p class="retire__note">
+        {{ note }} Future income is taxed with this year's tax tables, which are not raised for
+        inflation, so the tax shown is on the high side. Age rebates are used for each year of
+        retirement. Returns are yearly rates compounded monthly, contributions are paid at the end
+        of each month and rise once a year. Retirement income is paid at the start of each year and
+        rises with inflation. The lump sum is taken once. The two-pot system is simplified: the
+        one-third rule is applied to the whole value. Estimates only; nothing is saved.
+      </p>
+    }
+  </section>
+</div>

@@ -1,0 +1,79 @@
+<section class="plan-summary" aria-labelledby="plan-summary-heading">
+  <header class="plan-summary__head">
+    <h2 #heading class="plan-summary__heading" id="plan-summary-heading" tabindex="-1">Your plan</h2>
+    @if (recap(); as text) {
+      <p class="plan-summary__lead">{{ text }}</p>
+    }
+  </header>
+
+  @if (unavailable()) {
+    <p class="plan-summary__error" role="alert">{{ unavailableMessage() }}</p>
+  } @else {
+    <ol class="plan-summary__steps" role="list">
+      @for (card of cards(); track card.step.id) {
+        <li class="plan-summary__item">
+          <rw-plan-step
+            [index]="card.index"
+            [title]="card.step.title"
+            [why]="card.step.why"
+            [keyLabel]="card.step.key.label"
+            [keyValue]="card.keyValue"
+            [details]="card.details"
+            [notes]="card.step.notes"
+            [actionLabel]="card.actionLabel"
+            [titleId]="card.id"
+            (open)="open(card.step)"
+          />
+        </li>
+      }
+    </ol>
+
+    @if (notes().length > 0) {
+      <rw-card class="plan-summary__card" padding="lg">
+        <h3 class="plan-summary__subtitle">What this assumes</h3>
+        <ul class="plan-summary__list" role="list">
+          @for (note of notes(); track note.id) {
+            <li class="plan-summary__text">{{ note.text }}</li>
+          }
+        </ul>
+      </rw-card>
+    }
+  }
+
+  <rw-card class="plan-summary__card" padding="lg">
+    <h3 class="plan-summary__subtitle">Your answers</h3>
+    <dl class="plan-summary__answers">
+      @for (row of rows(); track row.id) {
+        <div class="plan-summary__answer">
+          <dt class="plan-summary__term">{{ row.label }}</dt>
+          <dd class="plan-summary__value">
+            <span>{{ row.value }}</span>
+            <button
+              rw-button
+              variant="ghost"
+              size="sm"
+              type="button"
+              [attr.aria-label]="'Change ' + row.label"
+              (click)="change(row.id)"
+            >
+              Change
+            </button>
+          </dd>
+        </div>
+      }
+    </dl>
+  </rw-card>
+
+  <div class="plan-summary__actions">
+    <button rw-button variant="secondary" type="button" (click)="backToQuestions()">
+      Back to the questions
+    </button>
+    <button rw-button variant="ghost" type="button" (click)="startAgain()">Start again</button>
+    @if (!unavailable()) {
+      <rw-download-pdf [report]="report()" />
+    }
+  </div>
+
+  <!-- Always rendered so screen readers pick up the plan when the answers change. -->
+  <rw-live-region [text]="announcement()" />
+</section>

@@ -1,0 +1,344 @@
+<div class="ra">
+  <rw-card class="ra__inputs" padding="lg">
+    <div class="ra__head">
+      <h2 class="ra__title">Your RA</h2>
+      @if (context.raIsExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button rw-button variant="secondary" size="sm" type="button" (click)="context.resetRa()">
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (fromLabel(); as source) {
+      <rw-handoff-chip [source]="source" (undo)="context.undoRa()" />
+    }
+    @if (context.raIsExample()) {
+      <p class="ra__intro">{{ intro() }}</p>
+    }
+
+    <rw-amount-field
+      label="Extra RA contribution per month"
+      prefix="R"
+      [min]="0"
+      [max]="contributionMax"
+      [step]="step"
+      [value]="inputs().contributionMonthly"
+      hint="On top of any retirement contributions you already make."
+      (valueChange)="set('contributionMonthly', $event)"
+    />
+    <rw-amount-field
+      label="Yearly increase in contributions"
+      suffix="%"
+      [min]="limits.escalationPercent.min"
+      [max]="limits.escalationPercent.max"
+      [step]="percentStep"
+      [value]="inputs().escalationPercent"
+      (valueChange)="set('escalationPercent', $event)"
+    />
+    <rw-amount-field
+      label="RA balance today"
+      prefix="R"
+      [min]="0"
+      [max]="balanceMax"
+      [step]="step"
+      [value]="inputs().startingBalance"
+      hint="Treated as your vested pot: it is not split between the two pots."
+      (valueChange)="set('startingBalance', $event)"
+    />
+    <rw-amount-field
+      label="Expected return per year"
+      suffix="%"
+      [min]="limits.returnPercent.min"
+      [max]="limits.returnPercent.max"
+      [step]="percentStep"
+      [value]="inputs().returnPercent"
+      [hint]="growthHint()"
+      (valueChange)="set('returnPercent', $event)"
+    />
+    <rw-amount-field
+      label="Inflation per year"
+      suffix="%"
+      [min]="limits.inflationPercent.min"
+      [max]="limits.inflationPercent.max"
+      [step]="percentStep"
+      [value]="inputs().inflationPercent"
+      [hint]="inflationHint()"
+      (valueChange)="set('inflationPercent', $event)"
+    />
+    <rw-amount-field
+      label="Retirement age"
+      [min]="limits.retirementAge.min"
+      [max]="limits.retirementAge.max"
+      [step]="1"
+      [value]="inputs().retirementAge"
+      hint="An RA pays out from age 55 at the earliest."
+      (valueChange)="set('retirementAge', $event)"
+    />
+
+    <div class="ra__block">
+      <h3 class="ra__subtitle">Assumptions you can change</h3>
+      @if (assumptions(); as a) {
+        <ul class="ra__assumptions">
+          <li>{{ a.inflation.description }}</li>
+          <li>{{ a.growthReturn.description }}</li>
+          <li>{{ a.cashReturn.description }}</li>
+        </ul>
+        <div class="ra__buttons">
+          <button rw-button variant="ghost" size="sm" type="button" (click)="useReturn('growth')">
+            {{ growthButton() }}
+          </button>
+          <button rw-button variant="ghost" size="sm" type="button" (click)="useReturn('cash')">
+            {{ cashButton() }}
+          </button>
+        </div>
+      } @else {
+        <p class="ra__text">Rates are unavailable, so enter your own return and inflation.</p>
+      }
+    </div>
+
+    <div class="ra__block">
+      <h3 class="ra__subtitle">Your salary (used for tax)</h3>
+      <p class="ra__text">
+        Changes here only affect this page. Use Send to RA on the Pay page to bring in new salary
+        figures.
+      </p>
+      <rw-amount-field
+        label="Gross pay per month"
+        prefix="R"
+        [min]="0"
+        [max]="grossMax"
+        [step]="step"
+        [value]="inputs().grossMonthly"
+        (valueChange)="set('grossMonthly', $event)"
+      />
+      <rw-amount-field
+        label="Age at the end of the tax year"
+        [min]="limits.age.min"
+        [max]="limits.age.max"
+        [step]="1"
+        [value]="inputs().age"
+        (valueChange)="set('age', $event)"
+      />
+      <rw-amount-field
+        label="People on your medical aid"
+        [min]="limits.medicalMembers.min"
+        [max]="limits.medicalMembers.max"
+        [step]="1"
+        [value]="inputs().medicalMembers"
+        hint="You plus dependants. 0 = no medical aid, 1 = just you."
+        (valueChange)="set('medicalMembers', $event)"
+      />
+      <rw-amount-field
+        label="Retirement contributions you already make per month"
+        prefix="R"
+        [min]="0"
+        [max]="retirementMax"
+        [step]="step"
+        [value]="inputs().employeeRetirementMonthly"
+        (valueChange)="set('employeeRetirementMonthly', $event)"
+      />
+      <rw-amount-field
+        label="Employer retirement contributions per month"
+        prefix="R"
+        [min]="0"
+        [max]="retirementMax"
+        [step]="step"
+        [value]="inputs().employerRetirementMonthly"
+        (valueChange)="set('employerRetirementMonthly', $event)"
+      />
+    </div>
+  </rw-card>
+
+  <section class="ra__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <rw-live-region [text]="announcement()" />
+    @if (context.raEstimate() === null) {
+      <rw-card class="ra__unavailable" padding="lg">
+        <p>Tax data is unavailable, so RA figures cannot be shown.</p>
+      </rw-card>
+    } @else if (failure(); as message) {
+      <p class="ra__error" role="alert">{{ message }}</p>
+    } @else if (result(); as r) {
+      <rw-card class="ra__hero" variant="hero-yellow" padding="lg">
+        <h2 class="ra__eyebrow">Projected RA balance at {{ r.retirementAge }}</h2>
+        <p class="ra__figure">
+          <rw-money [value]="r.nominal" size="hero" />
+        </p>
+        <p class="ra__figure">
+          <rw-money [value]="r.real" size="md" />
+          <span class="ra__unit">in today's money</span>
+        </p>
+        @if (r.years > 0) {
+          <p class="ra__text">{{ r.sentence }}</p>
+        }
+      </rw-card>
+
+      <rw-download-pdf class="ra__download" [report]="report()" />
+
+      @if (r.overCap || r.belowEarliest || r.pastAge) {
+        <div class="ra__warnings">
+          @if (r.overCap) {
+            <p class="ra__warning">
+              <rw-icon name="warning" size="sm" />
+              <span>
+                {{ r.overCapAmount }} of your contributions this year is over the tax-deductible
+                limit. It gets no deduction this year and carries forward to later years (this
+                calculator does not model when it is used).
+              </span>
+            </p>
+          }
+          @if (r.belowEarliest) {
+            <p class="ra__warning">
+              <rw-icon name="warning" size="sm" />
+              <span>
+                An RA cannot pay out before age {{ r.earliestAge }}, so the projection runs to
+                {{ r.earliestAge }}.
+              </span>
+            </p>
+          }
+          @if (r.pastAge) {
+            <p class="ra__warning">
+              <rw-icon name="warning" size="sm" />
+              <span>
+                You are already {{ r.retirementAge }} or older, so the projection shows today's
+                balance.
+              </span>
+            </p>
+          }
+        </div>
+      }
+
+      <rw-card class="ra__card" padding="lg">
+        <h2 class="ra__title">Tax-deductible room this year</h2>
+        <div class="ra__headroom">
+          <rw-ring-gauge
+            class="ra__ring"
+            label="Share of this year's retirement deduction limit used, including this RA"
+            [value]="r.usedPercent"
+            caption="used"
+          />
+          <dl class="ra__facts">
+            <div class="ra__fact">
+              <dt class="ra__fact-label">Limit this year</dt>
+              <dd class="ra__fact-value">
+                <rw-money [value]="r.limit" size="sm" />
+                <span class="ra__fact-note">{{ r.limitMonthly }}</span>
+              </dd>
+            </div>
+            <div class="ra__fact">
+              <dt class="ra__fact-label">Room after existing contributions</dt>
+              <dd class="ra__fact-value">
+                <rw-money [value]="r.room" size="sm" />
+                <span class="ra__fact-note">{{ r.roomMonthly }}</span>
+              </dd>
+            </div>
+            <div class="ra__fact">
+              <dt class="ra__fact-label">Left after this RA</dt>
+              <dd class="ra__fact-value">
+                <rw-money [value]="r.left" size="sm" />
+                <span class="ra__fact-note">{{ r.leftMonthly }}</span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </rw-card>
+
+      <div class="ra__stats">
+        <rw-stat-card
+          label="Tax saving"
+          [value]="r.saving"
+          [secondary]="r.savingMonthly"
+          hint="Lower PAYE through payroll, or a refund when you file"
+        />
+        <rw-stat-card label="Cost after tax" [value]="r.netCostMonthly" secondary="a month" />
+        <rw-stat-card label="Marginal rate" [text]="r.marginal" />
+      </div>
+      @if (r.approxWhy; as why) {
+        <p class="ra__approx">{{ why }}</p>
+      }
+
+      <rw-card class="ra__card" padding="lg">
+        <h2 class="ra__title">How your RA grows</h2>
+        @if (r.years > 0) {
+          <rw-line-chart
+            data-pdf-chart="ra-growth"
+            label="How your RA grows"
+            [series]="r.balanceSeries"
+            [secondSeries]="r.paidInSeries"
+            [secondArea]="true"
+            [formatX]="ageText"
+            [formatXTick]="plain"
+            [formatYTick]="compactRand"
+            xLabel="Age"
+            yLabel="Balance"
+          />
+          <p class="ra__text">The shaded gap between the lines is investment growth.</p>
+        } @else {
+          <p class="ra__text">No projection: you are already at retirement age.</p>
+        }
+        <dl class="ra__facts">
+          <div class="ra__fact">
+            <dt class="ra__fact-label">Paid in (with today's balance)</dt>
+            <dd class="ra__fact-value"><rw-money [value]="r.paidIn" size="sm" /></dd>
+          </div>
+          <div class="ra__fact">
+            <dt class="ra__fact-label">Investment growth</dt>
+            <dd class="ra__fact-value"><rw-money [value]="r.growth" size="sm" /></dd>
+          </div>
+        </dl>
+      </rw-card>
+
+      <rw-card class="ra__card" padding="lg">
+        <h2 class="ra__title">Two-pot split at {{ r.retirementAge }}</h2>
+        <rw-breakdown-bar
+          data-pdf-chart="ra-two-pot"
+          [label]="'Two-pot split at ' + r.retirementAge"
+          [segments]="r.segments"
+        />
+        <p class="ra__text">{{ r.twoPotNote }}</p>
+      </rw-card>
+
+      <rw-card class="ra__card" padding="lg">
+        <div class="ra__scroll" role="region" tabindex="0" aria-label="Year by year">
+          <table class="ra__table">
+            <caption class="ra__caption">
+              Year by year
+            </caption>
+            <thead>
+              <tr>
+                <th class="ra__cell ra__cell--label" scope="col">Age</th>
+                <th class="ra__cell" scope="col">Paid in</th>
+                <th class="ra__cell" scope="col">Growth</th>
+                <th class="ra__cell" scope="col">Balance</th>
+                <th class="ra__cell" scope="col">In today's money</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of r.rows; track row.age) {
+                <tr>
+                  <th class="ra__cell ra__cell--label" scope="row">{{ row.age }}</th>
+                  <td class="ra__cell">{{ row.paidIn }}</td>
+                  <td class="ra__cell">{{ row.growth }}</td>
+                  <td class="ra__cell">{{ row.balance }}</td>
+                  <td class="ra__cell">{{ row.real }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </rw-card>
+
+      <rw-card class="ra__card" padding="lg">
+        <rw-send-to [exclude]="'ra'" (sendTo)="sendTo($event)" />
+      </rw-card>
+    }
+
+    @if (taxNote(); as note) {
+      <p class="ra__note">
+        {{ note }} Returns are yearly rates compounded monthly, contributions are paid at the end of
+        each month and rise once a year. Estimates only.
+      </p>
+    }
+  </section>
+</div>

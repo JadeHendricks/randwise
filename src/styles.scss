@@ -8,6 +8,10 @@
 @use 'atoms/amount-field';
 @use 'atoms/chip';
 @use 'atoms/money';
+@use 'atoms/breakdown-bar';
+@use 'atoms/ring-gauge';
+@use 'atoms/line-chart';
+@use 'atoms/dot-matrix';
 
 // Molecules
 @use 'molecules/theme-toggle';
@@ -15,6 +19,16 @@
 @use 'molecules/data-banner';
 @use 'molecules/bento-tile';
 @use 'molecules/feature-placeholder';
+@use 'molecules/segmented-control';
+@use 'molecules/stat-card';
+@use 'molecules/send-to';
+@use 'molecules/handoff-chip';
+@use 'molecules/download-pdf';
+@use 'molecules/category-row';
+@use 'molecules/timeline';
+@use 'molecules/step-progress';
+@use 'molecules/choice-list';
+@use 'molecules/plan-step';
 
 // Organisms
 @use 'organisms/app-shell';

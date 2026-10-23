@@ -66,6 +66,64 @@ $breakpoints: (
   outline-offset: 3px;
 }
 
+// Same ring for scrolling containers: drawn inside the box so the container's
+// overflow cannot clip it.
+@mixin focus-ring-inset {
+  outline: 3px solid var(--rw-color-focus);
+  outline-offset: -3px;
+}
+
+// Touch screens and other coarse pointers (fingers need bigger targets).
+@mixin coarse-pointer {
+  @media (pointer: coarse) {
+    @content;
+  }
+}
+
+// Container query on the nearest `container-type: inline-size` ancestor.
+@mixin container-below($width) {
+  @container (max-width: #{$width}) {
+    @content;
+  }
+}
+
+// Horizontally scrolling region for a wide data table. It is focusable (the
+// markup sets tabindex=0), so keyboard users can scroll it. The layered
+// backgrounds draw a soft edge shadow only on a side that has more to scroll to.
+@mixin data-scroll-region {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  background:
+    linear-gradient(to right, var(--rw-color-surface-solid) 30%, transparent) left center / 2rem 100%
+      no-repeat local,
+    linear-gradient(to left, var(--rw-color-surface-solid) 30%, transparent) right center / 2rem 100%
+      no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--rw-scroll-shadow), transparent) left center / 0.75rem
+      100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--rw-scroll-shadow), transparent) right center /
+      0.75rem 100% no-repeat scroll;
+
+  &:focus-visible {
+    @include focus-ring-inset;
+  }
+}
+
+// First column of a scrolling table: stays put so each row keeps its label.
+@mixin data-table-label-cell {
+  position: sticky;
+  inset-inline-start: 0;
+  background: var(--rw-color-surface-solid);
+  border-inline-end: 1px solid var(--rw-color-border-strong);
+}
+
+// Keeps columns at their natural width on phones so the region scrolls
+// instead of squeezing numbers onto several lines.
+@mixin data-table-natural-width {
+  @include below(mobile) {
+    min-width: max-content;
+  }
+}
+
 @mixin pill-button-base {
   display: inline-flex;
   align-items: center;

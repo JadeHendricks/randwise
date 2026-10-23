@@ -1,0 +1,81 @@
+@use 'mixins';
+
+// Molecule: category row. One budget line: name, amount field, share of take-home, remove.
+.rw-category-row {
+  display: grid;
+  gap: var(--rw-space-3);
+  min-width: 0;
+  padding-block: var(--rw-space-3);
+  border-bottom: 1px solid var(--rw-color-border-strong);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rw-space-3);
+  }
+
+  &__name {
+    font-weight: var(--rw-weight-bold);
+    overflow-wrap: anywhere;
+  }
+
+  &__name-input {
+    flex: 1;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 var(--rw-space-3);
+    border: 1px solid var(--rw-color-border-control);
+    border-radius: var(--rw-radius-md);
+    background: var(--rw-color-surface-solid);
+    font-weight: var(--rw-weight-bold);
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+  }
+
+  &__fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 9rem;
+    align-items: end;
+    gap: var(--rw-space-4);
+
+    @include mixins.below(mobile) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  &__percent {
+    display: flex;
+    align-items: center;
+    gap: var(--rw-space-2);
+    min-height: 48px;
+    padding: 0 var(--rw-space-4);
+    border: 1px solid var(--rw-color-border-control);
+    border-radius: var(--rw-radius-md);
+    background: var(--rw-color-surface-solid);
+
+    &:focus-within {
+      @include mixins.focus-ring;
+    }
+  }
+
+  &__percent-input {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: var(--rw-text-lg);
+    font-weight: var(--rw-weight-bold);
+    font-variant-numeric: tabular-nums;
+    outline: 0;
+    appearance: textfield;
+  }
+
+  &__affix {
+    color: var(--rw-color-text-muted);
+    font-weight: var(--rw-weight-bold);
+  }
+}

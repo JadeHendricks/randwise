@@ -1,8 +1,14 @@
 @use 'mixins';
 
+// Slider thumb diameter; the WebKit margin below centres it on the 8px track.
+$thumb-size: 24px;
+
 // Atom: amount field. Labelled number input and range slider side by side.
 .rw-amount-field {
   display: block;
+  // Why: the field's own width decides when to stack, not the viewport, because
+  // two-column pages give it very different widths at the same viewport width.
+  container-type: inline-size;
 
   &__label {
     display: block;
@@ -17,7 +23,7 @@
     align-items: center;
     gap: var(--rw-space-4);
 
-    @include mixins.below(mobile) {
+    @include mixins.container-below(26rem) {
       grid-template-columns: minmax(0, 1fr);
     }
   }
@@ -28,7 +34,7 @@
     gap: var(--rw-space-2);
     min-height: 48px;
     padding: 0 var(--rw-space-4);
-    border: 1px solid var(--rw-color-border-strong);
+    border: 1px solid var(--rw-color-border-control);
     border-radius: var(--rw-radius-md);
     background: var(--rw-color-surface-solid);
 
@@ -64,6 +70,10 @@
     appearance: none;
     cursor: pointer;
 
+    @include mixins.coarse-pointer {
+      height: var(--rw-tap-target-min);
+    }
+
     &::-webkit-slider-runnable-track {
       height: 8px;
       border-radius: var(--rw-radius-pill);
@@ -85,9 +95,11 @@
     }
 
     &::-webkit-slider-thumb {
-      width: 24px;
-      height: 24px;
-      margin-top: -8px;
+      box-sizing: border-box;
+      width: $thumb-size;
+      height: $thumb-size;
+      // Centres the thumb on the 8px track (WebKit only; Firefox centres itself).
+      margin-top: calc((8px - $thumb-size) / 2);
       border: 3px solid var(--rw-color-surface-solid);
       border-radius: 50%;
       background: var(--rw-color-ink);
@@ -96,8 +108,9 @@
     }
 
     &::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
+      box-sizing: border-box;
+      width: $thumb-size;
+      height: $thumb-size;
       border: 3px solid var(--rw-color-surface-solid);
       border-radius: 50%;
       background: var(--rw-color-ink);

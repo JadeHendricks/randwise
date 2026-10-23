@@ -1,5 +1,8 @@
 @use 'mixins';
 
+// Narrowest mobile nav item; wide enough for the word Dashboard.
+$item-min-width: 64px;
+
 // Organism: icon rail. Floating glass rail on desktop, bottom bar on mobile.
 .rw-icon-rail {
   position: fixed;
@@ -34,6 +37,10 @@
       gap: 0;
       padding: 0 var(--rw-space-1);
       overflow: auto hidden;
+      // Scrolls sideways, snapping the active item toward the centre.
+      overscroll-behavior-x: contain;
+      scroll-padding-inline: var(--rw-space-4);
+      scroll-snap-type: x proximity;
     }
   }
 
@@ -72,7 +79,18 @@
     display: block;
 
     @include mixins.below(mobile) {
-      flex: 1 0 auto;
+      // Why: sizing items so about 5.5 fit leaves half of the next item showing at
+      // 360px and 390px, which tells people the bar scrolls. Capped so all eight
+      // still fit from 576px up to the 640px breakpoint.
+      flex: 1 0
+        max(
+          $item-min-width,
+          min(
+            calc(100% / 5.5),
+            calc($item-min-width + var(--rw-space-2))
+          )
+        );
+      scroll-snap-align: center;
     }
   }
 
@@ -97,8 +115,9 @@
     }
 
     @include mixins.below(mobile) {
-      min-width: 60px;
-      padding: var(--rw-space-2);
+      min-width: $item-min-width;
+      // Keeps the 64px item wide enough for the word Dashboard without breaking it.
+      padding-block: var(--rw-space-2);
     }
 
     &:hover {
@@ -106,8 +125,9 @@
       color: var(--rw-color-text);
     }
 
+    // Inset: the nav scrolls, so a ring drawn outside would be clipped.
     &:focus-visible {
-      @include mixins.focus-ring;
+      @include mixins.focus-ring-inset;
     }
 
     &--active {

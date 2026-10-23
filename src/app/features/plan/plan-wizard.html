@@ -1,0 +1,200 @@
+<form class="plan-wizard" novalidate (submit)="onSubmit($event)">
+  <rw-step-progress
+    [current]="plan.position() + 1"
+    [total]="plan.progressTotal()"
+    label="Plan progress"
+  />
+
+  <rw-card class="plan-wizard__card" padding="lg">
+    <div class="plan-wizard__group" role="group" [attr.aria-labelledby]="headingId">
+      <h2 #heading class="plan-wizard__heading" tabindex="-1" [id]="headingId">
+        {{ copy().title }}
+      </h2>
+      <p class="plan-wizard__lead">{{ copy().lead }}</p>
+
+      <div class="plan-wizard__fields">
+        @switch (question()) {
+          @case ('age') {
+            <rw-amount-field
+              label="Your age"
+              [min]="ageLimits.min"
+              [max]="ageLimits.max"
+              [step]="1"
+              [value]="answers().age"
+              (valueChange)="setAge($event)"
+            />
+          }
+          @case ('income') {
+            <rw-segmented-control
+              legend="Is that before or after tax?"
+              [options]="basisOptions"
+              [value]="answers().income.basis"
+              (valueChange)="plan.setIncomeBasis($event)"
+            />
+            <rw-segmented-control
+              legend="How often are you paid?"
+              [options]="periodOptions"
+              [value]="answers().income.period"
+              (valueChange)="plan.setIncomePeriod($event)"
+            />
+            <rw-amount-field
+              [label]="incomeLabel()"
+              prefix="R"
+              [min]="0"
+              [max]="incomeMax()"
+              [step]="step"
+              [value]="answers().income.amount"
+              (valueChange)="setIncomeAmount($event)"
+            />
+            @if (derived(); as d) {
+              @if (d.failed) {
+                <p class="plan-wizard__derived" role="alert">{{ d.text }}</p>
+              } @else {
+                <p class="plan-wizard__derived">{{ d.text }}</p>
+              }
+            }
+          }
+          @case ('goal') {
+            <rw-choice-list
+              legend="Your main goal"
+              [hideLegend]="true"
+              [options]="goalOptions"
+              [value]="answers().goal"
+              (valueChange)="setGoal($event)"
+            />
+          }
+          @case ('retire-details') {
+            <rw-amount-field
+              label="Age you want to retire"
+              [min]="retireAgeLimits.min"
+              [max]="retireAgeLimits.max"
+              [step]="1"
+              [value]="answers().retireAge"
+              [hint]="retireAgeHint()"
+              (valueChange)="setNumber('retireAge', $event)"
+            />
+            <rw-amount-field
+              label="Monthly income you want in retirement"
+              prefix="R"
+              [min]="0"
+              [max]="retireIncomeMax"
+              [step]="step"
+              [value]="answers().retireIncomeMonthly"
+              hint="After tax, in today's money."
+              (valueChange)="setNumber('retireIncomeMonthly', $event)"
+            />
+          }
+          @case ('tfsa-details') {
+            <rw-amount-field
+              label="TFSA target"
+              prefix="R"
+              [min]="0"
+              [max]="tfsaTargetMax"
+              [step]="step"
+              [value]="answers().tfsaTarget"
+              (valueChange)="setNumber('tfsaTarget', $event)"
+            />
+            <rw-amount-field
+              label="Amount you could put in each month"
+              prefix="R"
+              [min]="0"
+              [max]="surplusMax"
+              [step]="step"
+              [value]="answers().tfsaMonthly"
+              [hint]="tfsaHint()"
+              (valueChange)="setNumber('tfsaMonthly', $event)"
+            />
+          }
+          @case ('emergency-details') {
+            <rw-amount-field
+              label="Months of essentials to cover"
+              [min]="monthsLimits.min"
+              [max]="monthsLimits.max"
+              [step]="1"
+              [value]="answers().emergencyMonths"
+              hint="Three to six months is a common aim."
+              (valueChange)="setNumber('emergencyMonths', $event)"
+            />
+          }
+          @case ('risk') {
+            <rw-choice-list
+              legend="Your comfort with risk"
+              [hideLegend]="true"
+              [options]="riskOptions()"
+              [value]="answers().risk"
+              (valueChange)="setRisk($event ?? answers().risk)"
+            />
+            <p class="plan-wizard__note">
+              This is an assumption, not a promise. You can change it and see how the plan moves.
+            </p>
+          }
+          @case ('money') {
+            <rw-amount-field
+              label="Amount you can invest each month"
+              prefix="R"
+              [min]="0"
+              [max]="surplusMax"
+              [step]="step"
+              [value]="surplusValue()"
+              [hint]="surplusHint()"
+              (valueChange)="setNumber('surplusMonthly', $event)"
+            />
+            @if (answers().goal === 'retire-early' || answers().goal === 'pay-less-tax') {
+              <rw-amount-field
+                label="Retirement annuity balance today"
+                prefix="R"
+                [min]="0"
+                [max]="balanceMax"
+                [step]="step"
+                [value]="answers().raBalance"
+                hint="Optional. Leave it at 0 if you have none."
+                (valueChange)="setNumber('raBalance', $event)"
+              />
+            }
+            @if (answers().goal !== 'emergency-fund') {
+              <rw-amount-field
+                label="TFSA balance today"
+                prefix="R"
+                [min]="0"
+                [max]="balanceMax"
+                [step]="step"
+                [value]="answers().tfsaBalance"
+                hint="Optional. We treat it as money you have already put in."
+                (valueChange)="setNumber('tfsaBalance', $event)"
+              />
+            } @else {
+              <rw-amount-field
+                label="Emergency fund saved so far"
+                prefix="R"
+                [min]="0"
+                [max]="balanceMax"
+                [step]="step"
+                [value]="answers().emergencySaved"
+                hint="Optional. Leave it at 0 if you are starting from scratch."
+                (valueChange)="setNumber('emergencySaved', $event)"
+              />
+            }
+          }
+        }
+      </div>
+
+      @if (showError()) {
+        <p class="plan-wizard__error" role="alert">{{ plan.problem() }}</p>
+      }
+    </div>
+  </rw-card>
+
+  <div class="plan-wizard__actions">
+    @if (plan.position() > 0) {
+      <button rw-button variant="secondary" type="button" (click)="onBack()">Back</button>
+    }
+    <span class="plan-wizard__spacer"></span>
+    @if (plan.reachedSummary()) {
+      <button rw-button variant="ghost" type="button" (click)="onSkip()">Skip to my plan</button>
+    }
+    <button rw-button variant="primary" type="submit">{{ nextLabel() }}</button>
+  </div>
+
+  <!-- Always rendered so screen readers pick up the new step after Back and Next. -->
+  <rw-live-region [text]="announcement()" />
+</form>

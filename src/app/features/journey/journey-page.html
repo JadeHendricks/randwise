@@ -1,0 +1,343 @@
+<div class="journey">
+  <rw-card class="journey__inputs" padding="lg">
+    <div class="journey__head">
+      <h2 class="journey__title">Your journey</h2>
+      @if (context.journeyIsExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button
+          rw-button
+          variant="secondary"
+          size="sm"
+          type="button"
+          (click)="context.resetJourney()"
+        >
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (fromLabel(); as source) {
+      <rw-handoff-chip [source]="source" (undo)="context.undoJourney()" />
+    }
+    @if (context.journeyIsExample()) {
+      <p class="journey__text">{{ intro() }}</p>
+    }
+
+    <rw-amount-field
+      label="Current age"
+      [min]="limits.age.min"
+      [max]="limits.age.max"
+      [step]="1"
+      [value]="inputs().age"
+      (valueChange)="set('age', $event)"
+    />
+    <rw-amount-field
+      label="Retirement age"
+      [min]="limits.retirementAge.min"
+      [max]="limits.retirementAge.max"
+      [step]="1"
+      [value]="inputs().retirementAge"
+      [hint]="retirementAgeHint()"
+      (valueChange)="set('retirementAge', $event)"
+    />
+    <rw-amount-field
+      label="Income increase per year"
+      suffix="%"
+      [min]="limits.incomeEscalationPercent.min"
+      [max]="limits.incomeEscalationPercent.max"
+      [step]="percentStep"
+      [value]="inputs().incomeEscalationPercent"
+      hint="Also raises your payroll retirement contributions. It starts at the CPI assumption."
+      (valueChange)="set('incomeEscalationPercent', $event)"
+    />
+    <rw-amount-field
+      label="Inflation per year"
+      suffix="%"
+      [min]="limits.inflationPercent.min"
+      [max]="limits.inflationPercent.max"
+      [step]="percentStep"
+      [value]="inputs().inflationPercent"
+      [hint]="inflationHint()"
+      (valueChange)="set('inflationPercent', $event)"
+    />
+
+    <div class="journey__block">
+      <h3 class="journey__subtitle">Retirement annuity (RA)</h3>
+      <rw-amount-field
+        label="Monthly RA contribution now"
+        prefix="R"
+        [min]="0"
+        [max]="contributionMax"
+        [step]="step"
+        [value]="inputs().contributionMonthly"
+        hint="On top of any retirement contributions you already make through work."
+        (valueChange)="set('contributionMonthly', $event)"
+      />
+      <rw-amount-field
+        label="Yearly increase in RA contributions"
+        suffix="%"
+        [min]="limits.escalationPercent.min"
+        [max]="limits.escalationPercent.max"
+        [step]="percentStep"
+        [value]="inputs().escalationPercent"
+        (valueChange)="set('escalationPercent', $event)"
+      />
+      <rw-amount-field
+        label="RA balance today"
+        prefix="R"
+        [min]="0"
+        [max]="balanceMax"
+        [step]="step"
+        [value]="inputs().startingBalance"
+        (valueChange)="set('startingBalance', $event)"
+      />
+      <rw-amount-field
+        label="RA return per year"
+        suffix="%"
+        [min]="limits.returnPercent.min"
+        [max]="limits.returnPercent.max"
+        [step]="percentStep"
+        [value]="inputs().returnPercent"
+        [hint]="growthHint()"
+        (valueChange)="set('returnPercent', $event)"
+      />
+    </div>
+
+    <div class="journey__block">
+      <h3 class="journey__subtitle">Tax-free savings (TFSA)</h3>
+      <rw-amount-field
+        label="Monthly TFSA top-up"
+        prefix="R"
+        [min]="0"
+        [max]="contributionMax"
+        [step]="step"
+        [value]="inputs().tfsaTopUpMonthly"
+        hint="Paid from take-home pay. Your RA tax refund is added on top."
+        (valueChange)="set('tfsaTopUpMonthly', $event)"
+      />
+      <rw-amount-field
+        label="TFSA balance today"
+        prefix="R"
+        [min]="0"
+        [max]="balanceMax"
+        [step]="step"
+        [value]="inputs().tfsaBalance"
+        (valueChange)="set('tfsaBalance', $event)"
+      />
+      <rw-amount-field
+        label="TFSA contributions made so far"
+        prefix="R"
+        [min]="0"
+        [max]="tfsaUsedMax"
+        [step]="step"
+        [value]="inputs().tfsaLifetimeUsed"
+        [hint]="tfsaUsedHint()"
+        (valueChange)="set('tfsaLifetimeUsed', $event)"
+      />
+      <rw-amount-field
+        label="TFSA return per year"
+        suffix="%"
+        [min]="limits.tfsaReturnPercent.min"
+        [max]="limits.tfsaReturnPercent.max"
+        [step]="percentStep"
+        [value]="inputs().tfsaReturnPercent"
+        [hint]="tfsaReturnHint()"
+        (valueChange)="set('tfsaReturnPercent', $event)"
+      />
+      <rw-segmented-control
+        legend="Tax saving arrives as"
+        [options]="modeOptions"
+        [value]="inputs().refundMode"
+        (valueChange)="setMode($event)"
+      />
+      <rw-segmented-control
+        legend="Allow TFSA over-contribution"
+        [options]="overOptions"
+        [value]="overChoice()"
+        (valueChange)="setOver($event)"
+      />
+    </div>
+
+    <div class="journey__block">
+      <h3 class="journey__subtitle">Assumptions you can change</h3>
+      @if (assumptions(); as a) {
+        <ul class="journey__assumptions">
+          <li>{{ a.inflation.description }}</li>
+          <li>{{ a.growthReturn.description }}</li>
+        </ul>
+      } @else {
+        <p class="journey__text">Rates are unavailable, so enter your own inflation and returns.</p>
+      }
+    </div>
+
+    <div class="journey__block">
+      <h3 class="journey__subtitle">Your salary (used for tax)</h3>
+      <p class="journey__text">Changes here only affect this page.</p>
+      <rw-amount-field
+        label="Gross pay per month"
+        prefix="R"
+        [min]="0"
+        [max]="grossMax"
+        [step]="step"
+        [value]="inputs().grossMonthly"
+        (valueChange)="set('grossMonthly', $event)"
+      />
+      <rw-amount-field
+        label="People on your medical aid"
+        [min]="limits.medicalMembers.min"
+        [max]="limits.medicalMembers.max"
+        [step]="1"
+        [value]="inputs().medicalMembers"
+        hint="You plus dependants. 0 = no medical aid, 1 = just you."
+        (valueChange)="set('medicalMembers', $event)"
+      />
+      <rw-amount-field
+        label="Retirement contributions you already make per month"
+        prefix="R"
+        [min]="0"
+        [max]="retirementMax"
+        [step]="step"
+        [value]="inputs().employeeRetirementMonthly"
+        (valueChange)="set('employeeRetirementMonthly', $event)"
+      />
+      <rw-amount-field
+        label="Employer retirement contributions per month"
+        prefix="R"
+        [min]="0"
+        [max]="retirementMax"
+        [step]="step"
+        [value]="inputs().employerRetirementMonthly"
+        (valueChange)="set('employerRetirementMonthly', $event)"
+      />
+    </div>
+  </rw-card>
+
+  <section class="journey__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <rw-live-region [text]="announcement()" />
+    @if (context.journeyEstimate() === null) {
+      <rw-card class="journey__unavailable" padding="lg">
+        <p>Tax data is unavailable, so the journey cannot be worked out.</p>
+      </rw-card>
+    } @else if (failure(); as message) {
+      <p class="journey__error" role="alert">{{ message }}</p>
+    } @else if (result(); as r) {
+      <rw-card class="journey__hero" variant="hero-yellow" padding="lg">
+        <h2 class="journey__eyebrow">Tax saved by {{ r.retirementAge }}</h2>
+        <p class="journey__figure">
+          <rw-money [value]="r.taxSaved" size="hero" />
+        </p>
+        <p class="journey__lead">{{ r.tfsaSentence }}</p>
+        <p class="journey__text">{{ r.raSentence }}</p>
+      </rw-card>
+
+      <rw-download-pdf class="journey__download" [report]="report()" />
+
+      @if (budgetNote(); as note) {
+        <p class="journey__text">{{ note }}</p>
+      }
+
+      <div class="journey__warnings" role="status">
+        @for (warning of r.warnings; track warning) {
+          <p class="journey__warning">
+            <rw-icon name="warning" size="sm" />
+            <span>{{ warning }}</span>
+          </p>
+        }
+      </div>
+
+      <rw-card class="journey__card" padding="lg">
+        <h2 class="journey__title">Your milestones</h2>
+        <rw-timeline [items]="r.timeline" />
+      </rw-card>
+
+      @if (r.hasChart) {
+        <rw-card class="journey__card" padding="lg">
+          <h2 class="journey__title">Your balances over time</h2>
+          <rw-line-chart
+            data-pdf-chart="journey-balances"
+            label="RA and TFSA balances over time"
+            [series]="r.raSeries"
+            [secondSeries]="r.tfsaSeries"
+            [secondArea]="true"
+            [formatX]="ageText"
+            [formatXTick]="plain"
+            [formatYTick]="compactRand"
+            xLabel="Age"
+            yLabel="Balance in today's money"
+          />
+        </rw-card>
+      }
+
+      <rw-card class="journey__card" padding="lg">
+        <h2 class="journey__title">TFSA lifetime limit</h2>
+        <div class="journey__track">
+          <rw-ring-gauge
+            class="journey__ring"
+            data-pdf-chart="journey-lifetime"
+            label="Share of the TFSA lifetime limit used by retirement"
+            [value]="r.ringPercent"
+            caption="of the limit"
+            [centreLabel]="r.ringCentre"
+          />
+          <p class="journey__text">{{ r.lifetimeText }}</p>
+        </div>
+      </rw-card>
+
+      @if (r.rows.length > 0) {
+        <rw-card class="journey__card" padding="lg">
+          <details class="journey__details">
+            <summary class="journey__summary">Year by year</summary>
+            <div class="journey__scroll" role="region" tabindex="0" aria-label="Your journey, one row for each year">
+              <table class="journey__table">
+                <caption class="journey__caption">
+                  Your journey, one row for each year
+                </caption>
+                <thead>
+                  <tr>
+                    <th class="journey__cell journey__cell--label" scope="col">Age</th>
+                    <th class="journey__cell" scope="col">Income a month</th>
+                    <th class="journey__cell" scope="col">RA a year</th>
+                    <th class="journey__cell" scope="col">Deductible</th>
+                    <th class="journey__cell" scope="col">Not deductible</th>
+                    <th class="journey__cell" scope="col">Tax saved</th>
+                    <th class="journey__cell" scope="col">TFSA in</th>
+                    <th class="journey__cell" scope="col">Over the limit</th>
+                    <th class="journey__cell" scope="col">TFSA balance</th>
+                    <th class="journey__cell" scope="col">RA balance</th>
+                    <th class="journey__cell" scope="col">Lifetime used</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of r.rows; track row.year) {
+                    <tr>
+                      <th class="journey__cell journey__cell--label" scope="row">{{ row.age }}</th>
+                      <td class="journey__cell">{{ row.income }}</td>
+                      <td class="journey__cell">{{ row.ra }}</td>
+                      <td class="journey__cell">{{ row.deductible }}</td>
+                      <td class="journey__cell">{{ row.notDeductible }}</td>
+                      <td class="journey__cell">{{ row.taxSaved }}</td>
+                      <td class="journey__cell">{{ row.tfsaIn }}</td>
+                      <td class="journey__cell">{{ row.over }}</td>
+                      <td class="journey__cell">{{ row.tfsaBalance }}</td>
+                      <td class="journey__cell">{{ row.raBalance }}</td>
+                      <td class="journey__cell">{{ row.lifetime }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </rw-card>
+      }
+
+      <rw-card class="journey__card" padding="lg">
+        <rw-send-to [exclude]="'journey'" (sendTo)="sendTo($event)" />
+      </rw-card>
+    }
+
+    @if (taxNote(); as note) {
+      <p class="journey__note">{{ note }}</p>
+    }
+  </section>
+</div>

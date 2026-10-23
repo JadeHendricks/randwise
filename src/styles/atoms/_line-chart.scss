@@ -1,0 +1,183 @@
+@use 'mixins';
+
+// A fade rather than a stroke draw-in: dash animation does not combine with
+// vector-effect: non-scaling-stroke reliably across browsers.
+@keyframes rw-line-chart-in {
+  from {
+    opacity: 0;
+  }
+}
+
+// Atom: line chart. SVG plot with HTML axis labels so text never shrinks.
+.rw-line-chart {
+  position: relative;
+  display: block;
+  width: 100%;
+
+  &__plot {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--rw-space-2);
+  }
+
+  // Negative block margins let the first and last labels centre on the top and
+  // bottom gridlines while space-between spreads the rest evenly.
+  &__y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    grid-column: 1;
+    grid-row: 1;
+    margin-block: -0.5em;
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-xs);
+    line-height: 1;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__x-axis {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--rw-space-2);
+    grid-column: 2;
+    grid-row: 2;
+    margin-block-start: var(--rw-space-2);
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-xs);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__tick {
+    white-space: nowrap;
+  }
+
+  &__svg {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  &__empty {
+    grid-column: 1 / -1;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 600 / 260;
+    border: 1px dashed var(--rw-color-border-strong);
+    border-radius: var(--rw-radius-sm);
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-sm);
+  }
+
+  &__title {
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-xs);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__title--y {
+    margin-block-end: var(--rw-space-2);
+  }
+
+  &__title--x {
+    margin-block-start: var(--rw-space-1);
+    text-align: center;
+  }
+
+  &__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rw-space-2) var(--rw-space-4);
+    margin-block-start: var(--rw-space-3);
+  }
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--rw-space-2);
+    font-size: var(--rw-text-sm);
+  }
+
+  // A short line sample in the series colour; the second one is dashed like its line.
+  &__swatch {
+    width: var(--rw-space-5);
+    height: 0;
+    border-block-start: 3px solid var(--rw-chart-accent);
+  }
+
+  &__swatch--secondary {
+    border-block-start: 2px dashed var(--rw-chart-muted);
+  }
+
+  &__note {
+    margin-block-start: var(--rw-space-2);
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__grid {
+    stroke: var(--rw-chart-grid);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  &__zero {
+    stroke: var(--rw-color-text-muted);
+    stroke-width: 1px;
+    vector-effect: non-scaling-stroke;
+  }
+
+  &__area {
+    fill: var(--rw-chart-area);
+    stroke: none;
+
+    @include mixins.motion-safe {
+      animation: rw-line-chart-in var(--rw-duration-slow) var(--rw-ease-out) both;
+    }
+  }
+
+  // Fill under the second series, drawn over the primary area so the gap between the lines reads
+  // as the difference (for the RA chart: growth).
+  &__area--secondary {
+    fill: var(--rw-chart-area-secondary);
+  }
+
+  &__line {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+
+    @include mixins.motion-safe {
+      animation: rw-line-chart-in var(--rw-duration-slow) var(--rw-ease-out) both;
+    }
+  }
+
+
+  &__line--primary {
+    stroke: var(--rw-chart-accent);
+    stroke-width: 3px;
+  }
+
+  &__line--secondary {
+    stroke: var(--rw-chart-muted);
+    stroke-width: 2px;
+    stroke-dasharray: 6 6;
+  }
+
+  &__guide {
+    stroke: var(--rw-color-text-muted);
+    stroke-width: 1px;
+    stroke-dasharray: 4 4;
+    vector-effect: non-scaling-stroke;
+  }
+
+  &__marker {
+    fill: var(--rw-chart-accent);
+    stroke: var(--rw-color-surface-solid);
+    stroke-width: 2px;
+  }
+}

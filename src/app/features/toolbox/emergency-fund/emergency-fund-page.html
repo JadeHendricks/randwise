@@ -1,0 +1,164 @@
+<div class="tool">
+  <rw-card class="tool__inputs" padding="lg">
+    <a rw-button variant="ghost" size="sm" routerLink="/toolbox">Back to Toolbox</a>
+    <div class="tool__head">
+      <h2 class="tool__title">Your emergency fund</h2>
+      @if (store.emergencyFundIsExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button
+          rw-button
+          variant="secondary"
+          size="sm"
+          type="button"
+          (click)="store.resetEmergencyFund()"
+        >
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (store.emergencyFundIsExample()) {
+      <p class="tool__text">{{ intro() }}</p>
+    }
+
+    <div class="tool__block">
+      <rw-amount-field
+        label="Essential expenses per month"
+        prefix="R"
+        [min]="0"
+        [max]="expensesMax"
+        [step]="step"
+        [value]="inputs().monthlyExpenses"
+        hint="Rent or bond, food, transport, insurance, debt repayments and other bills you must pay."
+        (valueChange)="set('monthlyExpenses', $event)"
+      />
+      @if (needsLabel(); as label) {
+        <button rw-button variant="secondary" size="sm" type="button" (click)="useBudgetNeeds()">
+          {{ label }}
+        </button>
+      }
+    </div>
+    <rw-amount-field
+      label="Months to cover"
+      [min]="limits.targetMonths.min"
+      [max]="limits.targetMonths.max"
+      [step]="1"
+      [value]="inputs().targetMonths"
+      hint="3 to 6 months is the usual guide. Lean towards 6 if your income is irregular."
+      (valueChange)="set('targetMonths', $event)"
+    />
+    <rw-amount-field
+      label="Savings so far"
+      prefix="R"
+      [min]="0"
+      [max]="savingsMax"
+      [step]="step"
+      [value]="inputs().currentSavings"
+      (valueChange)="set('currentSavings', $event)"
+    />
+    <rw-amount-field
+      label="Saved each month"
+      prefix="R"
+      [min]="0"
+      [max]="contributionMax"
+      [step]="step"
+      [value]="inputs().monthlyContribution"
+      hint="Paid in at the end of every month."
+      (valueChange)="set('monthlyContribution', $event)"
+    />
+    <rw-amount-field
+      label="Savings interest rate per year"
+      suffix="%"
+      [min]="limits.savingsRatePercent.min"
+      [max]="limits.savingsRatePercent.max"
+      [step]="percentStep"
+      [value]="inputs().savingsRatePercent"
+      [hint]="rateHint()"
+      (valueChange)="set('savingsRatePercent', $event)"
+    />
+  </rw-card>
+
+  <section class="tool__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <rw-live-region [text]="announcement()" />
+    @if (failure(); as message) {
+      <p class="tool__error" role="alert">{{ message }}</p>
+    } @else if (result(); as r) {
+      <rw-card class="tool__hero" variant="hero-yellow" padding="lg">
+        <h2 class="tool__eyebrow">Your emergency fund target</h2>
+        <p class="tool__figure">
+          <rw-money [value]="r.target" size="hero" />
+        </p>
+        <p class="tool__lead">{{ r.lead }}</p>
+        @if (r.interestSentence) {
+          <p class="tool__text">{{ r.interestSentence }}</p>
+        }
+      </rw-card>
+
+      <rw-download-pdf class="tool__download" [report]="report()" />
+
+      <div class="tool__warnings" role="status">
+        @for (warning of r.warnings; track warning) {
+          <p class="tool__warning">
+            <rw-icon name="warning" size="sm" />
+            <span>{{ warning }}</span>
+          </p>
+        }
+      </div>
+
+      <div class="tool__stats">
+        <rw-stat-card label="Still to save" [value]="r.shortfall" />
+        <rw-stat-card
+          label="Time to your goal"
+          [text]="r.goalMonths"
+          [secondary]="r.goalSpan"
+          [hint]="r.withoutInterest"
+        />
+      </div>
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">Progress so far</h2>
+        <div class="tool__track">
+          <rw-ring-gauge
+            class="tool__ring"
+            label="Share of your emergency fund target already saved"
+            [value]="r.ringPercent"
+            caption="saved"
+            [centreLabel]="r.ringCentre"
+          />
+          <p class="tool__text">{{ r.progressText }}</p>
+        </div>
+      </rw-card>
+
+      @if (r.hasChart) {
+        <rw-card class="tool__card" padding="lg">
+          <h2 class="tool__title">Your balance over time</h2>
+          <rw-line-chart
+            data-pdf-chart="emergency-balance"
+            label="Emergency fund balance over time"
+            [series]="r.balance"
+            [secondSeries]="r.targetSeries"
+            [formatX]="monthText"
+            [formatXTick]="plain"
+            [formatYTick]="compactRand"
+            xLabel="Month"
+            yLabel="Balance"
+          />
+        </rw-card>
+      }
+
+      <rw-card class="tool__card" padding="lg">
+        <rw-send-to
+          heading="Send these figures to"
+          [targets]="budgetTarget"
+          (sendTo)="sendToBudget()"
+        />
+      </rw-card>
+    }
+
+    <p class="tool__note">
+      Estimates only. Interest is worked out each month at the yearly rate divided by 12, and each
+      month's saving is added at the end of the month. Nothing is saved.
+    </p>
+  </section>
+</div>

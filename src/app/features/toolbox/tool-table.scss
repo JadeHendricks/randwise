@@ -1,0 +1,46 @@
+@use 'mixins';
+
+// Year table inside a details element, for the Toolbox tools that list their years.
+.tool-table {
+  &__summary {
+    font-size: var(--rw-text-lg);
+    font-weight: var(--rw-weight-bold);
+    cursor: pointer;
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+  }
+
+  &__scroll {
+    margin-block-start: var(--rw-space-3);
+    @include mixins.data-scroll-region;
+  }
+
+  &__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--rw-text-sm);
+    font-variant-numeric: tabular-nums;
+    @include mixins.data-table-natural-width;
+  }
+
+  &__caption {
+    padding-bottom: var(--rw-space-3);
+    font-weight: var(--rw-weight-bold);
+    text-align: start;
+  }
+
+  &__cell {
+    padding: var(--rw-space-2);
+    border-bottom: 1px solid var(--rw-color-border-strong);
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  &__cell--label {
+    @include mixins.data-table-label-cell;
+    font-weight: var(--rw-weight-medium);
+    text-align: start;
+  }
+}

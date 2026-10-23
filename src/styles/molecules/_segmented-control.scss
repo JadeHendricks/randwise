@@ -1,0 +1,77 @@
+@use 'mixins';
+
+// Molecule: segmented control. Pill switch over native radios in a fieldset.
+.rw-segmented-control {
+  display: block;
+  min-width: 0;
+
+  &__legend {
+    margin-bottom: var(--rw-space-2);
+    padding: 0;
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__options {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--rw-space-1);
+    max-width: 100%;
+    padding: var(--rw-space-1);
+    border: 1px solid var(--rw-color-border-control);
+    border-radius: var(--rw-radius-pill);
+    background: var(--rw-color-surface-solid);
+  }
+
+  &__option {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 var(--rw-space-4);
+    border-radius: var(--rw-radius-pill);
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+    cursor: pointer;
+
+    @include mixins.coarse-pointer {
+      min-height: var(--rw-tap-target-min);
+    }
+
+    &:hover {
+      background: var(--rw-color-accent-soft);
+    }
+
+    &:has(:focus-visible) {
+      @include mixins.focus-ring;
+    }
+
+    @include mixins.motion-safe {
+      transition:
+        background-color var(--rw-duration-base) var(--rw-ease-out),
+        color var(--rw-duration-base) var(--rw-ease-out);
+    }
+  }
+
+  &__option--active {
+    background: var(--rw-color-ink);
+    color: var(--rw-color-on-ink);
+
+    &:hover {
+      background: var(--rw-color-ink);
+    }
+  }
+
+  // Forced-colours mode replaces the active background, so mark the selection with a border.
+  @media (forced-colors: active) {
+    &__option--active {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+  }
+
+  // The real radio stays focusable and in the accessibility tree.
+  &__input {
+    @include mixins.visually-hidden;
+  }
+}

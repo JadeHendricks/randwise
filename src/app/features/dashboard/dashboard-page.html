@@ -1,16 +1,100 @@
 <section class="dashboard" aria-label="Overview">
   <rw-card class="dashboard__hero" variant="hero-yellow" padding="lg">
-    <p class="dashboard__eyebrow">Take-home pay</p>
-    <rw-money class="dashboard__figure" [value]="0" size="hero" />
-    <p class="dashboard__lead">Start with your salary and see what you actually keep each month.</p>
+    <p class="dashboard__eyebrow">
+      {{ store.isExample() ? 'Example take-home pay' : 'Your take-home pay' }}
+    </p>
+    @if (net() !== null) {
+      <rw-money class="dashboard__figure" [value]="net()!" size="hero" />
+      <rw-dot-matrix
+        class="dashboard__split"
+        label="How a month's gross pay splits between net pay, PAYE, UIF, retirement and other deductions"
+        [columns]="split()"
+        [highlight]="0"
+      />
+      <!-- Names the dot columns for sighted users; the svg already carries the full text. -->
+      <p class="dashboard__caption" aria-hidden="true">{{ splitCaption() }}</p>
+      <p class="dashboard__lead">
+        {{ summary() }}
+        @if (store.isExample()) {
+          Example only. Change it on the Pay page.
+        }
+      </p>
+    } @else {
+      <p class="dashboard__lead dashboard__lead--unavailable">{{ unavailable() }}</p>
+    }
     <a rw-button size="lg" routerLink="/pay" class="dashboard__cta">
-      Start with your salary
+      Open the Pay page
       <rw-icon name="arrow-right" size="sm" />
     </a>
   </rw-card>
 
   @for (item of tiles; track item.path) {
-    <rw-bento-tile [item]="item" />
+    @if (item.path === 'ra') {
+      <rw-bento-tile class="dashboard__ra" [item]="item">
+        @if (raFigures(); as ra) {
+          <p class="dashboard__ra-label">{{ context.raIsExample() ? 'Illustrative RA' : 'Your RA' }}</p>
+          <p class="dashboard__ra-figure">
+            {{ ra.headroomAnnual }} a year ({{ ra.headroomMonthly }} a month) of tax-deductible room
+          </p>
+          <p class="dashboard__ra-figure">
+            {{ ra.contribution }} a month saves about {{ ra.saving }} tax a year
+          </p>
+        } @else {
+          <p class="dashboard__ra-figure">Tax data is unavailable.</p>
+        }
+      </rw-bento-tile>
+    } @else if (item.path === 'retire') {
+      <rw-bento-tile class="dashboard__retire" [item]="item">
+        @if (retireFigures(); as retire) {
+          <p class="dashboard__retire-label">
+            {{ context.retireIsExample() ? 'Illustrative plan' : 'Your plan' }}
+          </p>
+          <p class="dashboard__retire-figure">
+            {{ retire.required }} a month to retire at {{ retire.age }} on {{ retire.goal }} a
+            month (today's money)
+          </p>
+          <p class="dashboard__retire-figure">On track: {{ retire.onTrack }}</p>
+        } @else {
+          <p class="dashboard__retire-figure">{{ retireUnavailable() }}</p>
+        }
+      </rw-bento-tile>
+    } @else if (item.path === 'budget') {
+      <rw-bento-tile class="dashboard__budget" [item]="item">
+        @if (budgetFigures(); as budget) {
+          <p class="dashboard__budget-label">
+            {{ context.budgetIsExample() ? 'Illustrative budget' : 'Your budget' }}
+          </p>
+          <p class="dashboard__budget-figure">
+            {{ budget.net }} take-home: needs {{ budget.needs }}, wants {{ budget.wants }}, savings
+            {{ budget.savings }}
+          </p>
+          <p class="dashboard__budget-figure">{{ budget.balance }}</p>
+        } @else {
+          <p class="dashboard__budget-figure">{{ budgetUnavailable() }}</p>
+        }
+      </rw-bento-tile>
+    } @else if (item.path === 'journey') {
+      <rw-bento-tile class="dashboard__journey" [item]="item">
+        @if (journeyFigures(); as journey) {
+          <p class="dashboard__journey-label">
+            {{ context.journeyIsExample() ? 'Illustrative journey' : 'Your journey' }}
+          </p>
+          <p class="dashboard__journey-figure">
+            Saves about {{ journey.taxSaved }} in tax by {{ journey.age }}
+          </p>
+          <p class="dashboard__journey-figure">TFSA at {{ journey.age }}: {{ journey.tfsa }}</p>
+        } @else {
+          <p class="dashboard__journey-figure">{{ journeyUnavailable() }}</p>
+        }
+      </rw-bento-tile>
+    } @else if (item.path === 'plan') {
+      <rw-bento-tile class="dashboard__plan" [item]="item" [action]="planAction()">
+        <p class="dashboard__plan-label">Plan Builder</p>
+        <p class="dashboard__plan-text">{{ planText() }}</p>
+      </rw-bento-tile>
+    } @else {
+      <rw-bento-tile [item]="item" />
+    }
   }
 
   <rw-card class="dashboard__privacy" variant="dark">
