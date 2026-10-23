@@ -154,6 +154,11 @@
 
   &__scroll {
     overflow-x: auto;
+
+    // The region takes focus so the keyboard can scroll it; show the project ring, not the UA one.
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
   }
 
   &__table {

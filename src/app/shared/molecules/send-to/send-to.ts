@@ -16,7 +16,8 @@ let nextId = 0;
 
 /**
  * "Send these figures to ..." row. A target with a route is a working button; one without is a
- * focusable, announced "Coming soon" button that does nothing, so there are no dead links.
+ * focusable, announced "Coming soon" button that does nothing, so there are no dead links. Every
+ * shipped target has a route today; the coming-soon branch stays for a future target.
  * Choosing a target emits `sendTo` first, so the parent can push the figures, then navigates.
  */
 @Component({

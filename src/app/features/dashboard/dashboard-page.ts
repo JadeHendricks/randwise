@@ -88,6 +88,46 @@ export class DashboardPage {
       onTrack: formatPercent(retire.ringPercent / 100, 0),
     };
   });
+  // Plain text too. Null when there is no tax data or the Budget figures fail.
+  protected readonly budgetFigures = computed(() => {
+    const budget = this.context.budgetOutputs();
+    if (!budget) return null;
+    const percent = (value: number) => formatPercent(value / 100, 0);
+    const balance =
+      budget.status === 'balanced'
+        ? 'Every rand has a job'
+        : budget.status === 'under'
+          ? `${formatRand(roundRand(budget.unallocated))} unallocated`
+          : `Over by ${formatRand(roundRand(budget.overAllocated))}`;
+    return {
+      net: formatRand(roundRand(budget.netMonthly)),
+      needs: percent(budget.groupPercents.needs),
+      wants: percent(budget.groupPercents.wants),
+      savings: percent(budget.groupPercents.savings),
+      balance,
+    };
+  });
+  protected readonly budgetUnavailable = computed(() =>
+    this.context.budgetEstimate() === null
+      ? 'Tax data is unavailable.'
+      : 'Check the figures on the Budget page.',
+  );
+
+  // Plain text too. Null when there is no tax data or the Journey figures fail.
+  protected readonly journeyFigures = computed(() => {
+    const journey = this.context.journeyOutputs();
+    if (!journey) return null;
+    return {
+      age: journey.retirementAge,
+      taxSaved: formatRand(roundRand(journey.taxSaved)),
+      tfsa: formatRand(roundRand(journey.tfsaAtRetirement)),
+    };
+  });
+  protected readonly journeyUnavailable = computed(() =>
+    this.context.journeyEstimate() === null
+      ? 'Tax data is unavailable.'
+      : 'Check the figures on the Journey page.',
+  );
   // Why: the estimate is null for "no tax data"; any other missing output means the figures failed.
   protected readonly retireUnavailable = computed(() =>
     this.context.retireEstimate() === null

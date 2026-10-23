@@ -58,6 +58,35 @@
           <p class="dashboard__retire-figure">{{ retireUnavailable() }}</p>
         }
       </rw-bento-tile>
+    } @else if (item.path === 'budget') {
+      <rw-bento-tile class="dashboard__budget" [item]="item">
+        @if (budgetFigures(); as budget) {
+          <p class="dashboard__budget-label">
+            {{ context.budgetIsExample() ? 'Illustrative budget' : 'Your budget' }}
+          </p>
+          <p class="dashboard__budget-figure">
+            {{ budget.net }} take-home: needs {{ budget.needs }}, wants {{ budget.wants }}, savings
+            {{ budget.savings }}
+          </p>
+          <p class="dashboard__budget-figure">{{ budget.balance }}</p>
+        } @else {
+          <p class="dashboard__budget-figure">{{ budgetUnavailable() }}</p>
+        }
+      </rw-bento-tile>
+    } @else if (item.path === 'journey') {
+      <rw-bento-tile class="dashboard__journey" [item]="item">
+        @if (journeyFigures(); as journey) {
+          <p class="dashboard__journey-label">
+            {{ context.journeyIsExample() ? 'Illustrative journey' : 'Your journey' }}
+          </p>
+          <p class="dashboard__journey-figure">
+            Saves about {{ journey.taxSaved }} in tax by {{ journey.age }}
+          </p>
+          <p class="dashboard__journey-figure">TFSA at {{ journey.age }}: {{ journey.tfsa }}</p>
+        } @else {
+          <p class="dashboard__journey-figure">{{ journeyUnavailable() }}</p>
+        }
+      </rw-bento-tile>
     } @else {
       <rw-bento-tile [item]="item" />
     }

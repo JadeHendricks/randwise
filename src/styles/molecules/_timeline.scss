@@ -1,0 +1,60 @@
+// Molecule: timeline. A vertical ordered list of steps joined by a line. No motion.
+.rw-timeline {
+  display: block;
+  min-width: 0;
+
+  &__list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    position: relative;
+    display: grid;
+    gap: var(--rw-space-1);
+    padding-block-end: var(--rw-space-5);
+    padding-inline-start: var(--rw-space-6);
+
+    // The line runs from this dot to the next one; the last step has no line.
+    &::before {
+      content: '';
+      position: absolute;
+      inset-block: 1.1rem 0;
+      inset-inline-start: 0.4rem;
+      inline-size: 2px;
+      background: var(--rw-color-border-strong);
+    }
+
+    &:last-child {
+      padding-block-end: 0;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+
+  &__marker {
+    position: absolute;
+    inset-block-start: 0.35rem;
+    inset-inline-start: 0;
+    inline-size: 0.9rem;
+    block-size: 0.9rem;
+    border: 3px solid var(--rw-color-accent);
+    border-radius: 50%;
+    background: var(--rw-color-surface-solid);
+  }
+
+  &__title {
+    font-size: var(--rw-text-md);
+    overflow-wrap: anywhere;
+  }
+
+  &__detail {
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-sm);
+    overflow-wrap: anywhere;
+  }
+}

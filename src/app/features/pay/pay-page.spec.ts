@@ -227,19 +227,20 @@ describe('PayPage', () => {
     expect(root.querySelector('.pay__note')).toBeNull();
   });
 
-  it('offers Send to with Retirement annuity and Retire at 55 enabled and two Coming soon targets', async () => {
+  it('offers Send to with all four targets live and no Coming soon', async () => {
     const { root } = await render();
     const sendTo = root.querySelector('.pay__hero ~ .pay__card rw-send-to');
     expect(sendTo).not.toBeNull();
     expect(text(sendTo?.querySelector('h2'))).toBe('Use these figures');
-    expect(sendTo?.querySelectorAll('.rw-send-to__soon').length).toBe(2);
-    expect(sendTo?.querySelectorAll('[aria-disabled=true]').length).toBe(2);
-    expect(text(sendTo)).toContain('Retirement annuity');
+    expect(sendTo?.querySelectorAll('.rw-send-to__soon').length).toBe(0);
+    expect(sendTo?.querySelectorAll('[aria-disabled=true]').length).toBe(0);
     const targets = Array.from(sendTo?.querySelectorAll('.rw-send-to__target') ?? []);
-    expect(text(targets[1])).toBe('Retire at 55');
-    expect(targets[1].hasAttribute('aria-disabled')).toBe(false);
-    expect(text(targets[2])).toBe('Budget Coming soon');
-    expect(text(targets[3])).toBe('Journey Coming soon');
+    expect(targets.map((target) => text(target))).toEqual([
+      'Retirement annuity',
+      'Retire at 55',
+      'Budget',
+      'Journey',
+    ]);
   });
 
   it('hides Send to in the alert and unavailable states', async () => {

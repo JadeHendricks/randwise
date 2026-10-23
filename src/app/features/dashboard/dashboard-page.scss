@@ -65,6 +65,18 @@
   &__retire-figure {
     font-size: var(--rw-text-sm);
   }
+  &__budget-label,
+  &__journey-label {
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-xs);
+    font-weight: var(--rw-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  &__budget-figure,
+  &__journey-figure {
+    font-size: var(--rw-text-sm);
+  }
   &__privacy {
     display: flex;
     flex-direction: column;

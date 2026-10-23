@@ -1,0 +1,253 @@
+<div class="budget">
+  <rw-card class="budget__inputs" padding="lg">
+    <div class="budget__head">
+      <h2 class="budget__title">Your income</h2>
+      @if (context.budgetIsExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button
+          rw-button
+          variant="secondary"
+          size="sm"
+          type="button"
+          (click)="context.resetBudget()"
+        >
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (fromLabel(); as source) {
+      <rw-handoff-chip [source]="source" (undo)="context.undoBudget()" />
+    }
+    @if (context.budgetIsExample()) {
+      <p class="budget__text">
+        This is an example: a 50/30/20 split of the take-home pay from your Salary figures. Change
+        any value; nothing is saved.
+      </p>
+    }
+
+    <rw-segmented-control
+      legend="Amount is"
+      [options]="basisOptions"
+      [value]="inputs().basis"
+      (valueChange)="context.switchBudgetBasis($event)"
+    />
+    <rw-segmented-control
+      legend="Show amounts"
+      [options]="periodOptions"
+      [value]="inputs().period"
+      (valueChange)="context.setBudgetPeriod($event)"
+    />
+    <rw-amount-field
+      [label]="amountLabel()"
+      prefix="R"
+      [min]="0"
+      [max]="amountMax()"
+      [step]="step"
+      [value]="inputs().amount"
+      (valueChange)="set('amount', $event)"
+    />
+    <rw-amount-field
+      label="Age at the end of the tax year"
+      [min]="limits.age.min"
+      [max]="limits.age.max"
+      [step]="1"
+      [value]="inputs().age"
+      (valueChange)="set('age', $event)"
+    />
+    <rw-amount-field
+      label="People on your medical aid"
+      [min]="limits.medicalMembers.min"
+      [max]="limits.medicalMembers.max"
+      [step]="1"
+      [value]="inputs().medicalMembers"
+      hint="You plus dependants. 0 = no medical aid, 1 = just you."
+      (valueChange)="set('medicalMembers', $event)"
+    />
+    <rw-amount-field
+      label="Your retirement contributions per month"
+      prefix="R"
+      [min]="0"
+      [max]="retirementMax"
+      [step]="step"
+      [value]="inputs().employeeRetirementMonthly"
+      hint="Taken out of your pay before it lands, so they are not part of the budget."
+      (valueChange)="set('employeeRetirementMonthly', $event)"
+    />
+    <rw-amount-field
+      label="Employer retirement contributions per month"
+      prefix="R"
+      [min]="0"
+      [max]="retirementMax"
+      [step]="step"
+      [value]="inputs().employerRetirementMonthly"
+      hint="Not cash, so they are not part of the budget."
+      (valueChange)="set('employerRetirementMonthly', $event)"
+    />
+    <rw-amount-field
+      label="Other deductions per month"
+      prefix="R"
+      [min]="0"
+      [max]="otherMax"
+      [step]="step"
+      [value]="inputs().otherDeductionsMonthly"
+      hint="Taken after tax, such as medical aid premiums or union fees."
+      (valueChange)="set('otherDeductionsMonthly', $event)"
+    />
+
+    <div class="budget__block">
+      <h3 class="budget__subtitle">Savings checks</h3>
+      <rw-amount-field
+        label="Months of needs in your emergency fund"
+        [min]="limits.emergencyMonths.min"
+        [max]="limits.emergencyMonths.max"
+        [step]="1"
+        [value]="settings().emergencyMonths"
+        hint="3 to 6 months of needs is a common guide."
+        (valueChange)="setSetting('emergencyMonths', $event)"
+      />
+      <rw-amount-field
+        label="Already in your emergency fund"
+        prefix="R"
+        [min]="0"
+        [max]="savedMax"
+        [step]="step"
+        [value]="settings().emergencySaved"
+        (valueChange)="setSetting('emergencySaved', $event)"
+      />
+      <rw-amount-field
+        label="TFSA contributions made so far"
+        prefix="R"
+        [min]="0"
+        [max]="tfsaUsedMax"
+        [step]="step"
+        [value]="settings().tfsaLifetimeUsed"
+        [hint]="tfsaUsedHint()"
+        (valueChange)="setSetting('tfsaLifetimeUsed', $event)"
+      />
+    </div>
+  </rw-card>
+
+  <section class="budget__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+    @if (context.budgetEstimate() === null) {
+      <rw-card class="budget__unavailable" padding="lg">
+        <p>Tax data is unavailable, so the budget cannot be worked out.</p>
+      </rw-card>
+    } @else if (failure(); as message) {
+      <p class="budget__error" role="alert">{{ message }}</p>
+    } @else if (result(); as r) {
+      <rw-card class="budget__hero" variant="hero-yellow" padding="lg">
+        <h2 class="budget__eyebrow">Monthly take-home</h2>
+        <p class="budget__figure">
+          <rw-money [value]="r.net" size="hero" />
+        </p>
+        <p class="budget__lead">{{ r.sentence }}</p>
+        <rw-dot-matrix class="budget__matrix" label="Take-home pay by group, as dots" [columns]="r.columns" />
+        <p class="budget__text">{{ r.caption }}</p>
+      </rw-card>
+
+      @if (r.status === 'over') {
+        <p class="budget__error" role="alert">{{ r.overText }}</p>
+      }
+
+      <rw-card class="budget__card" padding="lg">
+        <rw-breakdown-bar label="Where your take-home goes" [segments]="r.segments" />
+        <div class="budget__presets" role="group" aria-label="Start from a preset">
+          @for (preset of presets; track preset.id) {
+            <button
+              type="button"
+              rw-button
+              size="sm"
+              [variant]="presetId() === preset.id ? 'primary' : 'secondary'"
+              [attr.aria-pressed]="presetId() === preset.id"
+              [attr.aria-label]="preset.aria"
+              (click)="context.applyBudgetPreset(preset.id)"
+            >
+              {{ preset.label }}
+            </button>
+          }
+          @if (presetId() === 'custom') {
+            <rw-chip label="Custom" />
+          }
+        </div>
+        <p class="budget__note">
+          A preset spreads needs, wants and savings over your lines, keeping how each group is
+          already split.
+        </p>
+      </rw-card>
+
+      @for (group of r.groups; track group.group) {
+        <rw-card class="budget__card" padding="lg">
+          <section class="budget__group">
+            <h2 class="budget__title">{{ group.heading }}</h2>
+            <div class="budget__lines">
+              @for (line of group.lines; track line.id) {
+                <rw-category-row
+                  [name]="line.name"
+                  [amount]="line.amount"
+                  [percent]="line.percent"
+                  [max]="lineMaxFor(line.amount)"
+                  [editable]="line.custom"
+                  [removable]="line.custom"
+                  (amountChange)="context.setBudgetAmount(line.id, $event)"
+                  (percentChange)="context.setBudgetPercent(line.id, $event)"
+                  (nameChange)="context.renameBudgetLine(line.id, $event)"
+                  (remove)="removeLine(line.id, group.group)"
+                />
+              }
+            </div>
+            <div>
+              <button
+                rw-button
+                variant="secondary"
+                size="sm"
+                type="button"
+                [attr.data-add-group]="group.group"
+                (click)="context.addBudgetLine(group.group)"
+              >
+                {{ group.addLabel }}
+              </button>
+            </div>
+          </section>
+        </rw-card>
+      }
+
+      <rw-card class="budget__card" padding="lg">
+        <h2 class="budget__title">Savings checks</h2>
+        <div class="budget__checks">
+          @for (check of r.checks; track check.text) {
+            <p class="budget__check" [class.budget__check--warn]="check.warn">
+              @if (check.warn) {
+                <rw-icon name="warning" size="sm" />
+              }
+              <span>{{ check.text }}</span>
+            </p>
+          }
+        </div>
+        <div class="budget__track">
+          <rw-ring-gauge
+            class="budget__ring"
+            label="Emergency fund saved so far"
+            [value]="r.emergencyPercent"
+            caption="of target"
+            [centreLabel]="r.emergencyCentre"
+          />
+          <div class="budget__facts">
+            <h3 class="budget__subtitle">Emergency fund</h3>
+            <p class="budget__text">{{ r.emergencyText }}</p>
+          </div>
+        </div>
+      </rw-card>
+
+      <rw-card class="budget__card" padding="lg">
+        <rw-send-to [exclude]="'budget'" (sendTo)="sendTo($event)" />
+      </rw-card>
+    }
+
+    @if (taxNote(); as note) {
+      <p class="budget__note">{{ note }}</p>
+    }
+  </section>
+</div>
