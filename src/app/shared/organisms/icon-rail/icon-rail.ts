@@ -18,11 +18,13 @@ import { Icon } from '../../atoms/icon/icon';
         @for (item of items; track item.path) {
           <li class="rw-icon-rail__item">
             <a
+              #link
               class="rw-icon-rail__link"
               [routerLink]="'/' + item.path"
               routerLinkActive="rw-icon-rail__link--active"
               ariaCurrentWhenActive="page"
               [routerLinkActiveOptions]="{ exact: item.path === '' }"
+              (isActiveChange)="onActiveChange($event, link)"
             >
               <rw-icon [name]="item.icon" />
               <span class="rw-icon-rail__label">{{ item.label }}</span>
@@ -35,4 +37,15 @@ import { Icon } from '../../atoms/icon/icon';
 })
 export class IconRail {
   protected readonly items = NAV_ITEMS;
+
+  /**
+   * Why: the mobile bar scrolls sideways, so the current page's link can sit
+   * off screen. Bring it into view (instant, so reduced motion is respected).
+   * Optional call because jsdom has no scrollIntoView.
+   */
+  protected onActiveChange(active: boolean, link: HTMLElement): void {
+    if (active) {
+      link.scrollIntoView?.({ block: 'nearest', inline: 'center' });
+    }
+  }
 }

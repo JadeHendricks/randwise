@@ -1,3 +1,5 @@
+@use 'mixins';
+
 // Atom: money. Big confident tabular numerals.
 .rw-money {
   display: inline-block;
@@ -19,7 +21,18 @@
   }
 
   &--hero {
+    max-inline-size: 100%;
     font-size: var(--rw-text-display);
     letter-spacing: -0.03em;
+    // Backstop for browsers without container query units.
+    overflow-wrap: anywhere;
+
+    // Why: the yellow hero card is the container, so a long figure shrinks to
+    // fit a narrow card instead of spilling out. Cards wider than 22rem keep the token size.
+    @supports (container-type: inline-size) {
+      @include mixins.container-below(22rem) {
+        font-size: clamp(var(--rw-text-hero-min), 12cqi, var(--rw-text-display));
+      }
+    }
   }
 }

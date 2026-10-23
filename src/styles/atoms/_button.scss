@@ -4,25 +4,32 @@
 .rw-button {
   @include mixins.pill-button-base;
 
+  // Why: a long label wraps inside the viewport instead of pushing the page wider.
+  max-inline-size: 100%;
+  padding-block: var(--rw-space-2);
+  line-height: var(--rw-line-tight);
+  white-space: normal;
+  text-align: center;
+
   &:focus-visible {
     @include mixins.focus-ring;
   }
 
   &--sm {
     min-height: 36px;
-    padding: 0 var(--rw-space-4);
+    padding-inline: var(--rw-space-4);
     font-size: var(--rw-text-sm);
   }
 
   &--md {
     min-height: 44px;
-    padding: 0 var(--rw-space-5);
+    padding-inline: var(--rw-space-5);
     font-size: var(--rw-text-md);
   }
 
   &--lg {
     min-height: 56px;
-    padding: 0 var(--rw-space-6);
+    padding-inline: var(--rw-space-6);
     font-size: var(--rw-text-lg);
   }
 

@@ -25,6 +25,15 @@
   color: inherit;
 }
 
+:where(html) {
+  // Why: the fixed bottom bar must never hide a control that has keyboard focus.
+  @include mixins.below(mobile) {
+    scroll-padding-bottom: calc(
+      var(--rw-bottom-bar-height) + env(safe-area-inset-bottom, 0px) + var(--rw-space-4)
+    );
+  }
+}
+
 :where(svg) {
   display: block;
 }

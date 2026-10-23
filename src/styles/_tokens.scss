@@ -79,6 +79,7 @@
   --rw-text-xl: 1.75rem;
   --rw-text-2xl: 2.25rem;
   --rw-text-display: clamp(2.5rem, 5vw, 4.5rem);
+  --rw-text-hero-min: 1.75rem;
   --rw-weight-regular: 400;
   --rw-weight-medium: 500;
   --rw-weight-bold: 700;
@@ -95,6 +96,10 @@
   // Layout
   --rw-rail-width: 96px;
   --rw-bottom-bar-height: 72px;
+  --rw-nav-item-min-width: 64px;
+  --rw-nav-visible-items: 5.5;
+  --rw-tap-target-min: 44px;
+  --rw-slider-thumb-size: 24px;
 }
 
 [data-theme='dark'] {

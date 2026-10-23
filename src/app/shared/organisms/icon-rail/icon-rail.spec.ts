@@ -37,6 +37,29 @@ describe('IconRail', () => {
     ]);
   });
 
+  it('lists the links in NAV_ITEMS order so the tab order matches the visual order', async () => {
+    const { root } = await setup();
+    const hrefs = Array.from(root.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(NAV_ITEMS.map((item) => (item.path === '' ? '/' : `/${item.path}`)));
+  });
+
+  it('scrolls the active link into view when the route changes', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      const { fixture, root } = await setup();
+      scrollIntoView.mockClear();
+      await TestBed.inject(Router).navigateByUrl('/journey');
+      await fixture.whenStable();
+      const active = root.querySelector('[aria-current="page"]');
+      expect(active?.textContent).toContain('Journey');
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'center' });
+      expect(scrollIntoView.mock.contexts.at(-1)).toBe(active);
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
   it('marks only the active link with aria-current', async () => {
     const { fixture, root } = await setup();
     await TestBed.inject(Router).navigateByUrl('/ra');

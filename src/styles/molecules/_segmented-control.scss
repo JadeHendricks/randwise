@@ -34,6 +34,10 @@
     font-weight: var(--rw-weight-bold);
     cursor: pointer;
 
+    @include mixins.coarse-pointer {
+      min-height: var(--rw-tap-target-min);
+    }
+
     &:hover {
       background: var(--rw-color-accent-soft);
     }

@@ -66,6 +66,27 @@ $breakpoints: (
   outline-offset: 3px;
 }
 
+// Same ring for scrolling containers: drawn inside the box so the container's
+// overflow cannot clip it.
+@mixin focus-ring-inset {
+  outline: 3px solid var(--rw-color-focus);
+  outline-offset: -3px;
+}
+
+// Touch screens and other coarse pointers (fingers need bigger targets).
+@mixin coarse-pointer {
+  @media (pointer: coarse) {
+    @content;
+  }
+}
+
+// Container query on the nearest `container-type: inline-size` ancestor.
+@mixin container-below($width) {
+  @container (max-width: #{$width}) {
+    @content;
+  }
+}
+
 @mixin pill-button-base {
   display: inline-flex;
   align-items: center;

@@ -118,6 +118,9 @@
   }
 
   &__link {
+    // Why: a link in a list is not inline text, so it needs the 24px minimum target (WCAG 2.5.8).
+    display: inline-block;
+    padding-block: var(--rw-space-1);
     color: var(--rw-color-accent);
     text-decoration: underline;
     text-underline-offset: 2px;
