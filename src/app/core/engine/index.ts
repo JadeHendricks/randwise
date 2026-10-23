@@ -75,3 +75,37 @@ export type {
   RetireResult,
   RetireRules,
 } from './retire';
+export { tfsaContribution, toTfsaRules } from './tfsa';
+export type { TfsaContribution, TfsaContributionInput, TfsaRules } from './tfsa';
+export {
+  BUDGET_GROUPS,
+  BUDGET_PRESETS,
+  addCategory,
+  applyPreset,
+  defaultBudgetCategories,
+  distributeToGroups,
+  limitWarnings,
+  percentOfNet,
+  removeCategory,
+  renameCategory,
+  setCategoryAmount,
+  setCategoryPercent,
+  summarise,
+} from './budget';
+export type {
+  BudgetCategory,
+  BudgetEmergency,
+  BudgetGroup,
+  BudgetGroupSummary,
+  BudgetKind,
+  BudgetLimitSettings,
+  BudgetLimits,
+  BudgetLineSummary,
+  BudgetPresetId,
+  BudgetRaLimit,
+  BudgetSplit,
+  BudgetStatus,
+  BudgetSummary,
+  BudgetTfsaLimit,
+  BudgetWarning,
+} from './budget';
