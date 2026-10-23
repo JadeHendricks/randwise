@@ -6,6 +6,7 @@ import { taxYearLabel } from '../../core/data/tax-calendar';
 import { TaxYearStatus } from '../../core/data/tax-year.schema';
 import { TaxYearService } from '../../core/data/tax-year.service';
 import { MAX_RA_RETIREMENT_AGE, roundRand } from '../../core/engine';
+import { ReportModel } from '../../core/pdf/report-model';
 import { HANDOFF_SOURCE_LABELS, SendTargetId } from '../../core/plan/handoff';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import {
@@ -27,6 +28,7 @@ import { LineChart, LineMarker, LinePoint, LineSeries } from '../../shared/atoms
 import { Money } from '../../shared/atoms/money/money';
 import { RingGauge } from '../../shared/atoms/ring-gauge/ring-gauge';
 import { formatPercent, formatRand, formatRandCompact } from '../../shared/format/format-rand';
+import { DownloadPdf } from '../../shared/molecules/download-pdf/download-pdf';
 import { HandoffChip } from '../../shared/molecules/handoff-chip/handoff-chip';
 import {
   SegmentedControl,
@@ -34,6 +36,7 @@ import {
 } from '../../shared/molecules/segmented-control/segmented-control';
 import { SendTo } from '../../shared/molecules/send-to/send-to';
 import { StatCard } from '../../shared/molecules/stat-card/stat-card';
+import { buildRetireReport } from './retire-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -86,6 +89,7 @@ function randText(amount: number): string {
     Button,
     Card,
     Chip,
+    DownloadPdf,
     HandoffChip,
     Icon,
     LineChart,
@@ -312,6 +316,12 @@ export class RetirePage {
     return r
       ? `Required contribution ${formatRand(r.requiredMonthly)} a month. On track ${r.ringCentre}.`
       : '';
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    return r ? buildRetireReport(this.inputs(), r) : null;
   });
 
   protected readonly taxNote = computed(() => {

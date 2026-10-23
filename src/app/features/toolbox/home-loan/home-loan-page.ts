@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { formatShortDate } from '../../../core/data/format-date';
 import { RatesService } from '../../../core/data/rates.service';
+import { ReportModel } from '../../../core/pdf/report-model';
 import { AFFORDABILITY_SHARE, roundRand } from '../../../core/engine';
 import { HomeLoanWarning } from '../../../core/toolbox/estimate-home-loan';
 import {
@@ -27,7 +28,9 @@ import {
   SegmentedControl,
   SegmentedOption,
 } from '../../../shared/molecules/segmented-control/segmented-control';
+import { DownloadPdf } from '../../../shared/molecules/download-pdf/download-pdf';
 import { StatCard } from '../../../shared/molecules/stat-card/stat-card';
+import { buildHomeLoanReport } from './home-loan-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -66,6 +69,7 @@ interface YearRow {
     Button,
     Card,
     Chip,
+    DownloadPdf,
     Icon,
     LineChart,
     Money,
@@ -188,6 +192,15 @@ export class HomeLoanPage {
       warnings: warnings.map((warning) => warningText[warning]),
       rows,
     };
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    if (!r) return null;
+    const inputs = this.inputs();
+    const mode = MODE_OPTIONS.find((option) => option.value === inputs.mode);
+    return buildHomeLoanReport(inputs, r, mode?.label ?? inputs.mode);
   });
 
   // Read out politely after each edit; empty while there is no result (the alert covers errors).

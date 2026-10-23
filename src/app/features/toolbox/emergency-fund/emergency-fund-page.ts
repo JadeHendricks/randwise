@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { RouterLink } from '@angular/router';
 
 import { RatesService } from '../../../core/data/rates.service';
+import { ReportModel } from '../../../core/pdf/report-model';
 import {
   EMERGENCY_HORIZON_MONTHS,
   MONTHS_PER_YEAR,
@@ -25,8 +26,10 @@ import { LineChart, LinePoint, LineSeries } from '../../../shared/atoms/line-cha
 import { Money } from '../../../shared/atoms/money/money';
 import { RingGauge } from '../../../shared/atoms/ring-gauge/ring-gauge';
 import { formatPercent, formatRand, formatRandCompact } from '../../../shared/format/format-rand';
+import { DownloadPdf } from '../../../shared/molecules/download-pdf/download-pdf';
 import { SendTo } from '../../../shared/molecules/send-to/send-to';
 import { StatCard } from '../../../shared/molecules/stat-card/stat-card';
+import { buildEmergencyFundReport } from './emergency-fund-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -64,6 +67,7 @@ function spanText(months: number): string {
     Button,
     Card,
     Chip,
+    DownloadPdf,
     Icon,
     LineChart,
     Money,
@@ -178,6 +182,12 @@ export class EmergencyFundPage {
       targetSeries: target,
       warnings: warnings.map((warning) => warningText[warning]),
     };
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    return r ? buildEmergencyFundReport(this.inputs(), r) : null;
   });
 
   // Read out politely after each edit; empty while there is no result (the alert covers errors).

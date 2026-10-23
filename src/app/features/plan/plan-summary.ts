@@ -9,14 +9,17 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 
+import type { ReportModel } from '../../core/pdf/report-model';
 import type { PlanGoal, PlanQuestionId } from '../../core/plan/plan-answers';
 import type { PlanFigure, PlanStep } from '../../core/plan/plan-builder';
 import { PlanBuilderStore } from '../../core/plan/plan-builder.store';
 import { Button } from '../../shared/atoms/button/button';
 import { Card } from '../../shared/atoms/card/card';
 import { formatRandWhole } from '../../shared/format/format-rand';
+import { DownloadPdf } from '../../shared/molecules/download-pdf/download-pdf';
 import { PlanStepCard, PlanStepDetail } from '../../shared/molecules/plan-step/plan-step';
 import { CALCULATOR_LABELS, answerRows, formatPlanFigure } from './plan-format';
+import { buildPlanReport } from './plan-report';
 
 const GOAL_PHRASES: Record<PlanGoal, string> = {
   'retire-early': 'retire early',
@@ -46,7 +49,7 @@ const detailOf = (figure: PlanFigure): PlanStepDetail => ({
  */
 @Component({
   selector: 'rw-plan-summary',
-  imports: [Button, Card, PlanStepCard],
+  imports: [Button, Card, DownloadPdf, PlanStepCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './plan-summary.html',
   styleUrl: './plan-summary.scss',
@@ -83,6 +86,11 @@ export class PlanSummary {
 
   protected readonly rows = computed(() => answerRows(this.plan.answers(), this.plan.basics()));
   protected readonly notes = this.plan.assumptionNotes;
+
+  // PDF export: formats the steps and answers this page already shows.
+  protected readonly report = computed<ReportModel | null>(() =>
+    this.unavailable() ? null : buildPlanReport(this.recap(), this.rows(), this.cards(), this.notes()),
+  );
 
   protected readonly announcement = computed(() =>
     this.unavailable() ? '' : `Your plan is ready: ${this.cards().length} steps.`,

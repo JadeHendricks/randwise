@@ -115,6 +115,8 @@
         }
       </rw-card>
 
+      <rw-download-pdf class="pay__download" [report]="report()" />
+
       <rw-card class="pay__card" padding="lg">
         <rw-send-to heading="Use these figures" (sendTo)="sendTo($event)" />
       </rw-card>
@@ -201,13 +203,18 @@
 
       <rw-card class="pay__card" padding="lg">
         <h2 class="pay__title">Where your gross pay goes each month</h2>
-        <rw-breakdown-bar label="Where your gross pay goes each month" [segments]="r.segments" />
+        <rw-breakdown-bar
+          data-pdf-chart="pay-breakdown"
+          label="Where your gross pay goes each month"
+          [segments]="r.segments"
+        />
       </rw-card>
 
       @if (chart(); as c) {
         <rw-card class="pay__card" padding="lg">
           <h2 class="pay__title">Net pay by gross pay, per month</h2>
           <rw-line-chart
+            data-pdf-chart="pay-net-by-gross"
             label="Net pay by gross pay, per month"
             [series]="c.series"
             [secondSeries]="c.reference"

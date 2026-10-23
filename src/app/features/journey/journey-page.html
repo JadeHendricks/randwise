@@ -231,6 +231,8 @@
         <p class="journey__text">{{ r.raSentence }}</p>
       </rw-card>
 
+      <rw-download-pdf class="journey__download" [report]="report()" />
+
       @if (budgetNote(); as note) {
         <p class="journey__text">{{ note }}</p>
       }
@@ -253,6 +255,7 @@
         <rw-card class="journey__card" padding="lg">
           <h2 class="journey__title">Your balances over time</h2>
           <rw-line-chart
+            data-pdf-chart="journey-balances"
             label="RA and TFSA balances over time"
             [series]="r.raSeries"
             [secondSeries]="r.tfsaSeries"
@@ -271,6 +274,7 @@
         <div class="journey__track">
           <rw-ring-gauge
             class="journey__ring"
+            data-pdf-chart="journey-lifetime"
             label="Share of the TFSA lifetime limit used by retirement"
             [value]="r.ringPercent"
             caption="of the limit"

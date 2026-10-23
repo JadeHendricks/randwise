@@ -207,6 +207,8 @@
         <p class="retire__text">{{ r.returnSentence }}</p>
       </rw-card>
 
+      <rw-download-pdf class="retire__download" [report]="report()" />
+
       @if (r.warnings.length > 0) {
         <div class="retire__warnings">
           @for (warning of r.warnings; track warning) {
@@ -370,6 +372,7 @@
       <rw-card class="retire__card" padding="lg">
         <h2 class="retire__title">Your balance over time</h2>
         <rw-line-chart
+          data-pdf-chart="retire-balance"
           label="Your balance over time"
           [series]="r.planSeries"
           [secondSeries]="r.currentSeries"
