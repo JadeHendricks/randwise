@@ -22,6 +22,7 @@ import {
   type BudgetGroup,
   type BudgetPresetId,
   type BudgetStatus,
+  type JourneyRules,
   type PayPeriod,
   type RaRules,
   type RetireRules,
@@ -32,10 +33,23 @@ import {
   roundRand,
   setCategoryAmount,
   setCategoryPercent,
+  toJourneyRules,
   toRaRules,
   toRetireRules,
   toTfsaRules,
 } from '../engine';
+import { type JourneyEstimate, estimateJourney } from '../journey/estimate-journey';
+import type { JourneyInputs } from '../journey/journey-inputs';
+import { journeyPlanDefaults } from '../journey/journey-inputs';
+import {
+  type BudgetContext,
+  type JourneySlice,
+  editJourney,
+  effectiveJourneyInputs,
+  freshJourneySlice,
+  nextJourneySlice,
+  undoJourney as undoJourneySlice,
+} from '../journey/journey-slice';
 import { type RaEstimate, estimateRa } from '../ra/estimate-ra';
 import type { RaInputs } from '../ra/ra-inputs';
 import { raPlanDefaults } from '../ra/ra-inputs';
@@ -131,6 +145,17 @@ export interface BudgetOutputs {
   readonly tfsaMonthly: number;
   readonly emergencyMonthly: number;
 }
+/** What the dashboard reads from the Journey. Full precision; round at the edge. */
+export interface JourneyOutputs {
+  /** Income tax saved by the RA contributions over the whole journey. */
+  readonly taxSaved: number;
+  readonly tfsaAtRetirement: number;
+  readonly raAtRetirement: number;
+  readonly retirementAge: number;
+  /** TFSA lifetime contributions as a share of the limit, 0 to 100. */
+  readonly lifetimePercent: number;
+}
+
 type Handoffs = { readonly [T in HandoffTarget]?: Handoff<T> };
 
 /**
@@ -148,6 +173,7 @@ export class PlanContextStore {
   // Read once: the bundled rates never change while the app runs.
   private readonly raPlanDefaults = raPlanDefaults(this.assumptions);
   private readonly retirePlanDefaults = retirePlanDefaults(this.assumptions);
+  private readonly journeyPlanDefaults = journeyPlanDefaults(this.assumptions);
 
   private readonly handoffs = signal<Handoffs>({});
   private nextId = 1;
@@ -319,6 +345,61 @@ export class PlanContextStore {
       emergencyMonthly: limits.emergency.monthly,
     };
   });
+  readonly journeyHandoff = computed<Handoff<'journey'> | null>(
+    () => this.handoffs().journey ?? null,
+  );
+
+  // Same shape as `raSlice`: a new Journey handoff resets local salary edits to the sent values.
+  private readonly journeySlice = linkedSignal<Handoff<'journey'> | null, JourneySlice>({
+    source: this.journeyHandoff,
+    computation: (handoff, previous) =>
+      nextJourneySlice(handoff, previous, this.journeyPlanDefaults),
+  });
+
+  /** The inputs the Journey page works from: the Salary profile live until overridden. */
+  readonly journey = computed<JourneyInputs>(() =>
+    effectiveJourneyInputs(this.journeySlice(), raHandoffFrom(this.profile())),
+  );
+  /** Who sent the figures in use, for the "From ..." chip. */
+  readonly journeyFrom = computed<HandoffSource | null>(() => this.journeySlice().from);
+  readonly journeyCanUndo = computed(() => this.journeySlice().undo !== null);
+  /** True while the Journey figures are the untouched example. */
+  readonly journeyIsExample = computed(() => {
+    const slice = this.journeySlice();
+    return !slice.planEdited && slice.profile === null && slice.from === null;
+  });
+  /** What the last Budget send said about its budget; null when the figures came from elsewhere. */
+  readonly journeyBudgetContext = computed<BudgetContext | null>(
+    () => this.journeySlice().budgetContext,
+  );
+
+  /** RA and TFSA rules from the selected tax year; null without tax data. */
+  readonly journeyRules = computed<JourneyRules | null>(() => {
+    const data = this.taxYears.taxYear();
+    return data ? toJourneyRules(data) : null;
+  });
+
+  /** Null only when there is no tax data; a figure the engine rejects comes back as `ok: false`. */
+  readonly journeyEstimate = computed<JourneyEstimate | null>(() => {
+    const tables = this.estimator.tables();
+    const rules = this.journeyRules();
+    return tables && rules ? estimateJourney(this.journey(), tables, rules) : null;
+  });
+
+  /** Figures the dashboard can show; null when there is no tax data or the figures fail. */
+  readonly journeyOutputs = computed<JourneyOutputs | null>(() => {
+    const estimate = this.journeyEstimate();
+    if (!estimate?.ok) return null;
+    const { result } = estimate;
+    return {
+      taxSaved: result.totals.taxSaved,
+      tfsaAtRetirement: result.final.tfsaBalance,
+      raAtRetirement: result.final.raBalance,
+      retirementAge: result.ages.retirementAge,
+      lifetimePercent: result.lifetimePercent,
+    };
+  });
+
   /** Sends figures to a calculator. Each call is a new handoff, even with identical values. */
   send<T extends HandoffTarget>(
     target: T,
@@ -388,6 +469,16 @@ export class PlanContextStore {
     void target;
     return false;
   }
+
+  /**
+   * Sends the Journey figures. Returns false, and changes nothing, for every target until the
+   * handoffs are connected.
+   */
+  sendFromJourney(target: SendTargetId): boolean {
+    void target;
+    return false;
+  }
+
   dismiss(target: HandoffTarget): void {
     this.handoffs.update((all) => ({ ...all, [target]: undefined }));
   }
@@ -430,6 +521,26 @@ export class PlanContextStore {
   resetRetire(): void {
     this.dismiss('retire');
     this.retireSlice.set(freshRetireSlice(this.retirePlanDefaults));
+  }
+
+  updateJourney(patch: Partial<JourneyInputs>): void {
+    this.journeySlice.update((slice) => editJourney(slice, patch, raHandoffFrom(this.profile())));
+  }
+
+  undoJourney(): void {
+    const slice = this.journeySlice();
+    if (!slice.undo) return;
+    const restored = undoJourneySlice(slice);
+    // Why this order: dismissing changes the linkedSignal source, which queues a recomputation
+    // that would keep the sent values. Setting AFTER the dismissal makes the restored state win,
+    // because a linkedSignal `set` first brings the signal up to date and then overwrites it.
+    this.dismiss('journey');
+    this.journeySlice.set(restored);
+  }
+
+  resetJourney(): void {
+    this.dismiss('journey');
+    this.journeySlice.set(freshJourneySlice(this.journeyPlanDefaults));
   }
 
   /** The lines in use and the take-home they are measured against; null while there is no good estimate. */

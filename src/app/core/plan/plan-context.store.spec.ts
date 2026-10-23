@@ -736,6 +736,165 @@ describe('PlanContextStore', () => {
       for (const spy of calls) expect(spy).not.toHaveBeenCalled();
     });
   });
+  describe('journey', () => {
+    const salaryValues = {
+      grossMonthly: 50_000,
+      age: 40,
+      medicalMembers: 0,
+      employeeRetirementMonthly: 0,
+      employerRetirementMonthly: 0,
+    };
+    // The hand-derived three-year journey (engine J1): age 52 to 55, income and RA up 10% a year.
+    const J1 = {
+      age: 52,
+      retirementAge: 55,
+      incomeEscalationPercent: 10,
+      contributionMonthly: 2_000,
+      escalationPercent: 10,
+      tfsaTopUpMonthly: 1_000,
+      returnPercent: 0,
+      tfsaReturnPercent: 0,
+      inflationPercent: 0,
+    };
+
+    it('starts as the example with the defaults from the rates', () => {
+      const { plan } = setup();
+      expect(plan.journeyIsExample()).toBe(true);
+      expect(plan.journeyFrom()).toBeNull();
+      expect(plan.journeyCanUndo()).toBe(false);
+      expect(plan.journeyBudgetContext()).toBeNull();
+      expect(plan.journey()).toMatchObject({
+        grossMonthly: 30_000,
+        age: 35,
+        retirementAge: 55,
+        incomeEscalationPercent: 4.5,
+        contributionMonthly: 2_000,
+        escalationPercent: 5,
+        tfsaTopUpMonthly: 1_000,
+        tfsaBalance: 0,
+        tfsaLifetimeUsed: 0,
+        returnPercent: 9.5,
+        tfsaReturnPercent: 9.5,
+        inflationPercent: 4.5,
+        refundMode: 'refund',
+        allowOverContribution: false,
+      });
+      expect(plan.journeyRules()).toMatchObject({ annualLimit: 46_000, lifetimeLimit: 500_000 });
+    });
+
+    it('publishes the hand-checked outputs for the three-year journey', () => {
+      const { plan } = setup();
+      plan.updateJourney(J1);
+      const outputs = plan.journeyOutputs();
+      // 6 240 + 7 509 + 9 002.40 tax saved; TFSA 18 240 + 19 509 + 21 002.40; RA 24 000 + 26 400 + 29 040.
+      expect(outputs?.taxSaved).toBeCloseTo(22_751.4, 6);
+      expect(outputs?.tfsaAtRetirement).toBeCloseTo(58_751.4, 6);
+      expect(outputs?.raAtRetirement).toBeCloseTo(79_440, 6);
+      expect(outputs?.retirementAge).toBe(55);
+      expect(outputs?.lifetimePercent).toBeCloseTo((58_751.4 / 500_000) * 100, 6);
+    });
+
+    it('follows the Salary inputs live while nothing is edited', () => {
+      const { plan, salary } = setup();
+      salary.update({ amount: 40_000 });
+      expect(plan.journey().grossMonthly).toBe(40_000);
+      expect(plan.journeyIsExample()).toBe(true);
+    });
+
+    it('keeps the salary side apart from Salary once edited', () => {
+      const { plan, salary } = setup();
+      plan.updateJourney({ grossMonthly: 45_000 });
+      salary.update({ amount: 60_000 });
+      expect(plan.journey().grossMonthly).toBe(45_000);
+      expect(plan.journeyIsExample()).toBe(false);
+    });
+
+    it('sanitises edits and rejects an unknown tax-saving mode', () => {
+      const { plan } = setup();
+      plan.updateJourney({ retirementAge: 200, contributionMonthly: -5 });
+      expect(plan.journey().retirementAge).toBe(80);
+      expect(plan.journey().contributionMonthly).toBe(2_000);
+      plan.updateJourney({ refundMode: 'bad' as never });
+      expect(plan.journey().refundMode).toBe('refund');
+    });
+
+    it('applies a Journey handoff, records the budget it came from and Undo restores both', () => {
+      const { plan } = setup();
+      plan.updateJourney({ tfsaTopUpMonthly: 1_000 });
+      plan.send('journey', 'budget', {
+        ...salaryValues,
+        contributionMonthly: 3_000,
+        tfsaTopUpMonthly: 2_000,
+        tfsaLifetimeUsed: 10_000,
+        budgetNetMonthly: 38_747.3,
+        budgetEmergencyMonthly: 1_500,
+      });
+      expect(plan.journeyFrom()).toBe('budget');
+      expect(plan.journey()).toMatchObject({
+        grossMonthly: 50_000,
+        age: 40,
+        contributionMonthly: 3_000,
+        tfsaTopUpMonthly: 2_000,
+        tfsaLifetimeUsed: 10_000,
+      });
+      expect(plan.journeyBudgetContext()).toEqual({
+        netMonthly: 38_747.3,
+        emergencyMonthly: 1_500,
+      });
+      expect(plan.journeyCanUndo()).toBe(true);
+
+      plan.undoJourney();
+      expect(plan.journeyFrom()).toBeNull();
+      expect(plan.journeyBudgetContext()).toBeNull();
+      expect(plan.journey()).toMatchObject({
+        grossMonthly: 30_000,
+        contributionMonthly: 2_000,
+        tfsaTopUpMonthly: 1_000,
+        tfsaLifetimeUsed: 0,
+      });
+    });
+
+    it('drops the budget note when the figures come from somewhere else', () => {
+      const { plan } = setup();
+      plan.send('journey', 'budget', { ...salaryValues, budgetNetMonthly: 10_000 });
+      expect(plan.journeyBudgetContext()).not.toBeNull();
+      plan.send('journey', 'salary', salaryValues);
+      expect(plan.journeyBudgetContext()).toBeNull();
+    });
+
+    it('resets to the example', () => {
+      const { plan } = setup();
+      plan.updateJourney({ contributionMonthly: 5_000 });
+      plan.resetJourney();
+      expect(plan.journeyIsExample()).toBe(true);
+      expect(plan.journey().contributionMonthly).toBe(2_000);
+    });
+
+    it('has no rules, estimate or outputs without tax data', () => {
+      TestBed.configureTestingModule({
+        providers: provideTestData({ taxYears: [], today: TODAY_PINNED }),
+      });
+      const plan = TestBed.inject(PlanContextStore);
+      expect(plan.journeyRules()).toBeNull();
+      expect(plan.journeyEstimate()).toBeNull();
+      expect(plan.journeyOutputs()).toBeNull();
+    });
+
+    it('touches no storage', () => {
+      const calls = [
+        vi.spyOn(Storage.prototype, 'getItem'),
+        vi.spyOn(Storage.prototype, 'setItem'),
+        vi.spyOn(Storage.prototype, 'removeItem'),
+        vi.spyOn(Storage.prototype, 'clear'),
+      ];
+      const { plan } = setup();
+      plan.updateJourney({ contributionMonthly: 3_000 });
+      plan.undoJourney();
+      plan.resetJourney();
+      for (const spy of calls) expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
   it('touches no storage and is one root instance', () => {
     const calls = [
       vi.spyOn(Storage.prototype, 'getItem'),

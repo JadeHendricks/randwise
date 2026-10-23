@@ -1,16 +1,19 @@
 import { navItem } from '../navigation/nav-items';
+import type { JourneyPlanFields } from '../journey/journey-inputs';
 import type { RaPlanFields } from '../ra/ra-inputs';
 import type { RetirePlanFields } from '../retire/retire-inputs';
 import type { RaHandoffValues } from './plan-profile';
 
-/** Where a handoff came from. Later tasks add more sources. */
-export type HandoffSource = 'salary' | 'ra' | 'retire';
+/** Where a handoff came from. */
+export type HandoffSource = 'salary' | 'ra' | 'retire' | 'budget' | 'journey';
 
 /** The word shown in the "From ..." chip. */
 export const HANDOFF_SOURCE_LABELS: Record<HandoffSource, string> = {
   salary: 'Salary',
   ra: 'RA',
   retire: 'Retire at 55',
+  budget: 'Budget',
+  journey: 'Journey',
 };
 
 /**
@@ -37,11 +40,23 @@ export type BudgetHandoffPayload = RaHandoffValues & {
   readonly tfsaLifetimeUsed?: number;
 };
 
-/** Values each target receives. The journey entry arrives with the Journey page. */
+/**
+ * What a handoff to the Journey carries: the Salary figures, and optionally journey plan values.
+ * A Budget send also tells the Journey the take-home and emergency-fund line it came from, which the
+ * page shows as a note.
+ */
+export type JourneyHandoffPayload = RaHandoffValues &
+  Partial<JourneyPlanFields> & {
+    readonly budgetNetMonthly?: number | null;
+    readonly budgetEmergencyMonthly?: number;
+  };
+
+/** Values each target receives. */
 export interface HandoffValuesByTarget {
   readonly ra: RaHandoffPayload;
   readonly retire: RetireHandoffPayload;
   readonly budget: BudgetHandoffPayload;
+  readonly journey: JourneyHandoffPayload;
 }
 
 export type HandoffTarget = keyof HandoffValuesByTarget;
