@@ -1,7 +1,9 @@
 import {
+  daysBetween,
   isIsoDate,
   isLeapYear,
   lastDayOfFebruary,
+  nextTaxYearToScout,
   parseIsoDate,
   pickTaxYear,
   taxYearEndingOn,
@@ -60,6 +62,55 @@ describe('tax calendar', () => {
   it('labels tax years', () => {
     expect(taxYearLabel(2027)).toBe('2026/27');
     expect(taxYearLabel(2100)).toBe('2099/00');
+  });
+
+  describe('nextTaxYearToScout', () => {
+    it('is closed until 20 February', () => {
+      expect(nextTaxYearToScout('2027-02-19')).toBeNull();
+      expect(nextTaxYearToScout('2027-01-10')).toBeNull();
+      expect(nextTaxYearToScout('2026-10-22')).toBeNull();
+    });
+
+    it('opens on 20 February and stays open to the end of the tax year', () => {
+      expect(nextTaxYearToScout('2027-02-20')).toBe(2028);
+      expect(nextTaxYearToScout('2027-02-28')).toBe(2028);
+    });
+
+    it('closes again on 1 March', () => {
+      expect(nextTaxYearToScout('2027-03-01')).toBeNull();
+    });
+
+    it('handles the last day of a leap-year February', () => {
+      expect(nextTaxYearToScout('2028-02-29')).toBe(2029);
+    });
+  });
+
+  describe('daysBetween', () => {
+    it('counts whole days', () => {
+      expect(daysBetween('2026-10-22', '2026-10-22')).toBe(0);
+      expect(daysBetween('2026-10-22', '2026-10-29')).toBe(7);
+      expect(daysBetween('2026-10-22', '2026-10-30')).toBe(8);
+    });
+
+    it('counts across a month end and a leap day', () => {
+      expect(daysBetween('2026-10-28', '2026-11-04')).toBe(7);
+      expect(daysBetween('2028-02-28', '2028-03-01')).toBe(2);
+      expect(daysBetween('2027-02-28', '2027-03-01')).toBe(1);
+    });
+
+    it('is not skewed by a daylight-saving change', () => {
+      expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2);
+      expect(daysBetween('2026-10-24', '2026-10-26')).toBe(2);
+      expect(daysBetween('2026-03-01', '2026-11-01')).toBe(245);
+    });
+
+    it('is negative when the second date is earlier', () => {
+      expect(daysBetween('2026-10-29', '2026-10-22')).toBe(-7);
+    });
+
+    it('rejects an invalid date', () => {
+      expect(() => daysBetween('2026-02-30', '2026-03-01')).toThrow();
+    });
   });
 
   describe('pickTaxYear', () => {

@@ -76,6 +76,33 @@ module.exports = defineConfig([
     },
   },
   {
+    // The tax-season scripts load these modules in plain Node (scripts/tax-season/lib/register-ts.mjs).
+    files: [
+      'src/app/core/data/tax-calendar.ts',
+      'src/app/core/data/tax-year.schema.ts',
+      'src/app/core/data/tax-year.validator.ts',
+      'src/app/core/data/rates.schema.ts',
+      'src/app/core/data/rates.validator.ts',
+      'src/app/core/data/validation.ts',
+      'src/app/core/data/bracket-checks.ts',
+    ],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@angular/*', 'rxjs', 'rxjs/*'],
+              message:
+                'these data modules are loaded by the tax-season scripts: no Angular or RxJS imports.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
     rules: {},
