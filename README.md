@@ -245,3 +245,44 @@ Nothing is sent anywhere. The scripts only read public [SARS](https://www.sars.g
 - `src/app/app.a11y.spec.ts`: one h1 and it matches the route heading; every input/select/textarea has a label; every chart has an aria-label or data table; no tabindex > 0; no heading level skips; links and buttons have accessible names.
 
 **Responsive:** The navigation bar fixes to the bottom on phones (under 640px) with scrollable items. Tables scroll in focusable regions with a sticky year/label column. Charts and form fields wrap and scale on small screens.
+
+## Optional: Kiro review hook for a new tax-year file
+
+This is an example of how to use Kiro Agent Hooks to review tax files. No hook file is committed to the repository, because the hook schema differs between Kiro versions (0.x uses `*.kiro.hook`, 1.x uses `.kiro/hooks/*.json`). To use it, check your Kiro version and create the hook in the Agent Hooks panel of your workspace, or paste the JSON into `.kiro/hooks/` using your version's schema.
+
+The hook triggers when a new tax file is created under `src/assets/data/tax-years/`, asking the agent to cross-check it against that year's official SARS tax tables and Budget Review figures.
+
+**Example hook definition (JSON):**
+
+```json
+{
+  "event": "fileCreated",
+  "patterns": ["src/assets/data/tax-years/*.json"],
+  "action": "ask"
+}
+```
+
+**Prompt for the agent:**
+
+```
+Your task: review a newly created tax-year file and cross-check it against official SARS tax tables and Budget Review figures.
+
+1. Parse the tax-year JSON and read its `sources` field to find the official reference pages.
+2. For each value in the file, compare it with its cited source page.
+3. Only change a value when the official page shows a different number and you cite it in the `source` field.
+4. When every field is confirmed and all values match their sources, set `status` to "verified" and `carriedForward` to false. Set `verifiedOn` to today (YYYY-MM-DD).
+5. If some values could not be confirmed (field missing on the page, page layout changed, source is a PDF you cannot parse), leave the file as `draft` and list what is unconfirmed.
+6. Never edit any file under `src/app/core/engine/**` or change the bundled-data.ts registrations.
+7. When done, run `npm test` and report the result.
+8. If the tests pass, the file is ready to commit. If any test fails, list the failures and suggest next steps.
+
+Note: the tax-season scout writes draft files on `npm start` from 20 February onwards if the file is missing or draft, at most once a day. Each draft triggers this hook, so you may review the same year multiple times as it is improved.
+```
+
+**Installation:**
+1. Open your Kiro workspace settings and find the Agent Hooks panel.
+2. Click **Add hook** and paste the JSON definition above (or use your Kiro version's format).
+3. Set the prompt text above (Kiro 1.x wraps it in an "ask" action).
+4. Save and the hook will fire on the next `npm start` or `npm run tax:scout`.
+
+Alternatively, place a hook file directly in `.kiro/hooks/` using your Kiro version's schema. This method requires manual file management and is less reliable than the panel.
