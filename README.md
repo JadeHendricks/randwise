@@ -1,42 +1,110 @@
 # Randwise
 
 A South African personal-finance planner. Frontend-only, runs locally, nothing is saved.
-Estimates only, not financial advice.
+**Estimates only, not financial advice.**
 
-## What it is
+## What Randwise is
 
-Randwise helps salaried South Africans plan their money in rand (ZAR). It is a frontend-only Angular app: no backend, no database, no API keys. Nothing is persisted or sent anywhere; theme override is in memory only and a reload starts fresh.
+Randwise helps salaried South Africans plan their money in rand (ZAR). You enter what you earn and
+it works out the SA tax side of things: your PAYE and net pay, how much you can put into a retirement
+annuity tax-free, what it takes to retire at 55, a monthly budget, a year-by-year journey that puts
+your RA tax refund into a tax-free savings account, a guided plan builder, and a toolbox of smaller
+calculators.
 
-**Calculators** (with their routes):
-- **Pay** (`/pay`): net pay from gross, with PAYE, UIF, medical aid credit, marginal and effective rates.
-- **RA** (`/ra`): retirement annuity projection, tax deduction room, tax saving and two-pot split.
-- **Retire at 55** (`/retire`): monthly contribution needed to retire on a target income, drawdown strategy and money longevity.
-- **Budget** (`/budget`): spending plan from take-home with RA, TFSA and emergency-fund checks.
-- **Journey** (`/journey`): RA and TFSA, year by year, with tax refunds invested.
-- **Plan Builder** (`/plan`): guided wizard for your money goal, from age and income to a step-by-step plan.
-- **Toolbox** (`/toolbox`): four tools—emergency fund, home loan, two-pot withdrawal, TFSA vs taxable account.
-- **Dashboard** (`/`): quick view of your current take-home, RA, Retire at 55, Budget and Journey.
-- **PDF export**: every calculator and plan can download its result as a PDF.
+It runs entirely in your browser. There is no account, no backend and no database, and **nothing you
+enter is saved**: a page refresh clears everything and starts from the example figures again. To keep
+a copy of any result, use the **Download PDF** button on that page.
 
-All calculators use the shared tax-year data and can send figures to each other. See each [calculator page](#pay-page-and-charts) for details.
+Every figure is an estimate. Randwise is not financial advice — see
+[Known limitations](#known-limitations--not-verified) before relying on a number.
 
-## Requirements
+## Quickstart
 
-- Node `^24.15` and npm
-
-## Commands
+Requirements: Node `^24.15` and npm.
 
 ```
 npm install
-npm start        # dev server at http://localhost:4200 (runs the tax-season check first)
-npm test         # app unit tests, then the script tests, single run (Vitest)
-npm run test:scripts            # only the tax-season script tests
+npm start     # dev server at http://localhost:4200
+```
+
+`npm start` runs a `prestart` tax-season data check (`scripts/tax-season/check.mjs`) before the dev
+server. It refreshes the local SARB rates file if it is more than 7 days old and, late in the tax
+season, drafts next year's tax file. It only reads public SARS/SARB pages and only rewrites local
+JSON; if it cannot reach them it warns and carries on without blocking the server. Full detail is in
+[How the data updates each tax season](#how-the-data-updates-each-tax-season).
+
+Other commands:
+
+```
+npm test      # app unit tests then the script tests, single run (Vitest)
+npm run lint  # ESLint (angular-eslint)
+npm run build # production build into dist/
 npm run tax:scout -- --year 2028   # build a tax-year file from the SARS pages
-npm run lint     # ESLint (angular-eslint)
-npm run build    # production build into dist/
 ```
 
 In PowerShell, run npm scripts that take options as `cmd /c "npm run tax:scout -- --year 2028"`.
+
+## The calculators
+
+One line each; follow the link for the SA rules and the detail. Every calculator reads the shared
+tax-year data, shows the tax-year badge and status in the header, and can send its figures to the
+others. The header badge notes that figures are verified per tax year and that some values may be
+**carried forward / draft** when SARS has not published them yet (see
+[the statuses table](#statuses-verified-verified-auto-draft)).
+
+- **Pay** (`/pay`) — net pay from a gross or take-home amount, using PAYE from the income-tax
+  brackets, age rebates, the s6A medical-aid credit and employee UIF. See
+  [Pay page and charts](#pay-page-and-charts).
+- **RA** (`/ra`) — retirement-annuity projection: your s11F tax-deductible room, the tax a
+  contribution saves, and the two-pot split. See [RA calculator and handoff](#ra-calculator-and-handoff).
+- **Retire at 55** (`/retire`) — the monthly contribution to retire on a target income, a
+  living-annuity drawdown and the one-third lump sum, with its tax. See [Retire at 55](#retire-at-55).
+- **Budget** (`/budget`) — a 50/30/20-style spending plan from take-home pay, with RA headroom, TFSA
+  limit and emergency-fund checks. See [Budget](#budget).
+- **Journey** (`/journey`) — an RA contribution and its tax refund invested in a TFSA, year by year,
+  to retirement. See [Journey](#journey).
+- **Plan Builder** (`/plan`) — a short wizard that turns your age, income and goal into an ordered
+  plan and opens each step in the right calculator. See [Plan Builder](#plan-builder).
+- **Toolbox** (`/toolbox`) — emergency fund, home loan, two-pot withdrawal and TFSA-vs-taxable, each
+  its own tool. See [Toolbox](#toolbox).
+- **Dashboard** (`/`) — a quick view of your current take-home, RA, Retire at 55, Budget and Journey.
+- **PDF export** — every calculator and plan can download its result as a PDF whose footer repeats the
+  tax year, its status and the "Estimates only, not financial advice" disclaimer.
+
+## Known limitations / not verified
+
+Randwise is accurate to its own model, but that model is a simplification and its tax figures are not
+independently reconfirmed. Read this before relying on an output.
+
+**Engine simplifications** (the maths is deliberately simplified — see [Tax engine](#tax-engine)):
+
+- **Annual-equivalent PAYE.** Monthly PAYE is the annual tax divided by 12. SARS's monthly deduction
+  tables round per period, so a real payslip can differ by a few cents.
+- **s6B medical credit ignored.** Only the s6A medical-scheme-fees credit is applied, as PAYE does;
+  the s6B additional medical-expenses credit is not.
+- **UIF on cash salary only.** The employer retirement fringe benefit is left out of UIF; it only
+  matters below the UIF earnings ceiling.
+- **Carried-forward / draft fields.** When SARS has not published a value for the new tax year, the
+  last official value is carried forward and the year is marked **draft**. This includes the **s11F
+  retirement deduction cap (R430 000)** and a few others — worth confirming yourself (below).
+- **Single lifetime lump sum.** The retirement lump-sum table is cumulative over a lifetime, so
+  Retire at 55 assumes the one-third lump sum is your only retirement/withdrawal lump sum; earlier
+  ones would raise the tax.
+- **Drawdown / this-year tax tables in retirement.** Future income is taxed with the current year's
+  tables (not inflated), so tax in later years is overstated and the capital needed is on the high
+  side. The two-pot one-third rule is applied to the whole RA value as a simplification.
+
+**Not checked against the real world (important).** The engine values are unit-tested against
+hand-derived figures, but they have **not** been checked against an official SARS calculator or a
+real payslip, and the **RA deduction cap (R430 000)** and other carried-forward/draft fields have
+**not** been independently reconfirmed. Before you rely on any output, sanity-check it yourself:
+
+- [ ] Compare the **Pay** page's net pay and PAYE against a real payslip or the official SARS PAYE
+      calculator for the same gross, age and medical members.
+- [ ] Confirm the **RA deduction cap** for the active tax year against the latest SARS / Budget
+      figures (the header badge panel shows the value in use and whether it is carried forward).
+- [ ] Open the header **badge panel** and check the **carried-forward fields** list — anything there
+      is last year's value, not confirmed for this year.
 
 ## Folder layout
 
