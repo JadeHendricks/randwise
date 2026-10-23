@@ -163,6 +163,12 @@ export class LineChart {
   readonly marker = input<LineMarker | null>(null);
   readonly formatX = input<(x: number) => string>(formatRand);
   readonly formatY = input<(y: number) => string>(formatRand);
+  /**
+   * Axis tick text only (defaults to formatX / formatY). Lets a narrow chart use short labels
+   * such as "R 50K" while the aria-label and hidden tables keep the exact formatted numbers.
+   */
+  readonly formatXTick = input<((x: number) => string) | null>(null);
+  readonly formatYTick = input<((y: number) => string) | null>(null);
   /** Fill under the first series. */
   readonly area = input(true);
 
@@ -214,8 +220,10 @@ export class LineChart {
     const areaPath = `${path} L${px(first[first.length - 1].x).toFixed(2)} ${baseline} L${px(first[0].x).toFixed(2)} ${baseline} Z`;
 
     const steps = Array.from({ length: TICKS }, (_, i) => i / (TICKS - 1));
-    const yTicks = steps.map((t) => ({ text: formatY(yMin + t * (yMax - yMin)) })).reverse();
-    const xTicks = steps.map((t) => ({ text: formatX(xMin + t * (xMax - xMin)) }));
+    const tickX = this.formatXTick() ?? formatX;
+    const tickY = this.formatYTick() ?? formatY;
+    const yTicks = steps.map((t) => ({ text: tickY(yMin + t * (yMax - yMin)) })).reverse();
+    const xTicks = steps.map((t) => ({ text: tickX(xMin + t * (xMax - xMin)) }));
     const gridYs = steps.map((t) => py(yMin + t * (yMax - yMin)));
 
     const m = this.marker();

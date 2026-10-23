@@ -5,6 +5,18 @@ export function formatRand(amount: number): string {
   return ZAR.format(amount);
 }
 
+const ZAR_COMPACT = new Intl.NumberFormat('en-ZA', {
+  style: 'currency',
+  currency: 'ZAR',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+/** Short rand for chart axes, e.g. `R 12,5K`, `R 1,5M`. Not for figures people read as exact. */
+export function formatRandCompact(amount: number): string {
+  return ZAR_COMPACT.format(amount);
+}
+
 /** A fraction (0.16 = 16%) as an en-ZA percentage with up to `maxDigits` decimals. */
 export function formatPercent(fraction: number, maxDigits = 1): string {
   return new Intl.NumberFormat('en-ZA', {
