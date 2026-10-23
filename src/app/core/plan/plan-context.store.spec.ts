@@ -60,15 +60,24 @@ describe('PlanContextStore', () => {
       expect(plan.ra().grossMonthly).toBe(30_000);
     });
 
-    it.each(['retire', 'budget', 'journey'] as const)(
-      'returns false for %s and sends nothing',
-      (id) => {
-        const { plan } = setup();
-        expect(plan.sendFromSalary(id)).toBe(false);
-        expect(plan.raHandoff()).toBeNull();
-        expect(plan.raFrom()).toBeNull();
-      },
-    );
+    it.each(['budget', 'journey'] as const)('returns false for %s and sends nothing', (id) => {
+      const { plan } = setup();
+      expect(plan.sendFromSalary(id)).toBe(false);
+      expect(plan.raHandoff()).toBeNull();
+      expect(plan.raFrom()).toBeNull();
+      expect(plan.retireHandoff()).toBeNull();
+      expect(plan.retireFrom()).toBeNull();
+    });
+
+    it('sends the Salary figures to Retire at 55 and leaves RA alone', () => {
+      const { plan, salary } = setup();
+      salary.update({ amount: 40_000 });
+      expect(plan.sendFromSalary('retire')).toBe(true);
+      expect(plan.retireFrom()).toBe('salary');
+      expect(plan.retire().grossMonthly).toBe(40_000);
+      expect(plan.retireCanUndo()).toBe(true);
+      expect(plan.raHandoff()).toBeNull();
+    });
 
     it('resets local salary edits on every new send, twice in a row', () => {
       const { plan, salary } = setup();
@@ -90,6 +99,84 @@ describe('PlanContextStore', () => {
       expect(plan.ra().contributionMonthly).toBe(3_000);
       expect(plan.raIsExample()).toBe(false);
     });
+  });
+
+  describe('sendFromRa', () => {
+    it('sends the salary side and the contribution plan to Retire at 55', () => {
+      const { plan } = setup();
+      plan.updateRa({
+        grossMonthly: 50_000,
+        age: 40,
+        contributionMonthly: 3_000,
+        escalationPercent: 6,
+        startingBalance: 100_000,
+        returnPercent: 8,
+        inflationPercent: 5,
+        retirementAge: 60,
+      });
+      expect(plan.sendFromRa('retire')).toBe(true);
+      expect(plan.retireFrom()).toBe('ra');
+      expect(plan.retire()).toMatchObject({
+        grossMonthly: 50_000,
+        age: 40,
+        contributionMonthly: 3_000,
+        escalationPercent: 6,
+        startingBalance: 100_000,
+        returnPercent: 8,
+        inflationPercent: 5,
+        retirementAge: 60,
+        // Not carried by the RA, so the Retire defaults stay.
+        goalNetMonthly: 50_000,
+        drawdownPercent: 5,
+      });
+      expect(plan.raHandoff()).toBeNull();
+    });
+
+    it.each(['ra', 'budget', 'journey'] as const)('returns false for %s and sends nothing', (id) => {
+      const { plan } = setup();
+      expect(plan.sendFromRa(id)).toBe(false);
+      expect(plan.retireHandoff()).toBeNull();
+      expect(plan.raHandoff()).toBeNull();
+    });
+  });
+
+  describe('sendFromRetire', () => {
+    it('sends the solved contribution rounded to the cent, with the plan figures', () => {
+      const { plan } = setup();
+      plan.updateRetire({ startingBalance: 0, retirementAge: 55 });
+      expect(plan.sendFromRetire('ra')).toBe(true);
+      expect(plan.raFrom()).toBe('retire');
+      expect(plan.ra().contributionMonthly).toBe(46_864.26);
+      expect(plan.ra()).toMatchObject({
+        grossMonthly: 30_000,
+        age: 35,
+        escalationPercent: 5,
+        startingBalance: 0,
+        returnPercent: 9.5,
+        inflationPercent: 4.5,
+        retirementAge: 55,
+      });
+      expect(plan.raCanUndo()).toBe(true);
+      expect(plan.retireHandoff()).toBeNull();
+    });
+
+    it('sends the current contribution when the figures fail', () => {
+      const { plan } = setup();
+      plan.updateRetire({ drawdownPercent: 2.4, contributionMonthly: 2_500 });
+      expect(plan.retireOutputs()).toBeNull();
+      expect(plan.sendFromRetire('ra')).toBe(true);
+      expect(plan.ra().contributionMonthly).toBe(2_500);
+    });
+
+    it.each(['retire', 'budget', 'journey'] as const)(
+      'returns false for %s and sends nothing',
+      (id) => {
+        const { plan } = setup();
+        expect(plan.sendFromRetire(id)).toBe(false);
+        expect(plan.raHandoff()).toBeNull();
+        expect(plan.retireHandoff()).toBeNull();
+      },
+    );
   });
 
   describe('undoRa', () => {

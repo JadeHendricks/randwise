@@ -6,7 +6,7 @@ import { taxYearLabel } from '../../core/data/tax-calendar';
 import { TaxYearStatus } from '../../core/data/tax-year.schema';
 import { TaxYearService } from '../../core/data/tax-year.service';
 import { MAX_RA_RETIREMENT_AGE, roundRand } from '../../core/engine';
-import { HANDOFF_SOURCE_LABELS } from '../../core/plan/handoff';
+import { HANDOFF_SOURCE_LABELS, SendTargetId } from '../../core/plan/handoff';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import {
   HIGH_RETURN,
@@ -32,6 +32,7 @@ import {
   SegmentedControl,
   SegmentedOption,
 } from '../../shared/molecules/segmented-control/segmented-control';
+import { SendTo } from '../../shared/molecules/send-to/send-to';
 import { StatCard } from '../../shared/molecules/stat-card/stat-card';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
@@ -91,6 +92,7 @@ function randText(amount: number): string {
     Money,
     RingGauge,
     SegmentedControl,
+    SendTo,
     StatCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -320,6 +322,10 @@ export class RetirePage {
 
   protected rand(amount: number): string {
     return formatRand(amount);
+  }
+
+  protected sendTo(target: SendTargetId): void {
+    this.context.sendFromRetire(target);
   }
 
   protected set(field: Exclude<keyof RetireInputs, 'takeLumpSum'>, value: number): void {

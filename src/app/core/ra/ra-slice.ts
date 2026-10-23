@@ -54,10 +54,17 @@ export function nextRaSlice(
 }
 
 function receive(slice: RaSlice, handoff: Handoff<'ra'>): RaSlice {
+  // Plan keys only come from Retire at 55; a Salary send has none, so it leaves the plan alone.
+  const planPatch: Partial<RaPlanFields> = {};
+  for (const key of PLAN_KEYS) {
+    const value = handoff.values[key];
+    if (value !== undefined) Object.assign(planPatch, { [key]: value });
+  }
+  const hasPlanKey = Object.keys(planPatch).length > 0;
   return {
-    plan: slice.plan,
+    plan: hasPlanKey ? sanitiseRaPlan(planPatch, slice.plan) : slice.plan,
     profile: sanitiseRaProfile(handoff.values, slice.profile ?? handoff.values),
-    planEdited: slice.planEdited,
+    planEdited: slice.planEdited || hasPlanKey,
     from: handoff.source,
     undo: { plan: slice.plan, profile: slice.profile, planEdited: slice.planEdited },
   };

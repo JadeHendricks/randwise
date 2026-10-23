@@ -86,7 +86,7 @@ describe('SEND_TARGETS', () => {
   it('lists RA, Retire at 55, Budget and Journey, and only RA has a route', () => {
     expect(SEND_TARGETS.map((t) => [t.id, t.label, t.route])).toEqual([
       ['ra', 'Retirement annuity', '/ra'],
-      ['retire', 'Retire at 55', null],
+      ['retire', 'Retire at 55', '/retire'],
       ['budget', 'Budget', null],
       ['journey', 'Journey', null],
     ]);

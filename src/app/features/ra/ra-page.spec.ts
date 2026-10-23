@@ -265,15 +265,14 @@ describe('RaPage', () => {
     expect(root.querySelector('rw-handoff-chip')).toBeNull();
   });
 
-  it('sends nowhere yet: three Coming soon targets and no RA target', async () => {
+  it('offers Retire at 55 as a live target, two Coming soon targets and no RA target', async () => {
     const { root } = await render();
     const targets = Array.from(root.querySelectorAll('.rw-send-to__target')).map((t) => text(t));
-    expect(targets).toEqual([
-      'Retire at 55 Coming soon',
-      'Budget Coming soon',
-      'Journey Coming soon',
-    ]);
-    for (const target of Array.from(root.querySelectorAll('.rw-send-to__target'))) {
+    expect(targets).toEqual(['Retire at 55', 'Budget Coming soon', 'Journey Coming soon']);
+    const [retire, ...soon] = Array.from(root.querySelectorAll('.rw-send-to__target'));
+    expect(retire.hasAttribute('aria-disabled')).toBe(false);
+    expect(soon).toHaveLength(2);
+    for (const target of soon) {
       expect(target.getAttribute('aria-disabled')).toBe('true');
     }
   });

@@ -381,6 +381,9 @@
           yLabel="Balance in today's money"
         />
       </rw-card>
+      <rw-card class="retire__card" padding="lg">
+        <rw-send-to [exclude]="'retire'" (sendTo)="sendTo($event)" />
+      </rw-card>
     }
 
     @if (taxNote(); as note) {

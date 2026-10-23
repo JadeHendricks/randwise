@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { RatesService } from '../data/rates.service';
 import { TaxYearService } from '../data/tax-year.service';
-import { type RaRules, type RetireRules, toRaRules, toRetireRules } from '../engine';
+import { type RaRules, type RetireRules, roundRand, toRaRules, toRetireRules } from '../engine';
 import { type RaEstimate, estimateRa } from '../ra/estimate-ra';
 import type { RaInputs } from '../ra/ra-inputs';
 import { raPlanDefaults } from '../ra/ra-inputs';
@@ -33,7 +33,23 @@ import type {
   HandoffValuesByTarget,
   SendTargetId,
 } from './handoff';
-import { type PlanProfile, profileFromSalary, raHandoffFrom } from './plan-profile';
+import {
+  type PlanProfile,
+  type RaHandoffValues,
+  profileFromSalary,
+  raHandoffFrom,
+} from './plan-profile';
+
+/** Just the Salary side of a calculator's inputs, for a handoff. */
+function salaryFields(inputs: RaHandoffValues): RaHandoffValues {
+  return {
+    grossMonthly: inputs.grossMonthly,
+    age: inputs.age,
+    medicalMembers: inputs.medicalMembers,
+    employeeRetirementMonthly: inputs.employeeRetirementMonthly,
+    employerRetirementMonthly: inputs.employerRetirementMonthly,
+  };
+}
 
 /** What other calculators (the dashboard now, Journey later) read from the RA. Full precision. */
 export interface RaOutputs {
@@ -203,8 +219,48 @@ export class PlanContextStore {
    * not built yet.
    */
   sendFromSalary(target: SendTargetId): boolean {
+    if (target !== 'ra' && target !== 'retire') return false;
+    this.send(target, 'salary', raHandoffFrom(this.profile()));
+    return true;
+  }
+
+  /**
+   * Sends the RA figures (the salary side and the contribution plan) to Retire at 55. Returns
+   * false, and changes nothing, for any other target.
+   */
+  sendFromRa(target: SendTargetId): boolean {
+    if (target !== 'retire') return false;
+    const ra = this.ra();
+    this.send('retire', 'ra', {
+      ...salaryFields(ra),
+      contributionMonthly: ra.contributionMonthly,
+      escalationPercent: ra.escalationPercent,
+      startingBalance: ra.startingBalance,
+      returnPercent: ra.returnPercent,
+      inflationPercent: ra.inflationPercent,
+      retirementAge: ra.retirementAge,
+    });
+    return true;
+  }
+
+  /**
+   * Sends the Retire at 55 figures to the RA calculator, with the contribution a month that the
+   * plan needs (rounded to the cent), or the current one when there is no result. Returns false,
+   * and changes nothing, for any other target.
+   */
+  sendFromRetire(target: SendTargetId): boolean {
     if (target !== 'ra') return false;
-    this.send('ra', 'salary', raHandoffFrom(this.profile()));
+    const retire = this.retire();
+    const required = this.retireOutputs()?.requiredMonthly;
+    this.send('ra', 'retire', {
+      ...salaryFields(retire),
+      contributionMonthly: required === undefined ? retire.contributionMonthly : roundRand(required),
+      escalationPercent: retire.escalationPercent,
+      startingBalance: retire.startingBalance,
+      returnPercent: retire.returnPercent,
+      inflationPercent: retire.inflationPercent,
+      retirementAge: retire.retirementAge,
+    });
     return true;
   }
 

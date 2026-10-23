@@ -14,7 +14,10 @@ describe('SendTo', () => {
   beforeEach(() => {
     fake = installFakeMatchMedia({ reducedMotion: true });
     TestBed.configureTestingModule({
-      providers: [provideRouter([{ path: 'ra', component: BlankPage }])],
+      providers: [provideRouter([
+        { path: 'ra', component: BlankPage },
+        { path: 'retire', component: BlankPage },
+      ])],
     });
   });
   afterEach(() => fake.uninstall());
@@ -42,19 +45,21 @@ describe('SendTo', () => {
     );
     expect(buttons().map((b) => normaliseSpaces(b.textContent))).toEqual([
       'Retirement annuity',
-      'Retire at 55 Coming soon',
+      'Retire at 55',
       'Budget Coming soon',
       'Journey Coming soon',
     ]);
   });
 
-  it('renders RA as a working primary button and the rest as aria-disabled ghost buttons', async () => {
+  it('renders RA and Retire at 55 as working primary buttons and the rest as aria-disabled ghost buttons', async () => {
     const { buttons } = await render();
-    const [ra, ...soon] = buttons();
-    expect(ra.classList).toContain('rw-button--primary');
-    expect(ra.hasAttribute('aria-disabled')).toBe(false);
-    expect(ra.querySelector('rw-icon')).not.toBeNull();
-    expect(soon).toHaveLength(3);
+    const [ra, retire, ...soon] = buttons();
+    for (const live of [ra, retire]) {
+      expect(live.classList).toContain('rw-button--primary');
+      expect(live.hasAttribute('aria-disabled')).toBe(false);
+      expect(live.querySelector('rw-icon')).not.toBeNull();
+    }
+    expect(soon).toHaveLength(2);
     for (const button of soon) {
       expect(button.getAttribute('aria-disabled')).toBe('true');
       expect(button.classList).toContain('rw-button--ghost');
@@ -74,10 +79,21 @@ describe('SendTo', () => {
     expect(router.url).toBe('/ra');
   });
 
+  it('emits "retire" and then navigates to /retire when Retire at 55 is chosen', async () => {
+    const { fixture, sent, buttons } = await render();
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigateByUrl');
+    buttons()[1].click();
+    expect(sent).toEqual(['retire']);
+    expect(navigate).toHaveBeenCalledWith('/retire');
+    await fixture.whenStable();
+    expect(router.url).toBe('/retire');
+  });
+
   it('neither emits nor navigates for a coming-soon target', async () => {
     const { sent, buttons } = await render();
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
-    for (const button of buttons().slice(1)) button.click();
+    for (const button of buttons().slice(2)) button.click();
     expect(sent).toEqual([]);
     expect(navigate).not.toHaveBeenCalled();
   });
@@ -85,7 +101,7 @@ describe('SendTo', () => {
   it('leaves out the excluded target', async () => {
     const { buttons } = await render({ exclude: 'ra' });
     expect(buttons().map((b) => normaliseSpaces(b.textContent))).toEqual([
-      'Retire at 55 Coming soon',
+      'Retire at 55',
       'Budget Coming soon',
       'Journey Coming soon',
     ]);

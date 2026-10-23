@@ -68,6 +68,37 @@ describe('nextRaSlice', () => {
     expect(result.undo).toEqual({ plan: edited.plan, profile: null, planEdited: true });
   });
 
+  it('applies plan keys carried by a handoff, and Undo restores the previous plan', () => {
+    const received = nextRaSlice(
+      {
+        id: 1,
+        source: 'retire',
+        target: 'ra',
+        values: { ...shared, contributionMonthly: 46_864.26, retirementAge: 60, returnPercent: 99 },
+      },
+      undefined,
+      defaults,
+    );
+    expect(received.from).toBe('retire');
+    expect(received.plan.contributionMonthly).toBe(46_864.26);
+    expect(received.plan.retirementAge).toBe(60);
+    // The sent values go through the same sanitiser as typed ones (return is capped at 20).
+    expect(received.plan.returnPercent).toBe(20);
+    // Untouched plan keys keep their values.
+    expect(received.plan.escalationPercent).toBe(5);
+    expect(received.planEdited).toBe(true);
+    const restored = undoRa(received);
+    expect(restored.plan).toEqual(defaults);
+    expect(restored.planEdited).toBe(false);
+    expect(restored.from).toBeNull();
+  });
+
+  it('leaves the plan alone for a Salary send, which carries no plan keys', () => {
+    const received = nextRaSlice(handoff(1), undefined, defaults);
+    expect(received.plan).toBe(defaults);
+    expect(received.planEdited).toBe(false);
+  });
+
   it('applies a handoff that is already there on the first run', () => {
     const result = nextRaSlice(handoff(1, { age: 44 }), undefined, defaults);
     expect(result.profile?.age).toBe(44);
