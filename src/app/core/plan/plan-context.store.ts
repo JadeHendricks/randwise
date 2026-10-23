@@ -51,7 +51,7 @@ import {
   undoJourney as undoJourneySlice,
 } from '../journey/journey-slice';
 import { type RaEstimate, estimateRa } from '../ra/estimate-ra';
-import type { RaInputs } from '../ra/ra-inputs';
+import type { RaInputs, RaPlanFields } from '../ra/ra-inputs';
 import { raPlanDefaults } from '../ra/ra-inputs';
 import {
   type RaSlice,
@@ -88,6 +88,18 @@ import {
   profileFromSalary,
   raHandoffFrom,
 } from './plan-profile';
+
+/** The six RA plan values that RA, Retire at 55 and Journey all share, for a handoff. */
+function raPlanKeys(inputs: RaPlanFields): RaPlanFields {
+  return {
+    contributionMonthly: inputs.contributionMonthly,
+    escalationPercent: inputs.escalationPercent,
+    startingBalance: inputs.startingBalance,
+    returnPercent: inputs.returnPercent,
+    inflationPercent: inputs.inflationPercent,
+    retirementAge: inputs.retirementAge,
+  };
+}
 
 /** Just the Salary side of a calculator's inputs, for a handoff. */
 function salaryFields(inputs: RaHandoffValues): RaHandoffValues {
@@ -411,72 +423,130 @@ export class PlanContextStore {
   }
 
   /**
-   * Sends the current Salary figures. Returns false, and changes nothing, for targets that are
-   * not built yet.
+   * Sends the current Salary figures to RA, Retire at 55, Budget or Journey. Returns false, and
+   * changes nothing, for any other id.
    */
   sendFromSalary(target: SendTargetId): boolean {
-    if (target !== 'ra' && target !== 'retire') return false;
-    this.send(target, 'salary', raHandoffFrom(this.profile()));
-    return true;
+    const salary = raHandoffFrom(this.profile());
+    switch (target) {
+      case 'ra':
+      case 'retire':
+      case 'journey':
+        this.send(target, 'salary', salary);
+        return true;
+      case 'budget':
+        // The Budget also needs the other deductions, which take-home pay is net of.
+        this.send('budget', 'salary', {
+          ...salary,
+          otherDeductionsMonthly: this.profile().otherDeductionsMonthly,
+        });
+        return true;
+      default:
+        return false;
+    }
   }
 
   /**
-   * Sends the RA figures (the salary side and the contribution plan) to Retire at 55. Returns
-   * false, and changes nothing, for any other target.
+   * Sends the RA figures (the salary side and the contribution plan) to Retire at 55 or Journey,
+   * or the contribution as the Budget's RA line. Returns false, and changes nothing, for any
+   * other id.
    */
   sendFromRa(target: SendTargetId): boolean {
-    if (target !== 'retire') return false;
     const ra = this.ra();
-    this.send('retire', 'ra', {
-      ...salaryFields(ra),
-      contributionMonthly: ra.contributionMonthly,
-      escalationPercent: ra.escalationPercent,
-      startingBalance: ra.startingBalance,
-      returnPercent: ra.returnPercent,
-      inflationPercent: ra.inflationPercent,
-      retirementAge: ra.retirementAge,
-    });
-    return true;
+    switch (target) {
+      case 'retire':
+        this.send('retire', 'ra', { ...salaryFields(ra), ...raPlanKeys(ra) });
+        return true;
+      case 'journey':
+        this.send('journey', 'ra', { ...salaryFields(ra), ...raPlanKeys(ra) });
+        return true;
+      case 'budget':
+        this.send('budget', 'ra', {
+          ...salaryFields(ra),
+          raMonthly: ra.contributionMonthly,
+        });
+        return true;
+      default:
+        return false;
+    }
   }
 
   /**
-   * Sends the Retire at 55 figures to the RA calculator, with the contribution a month that the
-   * plan needs (rounded to the cent), or the current one when there is no result. Returns false,
-   * and changes nothing, for any other target.
+   * Sends the Retire at 55 figures to the RA calculator, Budget or Journey, with the contribution
+   * a month that the plan needs (rounded to the cent), or the current one when there is no
+   * result. Returns false, and changes nothing, for any other id.
    */
   sendFromRetire(target: SendTargetId): boolean {
-    if (target !== 'ra') return false;
+    if (target !== 'ra' && target !== 'budget' && target !== 'journey') return false;
     const retire = this.retire();
     const required = this.retireOutputs()?.requiredMonthly;
-    this.send('ra', 'retire', {
-      ...salaryFields(retire),
-      contributionMonthly:
-        required === undefined ? retire.contributionMonthly : roundRand(required),
-      escalationPercent: retire.escalationPercent,
-      startingBalance: retire.startingBalance,
-      returnPercent: retire.returnPercent,
-      inflationPercent: retire.inflationPercent,
-      retirementAge: retire.retirementAge,
-    });
+    const contributionMonthly =
+      required === undefined ? retire.contributionMonthly : roundRand(required);
+    const plan = { ...raPlanKeys(retire), contributionMonthly };
+    if (target === 'ra') this.send('ra', 'retire', { ...salaryFields(retire), ...plan });
+    else if (target === 'journey')
+      this.send('journey', 'retire', { ...salaryFields(retire), ...plan });
+    else this.send('budget', 'retire', { ...salaryFields(retire), raMonthly: contributionMonthly });
     return true;
   }
 
   /**
-   * Sends the Budget figures. Returns false, and changes nothing, for every target until the
-   * handoffs are connected.
+   * Sends the Budget figures to RA, Retire at 55 or Journey. The salary side is the Budget's own
+   * income; the RA line (and, for the Journey, the TFSA line, the TFSA contributions made so far
+   * and a note about the budget) travel with it. Returns false, and changes nothing, for any
+   * other id.
    */
   sendFromBudget(target: SendTargetId): boolean {
-    void target;
-    return false;
+    if (target !== 'ra' && target !== 'retire' && target !== 'journey') return false;
+    const estimate = this.budgetEstimate();
+    const good = estimate?.ok ? estimate : null;
+    const salary = raHandoffFrom(profileFromSalary(this.budgetIncome(), good ? good.salary : null));
+    // Without a good estimate there are no lines to send, only the income.
+    const raLine = good ? { contributionMonthly: roundRand(good.limits.ra.monthly) } : {};
+    if (target === 'ra') this.send('ra', 'budget', { ...salary, ...raLine });
+    else if (target === 'retire') this.send('retire', 'budget', { ...salary, ...raLine });
+    else {
+      this.send('journey', 'budget', {
+        ...salary,
+        ...raLine,
+        ...(good
+          ? {
+              tfsaTopUpMonthly: roundRand(good.limits.tfsa.monthly),
+              budgetEmergencyMonthly: roundRand(good.limits.emergency.monthly),
+            }
+          : {}),
+        tfsaLifetimeUsed: this.budgetSettings().tfsaLifetimeUsed,
+        budgetNetMonthly: good ? roundRand(good.net) : null,
+      });
+    }
+    return true;
   }
 
   /**
-   * Sends the Journey figures. Returns false, and changes nothing, for every target until the
-   * handoffs are connected.
+   * Sends the Journey figures to RA or Retire at 55 (the salary side and the RA plan), or to the
+   * Budget (the RA contribution, the TFSA top-up and the TFSA contributions made so far). Returns
+   * false, and changes nothing, for any other id.
    */
   sendFromJourney(target: SendTargetId): boolean {
-    void target;
-    return false;
+    const journey = this.journey();
+    switch (target) {
+      case 'ra':
+        this.send('ra', 'journey', { ...salaryFields(journey), ...raPlanKeys(journey) });
+        return true;
+      case 'retire':
+        this.send('retire', 'journey', { ...salaryFields(journey), ...raPlanKeys(journey) });
+        return true;
+      case 'budget':
+        this.send('budget', 'journey', {
+          ...salaryFields(journey),
+          raMonthly: journey.contributionMonthly,
+          tfsaMonthly: journey.tfsaTopUpMonthly,
+          tfsaLifetimeUsed: journey.tfsaLifetimeUsed,
+        });
+        return true;
+      default:
+        return false;
+    }
   }
 
   dismiss(target: HandoffTarget): void {

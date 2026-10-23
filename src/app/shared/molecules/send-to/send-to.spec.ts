@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import type { SendTargetId } from '../../../core/plan/handoff';
+import type { SendTarget, SendTargetId } from '../../../core/plan/handoff';
 import { FakeMatchMedia, installFakeMatchMedia } from '../../../testing/fake-match-media';
 import { normaliseSpaces } from '../../../testing/text';
 import { SendTo } from './send-to';
@@ -14,10 +14,14 @@ describe('SendTo', () => {
   beforeEach(() => {
     fake = installFakeMatchMedia({ reducedMotion: true });
     TestBed.configureTestingModule({
-      providers: [provideRouter([
-        { path: 'ra', component: BlankPage },
-        { path: 'retire', component: BlankPage },
-      ])],
+      providers: [
+        provideRouter([
+          { path: 'ra', component: BlankPage },
+          { path: 'retire', component: BlankPage },
+          { path: 'budget', component: BlankPage },
+          { path: 'journey', component: BlankPage },
+        ]),
+      ],
     });
   });
   afterEach(() => fake.uninstall());
@@ -46,67 +50,75 @@ describe('SendTo', () => {
     expect(buttons().map((b) => normaliseSpaces(b.textContent))).toEqual([
       'Retirement annuity',
       'Retire at 55',
-      'Budget Coming soon',
-      'Journey Coming soon',
+      'Budget',
+      'Journey',
     ]);
   });
 
-  it('renders RA and Retire at 55 as working primary buttons and the rest as aria-disabled ghost buttons', async () => {
-    const { buttons } = await render();
-    const [ra, retire, ...soon] = buttons();
-    for (const live of [ra, retire]) {
+  it('renders every shipped target as a working primary button, none as coming soon', async () => {
+    const { root, buttons } = await render();
+    expect(buttons()).toHaveLength(4);
+    for (const live of buttons()) {
       expect(live.classList).toContain('rw-button--primary');
       expect(live.hasAttribute('aria-disabled')).toBe(false);
       expect(live.querySelector('rw-icon')).not.toBeNull();
     }
-    expect(soon).toHaveLength(2);
-    for (const button of soon) {
-      expect(button.getAttribute('aria-disabled')).toBe('true');
-      expect(button.classList).toContain('rw-button--ghost');
-      expect(button.classList).toContain('rw-send-to__target--soon');
-      expect(button.querySelector('.rw-send-to__soon')?.textContent).toBe('Coming soon');
-    }
+    expect(root.querySelector('.rw-send-to__soon')).toBeNull();
+    expect(normaliseSpaces(root.textContent)).not.toContain('Coming soon');
   });
 
-  it('emits "ra" and then navigates to /ra when RA is chosen', async () => {
+  it.each([
+    ['ra', 0, '/ra'],
+    ['retire', 1, '/retire'],
+    ['budget', 2, '/budget'],
+    ['journey', 3, '/journey'],
+  ] as const)('emits "%s" and then navigates to %s', async (id, index, url) => {
     const { fixture, sent, buttons } = await render();
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigateByUrl');
-    buttons()[0].click();
-    expect(sent).toEqual(['ra']);
-    expect(navigate).toHaveBeenCalledWith('/ra');
+    buttons()[index].click();
+    expect(sent).toEqual([id]);
+    expect(navigate).toHaveBeenCalledWith(url);
     await fixture.whenStable();
-    expect(router.url).toBe('/ra');
+    expect(router.url).toBe(url);
   });
 
-  it('emits "retire" and then navigates to /retire when Retire at 55 is chosen', async () => {
-    const { fixture, sent, buttons } = await render();
-    const router = TestBed.inject(Router);
-    const navigate = vi.spyOn(router, 'navigateByUrl');
-    buttons()[1].click();
-    expect(sent).toEqual(['retire']);
-    expect(navigate).toHaveBeenCalledWith('/retire');
-    await fixture.whenStable();
-    expect(router.url).toBe('/retire');
-  });
+  describe('a target without a route (a capability kept for later)', () => {
+    const targets: readonly SendTarget[] = [
+      { id: 'ra', label: 'Retirement annuity', route: '/ra' },
+      { id: 'budget', label: 'Budget', route: null },
+    ];
 
-  it('neither emits nor navigates for a coming-soon target', async () => {
-    const { sent, buttons } = await render();
-    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
-    for (const button of buttons().slice(2)) button.click();
-    expect(sent).toEqual([]);
-    expect(navigate).not.toHaveBeenCalled();
+    it('renders it as an aria-disabled ghost button marked Coming soon', async () => {
+      const { buttons } = await render({ targets });
+      expect(buttons().map((b) => normaliseSpaces(b.textContent))).toEqual([
+        'Retirement annuity',
+        'Budget Coming soon',
+      ]);
+      const soon = buttons()[1];
+      expect(soon.getAttribute('aria-disabled')).toBe('true');
+      expect(soon.classList).toContain('rw-button--ghost');
+      expect(soon.classList).toContain('rw-send-to__target--soon');
+      expect(soon.querySelector('.rw-send-to__soon')?.textContent).toBe('Coming soon');
+    });
+
+    it('neither emits nor navigates when it is chosen', async () => {
+      const { sent, buttons } = await render({ targets });
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
+      buttons()[1].click();
+      expect(sent).toEqual([]);
+      expect(navigate).not.toHaveBeenCalled();
+    });
   });
 
   it('leaves out the excluded target', async () => {
     const { buttons } = await render({ exclude: 'ra' });
     expect(buttons().map((b) => normaliseSpaces(b.textContent))).toEqual([
       'Retire at 55',
-      'Budget Coming soon',
-      'Journey Coming soon',
+      'Budget',
+      'Journey',
     ]);
   });
-
   it('accepts a custom heading', async () => {
     const { root } = await render({ heading: 'Next step' });
     expect(root.querySelector('.rw-send-to__heading')?.textContent).toBe('Next step');

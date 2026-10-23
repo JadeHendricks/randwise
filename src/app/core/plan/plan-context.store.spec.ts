@@ -7,6 +7,14 @@ import { PlanContextStore } from './plan-context.store';
 // Pinned so the bundled 2027 file is the tax year in use whatever day the specs run.
 const TODAY_PINNED = new Date(2026, 9, 22);
 
+/** Nothing was sent to any calculator. */
+function expectNothingSent(plan: PlanContextStore) {
+  expect(plan.raHandoff()).toBeNull();
+  expect(plan.retireHandoff()).toBeNull();
+  expect(plan.budgetHandoff()).toBeNull();
+  expect(plan.journeyHandoff()).toBeNull();
+}
+
 function setup() {
   TestBed.configureTestingModule({
     providers: [{ provide: TODAY, useValue: () => new Date(TODAY_PINNED) }],
@@ -58,15 +66,6 @@ describe('PlanContextStore', () => {
       expect(plan.raCanUndo()).toBe(true);
       salary.update({ amount: 60_000 });
       expect(plan.ra().grossMonthly).toBe(30_000);
-    });
-
-    it.each(['budget', 'journey'] as const)('returns false for %s and sends nothing', (id) => {
-      const { plan } = setup();
-      expect(plan.sendFromSalary(id)).toBe(false);
-      expect(plan.raHandoff()).toBeNull();
-      expect(plan.raFrom()).toBeNull();
-      expect(plan.retireHandoff()).toBeNull();
-      expect(plan.retireFrom()).toBeNull();
     });
 
     it('sends the Salary figures to Retire at 55 and leaves RA alone', () => {
@@ -132,15 +131,11 @@ describe('PlanContextStore', () => {
       expect(plan.raHandoff()).toBeNull();
     });
 
-    it.each(['ra', 'budget', 'journey'] as const)(
-      'returns false for %s and sends nothing',
-      (id) => {
-        const { plan } = setup();
-        expect(plan.sendFromRa(id)).toBe(false);
-        expect(plan.retireHandoff()).toBeNull();
-        expect(plan.raHandoff()).toBeNull();
-      },
-    );
+    it('returns false for its own id and sends nothing', () => {
+      const { plan } = setup();
+      expect(plan.sendFromRa('ra')).toBe(false);
+      expectNothingSent(plan);
+    });
   });
 
   describe('sendFromRetire', () => {
@@ -171,15 +166,11 @@ describe('PlanContextStore', () => {
       expect(plan.ra().contributionMonthly).toBe(2_500);
     });
 
-    it.each(['retire', 'budget', 'journey'] as const)(
-      'returns false for %s and sends nothing',
-      (id) => {
-        const { plan } = setup();
-        expect(plan.sendFromRetire(id)).toBe(false);
-        expect(plan.raHandoff()).toBeNull();
-        expect(plan.retireHandoff()).toBeNull();
-      },
-    );
+    it('returns false for its own id and sends nothing', () => {
+      const { plan } = setup();
+      expect(plan.sendFromRetire('retire')).toBe(false);
+      expectNothingSent(plan);
+    });
   });
 
   describe('undoRa', () => {
@@ -690,13 +681,10 @@ describe('PlanContextStore', () => {
       expect(plan.raIsExample()).toBe(true);
     });
 
-    it('sends nothing yet: sendFromBudget returns false for every target', () => {
+    it('returns false for its own id and sends nothing', () => {
       const { plan } = setup();
-      for (const id of ['ra', 'retire', 'budget', 'journey'] as const) {
-        expect(plan.sendFromBudget(id)).toBe(false);
-      }
-      expect(plan.raHandoff()).toBeNull();
-      expect(plan.retireHandoff()).toBeNull();
+      expect(plan.sendFromBudget('budget')).toBe(false);
+      expectNothingSent(plan);
     });
 
     it('has an estimate that fails, no outputs and edits that do nothing for a take-home that is too high', () => {
@@ -736,6 +724,166 @@ describe('PlanContextStore', () => {
       for (const spy of calls) expect(spy).not.toHaveBeenCalled();
     });
   });
+  describe('send matrix: every other target is live and each id refuses itself', () => {
+    const RA_PLAN = {
+      grossMonthly: 50_000,
+      age: 40,
+      contributionMonthly: 3_000,
+      escalationPercent: 6,
+      startingBalance: 100_000,
+      returnPercent: 8,
+      inflationPercent: 5,
+      retirementAge: 60,
+    };
+
+    it('Salary to Budget carries the income and the other deductions', () => {
+      const { plan, salary } = setup();
+      salary.update({ otherDeductionsMonthly: 500 });
+      expect(plan.sendFromSalary('budget')).toBe(true);
+      expect(plan.budgetFrom()).toBe('salary');
+      expect(plan.budgetIncome()).toMatchObject({
+        basis: 'gross',
+        period: 'monthly',
+        amount: 30_000,
+        age: 35,
+        otherDeductionsMonthly: 500,
+      });
+    });
+
+    it('Salary to Journey carries the salary side', () => {
+      const { plan, salary } = setup();
+      salary.update({ amount: 40_000 });
+      expect(plan.sendFromSalary('journey')).toBe(true);
+      expect(plan.journeyFrom()).toBe('salary');
+      expect(plan.journey().grossMonthly).toBe(40_000);
+      expect(plan.journeyBudgetContext()).toBeNull();
+    });
+
+    it('RA to Budget carries the salary side and the contribution as the RA line', () => {
+      const { plan } = setup();
+      plan.updateRa(RA_PLAN);
+      expect(plan.sendFromRa('budget')).toBe(true);
+      expect(plan.budgetFrom()).toBe('ra');
+      expect(plan.budgetIncome()).toMatchObject({ amount: 50_000, age: 40 });
+      expect(plan.budgetOutputs()?.raMonthly).toBe(3_000);
+    });
+
+    it('RA to Journey carries the salary side and the six RA values', () => {
+      const { plan } = setup();
+      plan.updateRa(RA_PLAN);
+      expect(plan.sendFromRa('journey')).toBe(true);
+      expect(plan.journeyFrom()).toBe('ra');
+      expect(plan.journey()).toMatchObject(RA_PLAN);
+      // Not carried by the RA, so the Journey defaults stay.
+      expect(plan.journey()).toMatchObject({ tfsaTopUpMonthly: 1_000, refundMode: 'refund' });
+    });
+
+    it('Retire at 55 to Budget carries the solved contribution as the RA line', () => {
+      const { plan } = setup();
+      plan.updateRetire({ startingBalance: 0, retirementAge: 55 });
+      expect(plan.sendFromRetire('budget')).toBe(true);
+      expect(plan.budgetFrom()).toBe('retire');
+      expect(plan.budgetOutputs()?.raMonthly).toBe(46_864.26);
+    });
+
+    it('Retire at 55 to Journey carries the solved contribution and the plan figures', () => {
+      const { plan } = setup();
+      plan.updateRetire({ startingBalance: 0, retirementAge: 55 });
+      expect(plan.sendFromRetire('journey')).toBe(true);
+      expect(plan.journeyFrom()).toBe('retire');
+      expect(plan.journey()).toMatchObject({
+        grossMonthly: 30_000,
+        contributionMonthly: 46_864.26,
+        escalationPercent: 5,
+        returnPercent: 9.5,
+        inflationPercent: 4.5,
+        retirementAge: 55,
+      });
+    });
+
+    it('Budget to RA and Retire at 55 carry the budget income and the RA line', () => {
+      const { plan } = setup();
+      plan.updateBudgetIncome({ amount: 50_000, age: 40 });
+      // 50 000 gross -> take-home 38 747.30 -> savings 20% -> RA 30%: 38 747.30 x 0.2 x 0.3 = 2 324.838.
+      expect(plan.sendFromBudget('ra')).toBe(true);
+      expect(plan.raFrom()).toBe('budget');
+      expect(plan.ra()).toMatchObject({
+        grossMonthly: 50_000,
+        age: 40,
+        contributionMonthly: 2_324.84,
+      });
+      expect(plan.sendFromBudget('retire')).toBe(true);
+      expect(plan.retireFrom()).toBe('budget');
+      expect(plan.retire()).toMatchObject({ grossMonthly: 50_000, contributionMonthly: 2_324.84 });
+    });
+
+    it('Budget to Journey carries the lines, the TFSA contributions so far and a note', () => {
+      const { plan } = setup();
+      plan.updateBudgetSettings({ tfsaLifetimeUsed: 120_000 });
+      expect(plan.sendFromBudget('journey')).toBe(true);
+      expect(plan.journeyFrom()).toBe('budget');
+      expect(plan.journey()).toMatchObject({
+        grossMonthly: 30_000,
+        contributionMonthly: 1_508.51,
+        tfsaTopUpMonthly: 1_508.51,
+        tfsaLifetimeUsed: 120_000,
+      });
+      // Emergency line: 25 141.88 x 0.2 x 0.2 = 1 005.6752.
+      expect(plan.journeyBudgetContext()).toEqual({
+        netMonthly: 25_141.88,
+        emergencyMonthly: 1_005.68,
+      });
+    });
+
+    it('Budget sends only the income when its figures fail', () => {
+      const { plan } = setup();
+      plan.updateBudgetIncome({ basis: 'net', amount: 5e9 });
+      expect(plan.sendFromBudget('journey')).toBe(true);
+      expect(plan.journeyBudgetContext()).toEqual({ netMonthly: null, emergencyMonthly: 0 });
+      expect(plan.journey().contributionMonthly).toBe(2_000);
+    });
+
+    it('Journey to RA and Retire at 55 carry the salary side and the six RA values', () => {
+      const { plan } = setup();
+      plan.updateJourney(RA_PLAN);
+      expect(plan.sendFromJourney('ra')).toBe(true);
+      expect(plan.raFrom()).toBe('journey');
+      expect(plan.ra()).toMatchObject(RA_PLAN);
+      expect(plan.sendFromJourney('retire')).toBe(true);
+      expect(plan.retireFrom()).toBe('journey');
+      expect(plan.retire()).toMatchObject(RA_PLAN);
+    });
+
+    it('Journey to Budget carries the RA line, the TFSA line and the TFSA contributions so far', () => {
+      const { plan } = setup();
+      plan.updateJourney({ ...RA_PLAN, tfsaTopUpMonthly: 2_500, tfsaLifetimeUsed: 90_000 });
+      expect(plan.sendFromJourney('budget')).toBe(true);
+      expect(plan.budgetFrom()).toBe('journey');
+      expect(plan.budgetIncome()).toMatchObject({ amount: 50_000, age: 40 });
+      const outputs = plan.budgetOutputs();
+      expect(outputs?.raMonthly).toBe(3_000);
+      expect(outputs?.tfsaMonthly).toBe(2_500);
+      expect(plan.budgetSettings().tfsaLifetimeUsed).toBe(90_000);
+    });
+
+    it('each id refuses itself and sends nothing', () => {
+      const { plan } = setup();
+      expect(plan.sendFromJourney('journey')).toBe(false);
+      expect(plan.sendFromBudget('budget')).toBe(false);
+      expect(plan.sendFromRa('ra')).toBe(false);
+      expect(plan.sendFromRetire('retire')).toBe(false);
+      expectNothingSent(plan);
+    });
+
+    it('a send to a target does not touch the other targets', () => {
+      const { plan } = setup();
+      plan.sendFromRa('journey');
+      expect(plan.raHandoff()).toBeNull();
+      expect(plan.retireHandoff()).toBeNull();
+      expect(plan.budgetHandoff()).toBeNull();
+    });
+  });
+
   describe('journey', () => {
     const salaryValues = {
       grossMonthly: 50_000,

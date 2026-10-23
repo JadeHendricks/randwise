@@ -69,19 +69,19 @@ export interface Handoff<T extends HandoffTarget = HandoffTarget> {
   readonly values: HandoffValuesByTarget[T];
 }
 
-/** Every place the "Send to" row can offer, including ones that are not built yet. */
+/** Every place the "Send to" row can offer. */
 export type SendTargetId = 'ra' | 'retire' | 'budget' | 'journey';
 
 export interface SendTarget {
   readonly id: SendTargetId;
   readonly label: string;
-  /** Null means coming soon: shown, but with nowhere to go yet. */
+  /** Null means coming soon: shown, but with nowhere to go yet. No shipped target uses this. */
   readonly route: string | null;
 }
 
 export const SEND_TARGETS: readonly SendTarget[] = [
   { id: 'ra', label: navItem('ra').heading, route: '/ra' },
   { id: 'retire', label: navItem('retire').heading, route: '/retire' },
-  { id: 'budget', label: navItem('budget').heading, route: null },
-  { id: 'journey', label: navItem('journey').heading, route: null },
+  { id: 'budget', label: navItem('budget').heading, route: '/budget' },
+  { id: 'journey', label: navItem('journey').heading, route: '/journey' },
 ];
