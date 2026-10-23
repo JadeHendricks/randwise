@@ -2,8 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { TODAY } from '../../core/data/data-source';
+import { roundRand } from '../../core/engine';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { SalaryInputsStore } from '../../core/salary/salary-inputs.store';
+import { formatRand } from '../../shared/format/format-rand';
 import { FakeMatchMedia, installFakeMatchMedia } from '../../testing/fake-match-media';
 import { normaliseSpaces } from '../../testing/text';
 import { provideTestData } from '../../testing/tax-data-fixtures';
@@ -96,13 +98,16 @@ describe('DashboardPage', () => {
     expect(root.querySelectorAll('.rw-money__figure').length).toBe(1);
     const clone = root.cloneNode(true) as HTMLElement;
     clone.querySelector('.dashboard__hero')?.remove();
-    // The RA and Retire at 55 tiles are live now, so this covers the placeholder tiles only.
-    clone.querySelector('.dashboard__ra')?.remove();
-    clone.querySelector('.dashboard__retire')?.remove();
+    // The RA, Retire at 55, Budget and Journey tiles are live now, so this covers the placeholder
+    // tiles only.
+    for (const live of ['ra', 'retire', 'budget', 'journey']) {
+      clone.querySelector('.dashboard__' + live)?.remove();
+    }
     expect(normaliseSpaces(clone.textContent)).not.toMatch(/R\s?\d/);
   });
 
-  const raTile = (root: HTMLElement) => normaliseSpaces(root.querySelector('.dashboard__ra')?.textContent);
+  const raTile = (root: HTMLElement) =>
+    normaliseSpaces(root.querySelector('.dashboard__ra')?.textContent);
 
   it('shows a live illustrative RA tile with headroom and tax saving', async () => {
     const root = (await render()).nativeElement as HTMLElement;
@@ -134,9 +139,7 @@ describe('DashboardPage', () => {
     const root = (await render()).nativeElement as HTMLElement;
     const tile = retireTile(root);
     expect(tile).toContain('Illustrative plan');
-    expect(tile).toContain(
-      "R 46 864 a month to retire at 55 on R 50 000 a month (today's money)",
-    );
+    expect(tile).toContain("R 46 864 a month to retire at 55 on R 50 000 a month (today's money)");
     expect(tile).toContain('On track: 4%');
     // Plain text only: the dashboard keeps one money figure.
     expect(root.querySelector('.dashboard__retire .rw-money__figure')).toBeNull();
@@ -167,6 +170,89 @@ describe('DashboardPage', () => {
     expect(tile).not.toContain('a month to retire at');
   });
 
+  const budgetTile = (root: HTMLElement) =>
+    normaliseSpaces(root.querySelector('.dashboard__budget')?.textContent);
+
+  it('shows a live illustrative Budget tile: R 25 141,88 split 50/30/20 with every rand given a job', async () => {
+    const root = (await render()).nativeElement as HTMLElement;
+    const tile = budgetTile(root);
+    expect(tile).toContain('Illustrative budget');
+    expect(tile).toContain('R 25 141,88 take-home: needs 50%, wants 30%, savings 20%');
+    expect(tile).toContain('Every rand has a job');
+    // Plain text only: the dashboard keeps one money figure.
+    expect(root.querySelector('.dashboard__budget .rw-money__figure')).toBeNull();
+    const card = root.querySelector('.dashboard__budget .rw-bento-tile__card') as HTMLElement;
+    const order = Array.from(card.children).map((c) => c.className);
+    expect(order.indexOf('rw-bento-tile__text')).toBeLessThan(
+      order.findIndex((c) => c.includes('dashboard__budget-label')),
+    );
+  });
+
+  it('labels the Budget tile "Your budget" and reports what is unallocated or over', async () => {
+    const fixture = await render();
+    const plan = TestBed.inject(PlanContextStore);
+    plan.setBudgetAmount('housing', 4_000);
+    await fixture.whenStable();
+    // Housing falls from 5 028.376 to 4 000: R1 028.38 unallocated.
+    let tile = budgetTile(fixture.nativeElement as HTMLElement);
+    expect(tile).toContain('Your budget');
+    expect(tile).not.toContain('Illustrative budget');
+    expect(tile).toContain('R 1 028,38 unallocated');
+
+    plan.setBudgetAmount('housing', 7_000);
+    await fixture.whenStable();
+    // 7 000 - 5 028.376 = R1 971.62 over.
+    tile = budgetTile(fixture.nativeElement as HTMLElement);
+    expect(tile).toContain('Over by R 1 971,62');
+  });
+
+  it('asks to check the figures when the Budget income fails', async () => {
+    const fixture = await render();
+    TestBed.inject(PlanContextStore).updateBudgetIncome({ basis: 'net', amount: 5e9 });
+    await fixture.whenStable();
+    const tile = budgetTile(fixture.nativeElement as HTMLElement);
+    expect(tile).toContain('Check the figures on the Budget page.');
+    expect(tile).not.toContain('take-home:');
+  });
+
+  const journeyTile = (root: HTMLElement) =>
+    normaliseSpaces(root.querySelector('.dashboard__journey')?.textContent);
+
+  it('shows a live illustrative Journey tile with the engine figures', async () => {
+    const fixture = await render();
+    const root = fixture.nativeElement as HTMLElement;
+    const outputs = TestBed.inject(PlanContextStore).journeyOutputs();
+    if (!outputs) throw new Error('no journey outputs');
+    const tile = journeyTile(root);
+    const rand = (value: number) => normaliseSpaces(formatRand(roundRand(value)));
+    expect(tile).toContain('Illustrative journey');
+    expect(tile).toContain(`Saves about ${rand(outputs.taxSaved)} in tax by 55`);
+    expect(tile).toContain(`TFSA at 55: ${rand(outputs.tfsaAtRetirement)}`);
+    expect(outputs.taxSaved).toBeGreaterThan(0);
+    expect(outputs.tfsaAtRetirement).toBeGreaterThan(0);
+    expect(root.querySelector('.dashboard__journey .rw-money__figure')).toBeNull();
+    expect(root.querySelectorAll('.rw-money__figure').length).toBe(1);
+  });
+
+  it('labels the Journey tile "Your journey" and shows the hand-checked J1 figures once edited', async () => {
+    const fixture = await render();
+    TestBed.inject(PlanContextStore).updateJourney({
+      age: 52,
+      retirementAge: 55,
+      incomeEscalationPercent: 10,
+      contributionMonthly: 2_000,
+      escalationPercent: 10,
+      tfsaTopUpMonthly: 1_000,
+      returnPercent: 0,
+      tfsaReturnPercent: 0,
+      inflationPercent: 0,
+    });
+    await fixture.whenStable();
+    const tile = journeyTile(fixture.nativeElement as HTMLElement);
+    expect(tile).toContain('Your journey');
+    expect(tile).toContain('Saves about R 22 751,40 in tax by 55');
+    expect(tile).toContain('TFSA at 55: R 58 751,40');
+  });
   it('links to every other lazy route and keeps the privacy card', async () => {
     const root = (await render()).nativeElement as HTMLElement;
     const hrefs = Array.from(root.querySelectorAll('a')).map((a) => a.getAttribute('href'));
@@ -203,5 +289,10 @@ describe('DashboardPage without tax data', () => {
     expect(normaliseSpaces(root.querySelector('.dashboard__retire')?.textContent)).toContain(
       'Tax data is unavailable.',
     );
+    for (const live of ['budget', 'journey']) {
+      expect(normaliseSpaces(root.querySelector('.dashboard__' + live)?.textContent)).toContain(
+        'Tax data is unavailable.',
+      );
+    }
   });
 });
