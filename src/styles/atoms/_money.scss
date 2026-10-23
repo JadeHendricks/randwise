@@ -29,10 +29,8 @@
 
     // Why: the yellow hero card is the container, so a long figure shrinks to
     // fit a narrow card instead of spilling out. Cards wider than 22rem keep the token size.
-    @supports (container-type: inline-size) {
-      @include mixins.container-below(22rem) {
-        font-size: clamp(var(--rw-text-hero-min), 12cqi, var(--rw-text-display));
-      }
+    @include mixins.container-below(22rem) {
+      font-size: clamp(1.75rem, 12cqi, var(--rw-text-display));
     }
   }
 }

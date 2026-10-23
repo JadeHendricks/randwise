@@ -33,6 +33,9 @@ export const LIVE_REGION_SETTLE_MS = new InjectionToken<number>('LIVE_REGION_SET
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: { class: 'rw-live-region' },
+  // Why: the host adds no box, so it never becomes a grid or flex item that picks up a gap. The
+  // rule lives here, not in the global sheet, so it loads with the lazy pages that use it.
+  styles: '.rw-live-region { display: contents; }',
   template: `<p class="rw-visually-hidden" aria-live="polite" aria-atomic="true">{{ shown() }}</p>`,
 })
 export class LiveRegion {

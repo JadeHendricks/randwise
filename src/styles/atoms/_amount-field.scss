@@ -1,5 +1,8 @@
 @use 'mixins';
 
+// Slider thumb diameter; the WebKit margin below centres it on the 8px track.
+$thumb-size: 24px;
+
 // Atom: amount field. Labelled number input and range slider side by side.
 .rw-amount-field {
   display: block;
@@ -93,10 +96,10 @@
 
     &::-webkit-slider-thumb {
       box-sizing: border-box;
-      width: var(--rw-slider-thumb-size);
-      height: var(--rw-slider-thumb-size);
+      width: $thumb-size;
+      height: $thumb-size;
       // Centres the thumb on the 8px track (WebKit only; Firefox centres itself).
-      margin-top: calc((8px - var(--rw-slider-thumb-size)) / 2);
+      margin-top: calc((8px - $thumb-size) / 2);
       border: 3px solid var(--rw-color-surface-solid);
       border-radius: 50%;
       background: var(--rw-color-ink);
@@ -106,8 +109,8 @@
 
     &::-moz-range-thumb {
       box-sizing: border-box;
-      width: var(--rw-slider-thumb-size);
-      height: var(--rw-slider-thumb-size);
+      width: $thumb-size;
+      height: $thumb-size;
       border: 3px solid var(--rw-color-surface-solid);
       border-radius: 50%;
       background: var(--rw-color-ink);

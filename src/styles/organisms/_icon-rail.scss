@@ -1,5 +1,8 @@
 @use 'mixins';
 
+// Narrowest mobile nav item; wide enough for the word Dashboard.
+$item-min-width: 64px;
+
 // Organism: icon rail. Floating glass rail on desktop, bottom bar on mobile.
 .rw-icon-rail {
   position: fixed;
@@ -81,10 +84,10 @@
       // still fit from 576px up to the 640px breakpoint.
       flex: 1 0
         max(
-          var(--rw-nav-item-min-width),
+          $item-min-width,
           min(
-            calc(100% / var(--rw-nav-visible-items)),
-            calc(var(--rw-nav-item-min-width) + var(--rw-space-2))
+            calc(100% / 5.5),
+            calc($item-min-width + var(--rw-space-2))
           )
         );
       scroll-snap-align: center;
@@ -112,7 +115,7 @@
     }
 
     @include mixins.below(mobile) {
-      min-width: var(--rw-nav-item-min-width);
+      min-width: $item-min-width;
       // Keeps the 64px item wide enough for the word Dashboard without breaking it.
       padding-block: var(--rw-space-2);
     }

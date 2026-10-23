@@ -1,5 +1,0 @@
-// Atom: live region. The host adds no box, so it never becomes a grid or flex item that picks up
-// a gap; the visually hidden paragraph inside it is the only content.
-.rw-live-region {
-  display: contents;
-}

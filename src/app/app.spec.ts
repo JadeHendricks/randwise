@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 
 import { NAV_ITEMS } from './core/navigation/nav-items';
-import { LIVE_REGION_SETTLE_MS } from './shared/atoms/live-region/live-region';
 import { FakeMatchMedia, installFakeMatchMedia } from './testing/fake-match-media';
 import { provideTestData } from './testing/tax-data-fixtures';
 import { App } from './app';
@@ -15,11 +14,7 @@ describe('App shell', () => {
   async function configure(today: string) {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [
-        provideRouter(routes),
-        provideTestData({ today }),
-        { provide: LIVE_REGION_SETTLE_MS, useValue: 0 },
-      ],
+      providers: [provideRouter(routes), provideTestData({ today })],
     }).compileComponents();
   }
 
@@ -33,7 +28,7 @@ describe('App shell', () => {
   });
 
   const routeAnnouncement = (root: HTMLElement) =>
-    root.querySelector('.rw-app-shell__content > rw-live-region p')?.textContent?.trim();
+    root.querySelector('.rw-app-shell__content > p[aria-live]')?.textContent?.trim();
 
   async function setup(today = '2026-10-22') {
     await configure(today);
@@ -110,7 +105,7 @@ describe('App shell', () => {
     await TestBed.inject(Router).navigateByUrl('/ra');
     await fixture.whenStable();
     expect(routeAnnouncement(root)).toBe('Retirement annuity page');
-    expect(root.querySelector('.rw-app-shell__content > rw-live-region p')?.getAttribute('aria-live')).toBe(
+    expect(root.querySelector('.rw-app-shell__content > p[aria-live]')?.getAttribute('aria-live')).toBe(
       'polite',
     );
     expect(document.activeElement).toBe(link);
