@@ -27,6 +27,15 @@
     margin-top: auto;
   }
 
+  &__split {
+    max-width: 14rem;
+  }
+
+  &__caption {
+    max-width: 32ch;
+    font-size: var(--rw-text-xs);
+  }
+
   &__lead {
     max-width: 32ch;
     font-size: var(--rw-text-lg);

@@ -1,10 +1,29 @@
 <section class="dashboard" aria-label="Overview">
   <rw-card class="dashboard__hero" variant="hero-yellow" padding="lg">
-    <p class="dashboard__eyebrow">Take-home pay</p>
-    <rw-money class="dashboard__figure" [value]="0" size="hero" />
-    <p class="dashboard__lead">Start with your salary and see what you actually keep each month.</p>
+    <p class="dashboard__eyebrow">
+      {{ store.isExample() ? 'Example take-home pay' : 'Your take-home pay' }}
+    </p>
+    @if (net() !== null) {
+      <rw-money class="dashboard__figure" [value]="net()!" size="hero" />
+      <rw-dot-matrix
+        class="dashboard__split"
+        label="How a month's gross pay splits between net pay, PAYE, UIF, retirement and other deductions"
+        [columns]="split()"
+        [highlight]="0"
+      />
+      <!-- Names the dot columns for sighted users; the svg already carries the full text. -->
+      <p class="dashboard__caption" aria-hidden="true">{{ splitCaption() }}</p>
+      <p class="dashboard__lead">
+        {{ summary() }}
+        @if (store.isExample()) {
+          Example only. Change it on the Pay page.
+        }
+      </p>
+    } @else {
+      <p class="dashboard__lead dashboard__lead--unavailable">{{ unavailable() }}</p>
+    }
     <a rw-button size="lg" routerLink="/pay" class="dashboard__cta">
-      Start with your salary
+      Open the Pay page
       <rw-icon name="arrow-right" size="sm" />
     </a>
   </rw-card>

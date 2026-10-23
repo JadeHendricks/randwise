@@ -205,6 +205,29 @@ describe('LineChart', () => {
     expect(ariaLabel(el)).toContain('R 25 141,88 at R 30 000,00');
   });
 
+  describe('legend', () => {
+    const legend = (el: HTMLElement) =>
+      Array.from(el.querySelectorAll('.rw-line-chart__item')).map((item) =>
+        normaliseSpaces(item.textContent),
+      );
+
+    it('names both series, with a dashed swatch for the second', async () => {
+      const el = await create(NET, { secondSeries: GROSS });
+      expect(legend(el)).toEqual(['Net pay', 'Gross pay']);
+      expect(el.querySelector('.rw-line-chart__legend')?.getAttribute('aria-hidden')).toBe('true');
+      expect(el.querySelectorAll('.rw-line-chart__swatch--secondary')).toHaveLength(1);
+    });
+
+    it('lists only the first series when there is no second series', async () => {
+      expect(legend(await create(NET))).toEqual(['Net pay']);
+    });
+
+    it('is not shown in the empty state', async () => {
+      const el = await create({ name: 'Net pay', points: [] }, { secondSeries: GROSS });
+      expect(el.querySelector('.rw-line-chart__legend')).toBeNull();
+    });
+  });
+
   it('omits the area path when area is false', async () => {
     expect((await create(NET)).querySelector('.rw-line-chart__area')).not.toBeNull();
     expect((await create(NET, { area: false })).querySelector('.rw-line-chart__area')).toBeNull();
