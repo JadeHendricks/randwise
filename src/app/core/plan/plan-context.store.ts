@@ -160,10 +160,7 @@ export interface JourneyOutputs {
   /** Income tax saved by the RA contributions over the whole journey. */
   readonly taxSaved: number;
   readonly tfsaAtRetirement: number;
-  readonly raAtRetirement: number;
   readonly retirementAge: number;
-  /** TFSA lifetime contributions as a share of the limit, 0 to 100. */
-  readonly lifetimePercent: number;
 }
 
 type Handoffs = { readonly [T in HandoffTarget]?: Handoff<T> };
@@ -408,9 +405,7 @@ export class PlanContextStore {
     return {
       taxSaved: result.totals.taxSaved,
       tfsaAtRetirement: result.final.tfsaBalance,
-      raAtRetirement: result.final.raBalance,
       retirementAge: result.ages.retirementAge,
-      lifetimePercent: result.lifetimePercent,
     };
   });
 

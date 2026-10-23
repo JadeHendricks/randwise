@@ -958,12 +958,10 @@ describe('PlanContextStore', () => {
       const { plan } = setup();
       plan.updateJourney(J1);
       const outputs = plan.journeyOutputs();
-      // 6 240 + 7 509 + 9 002.40 tax saved; TFSA 18 240 + 19 509 + 21 002.40; RA 24 000 + 26 400 + 29 040.
+      // 6 240 + 7 509 + 9 002.40 tax saved; TFSA 18 240 + 19 509 + 21 002.40.
       expect(outputs?.taxSaved).toBeCloseTo(22_751.4, 6);
       expect(outputs?.tfsaAtRetirement).toBeCloseTo(58_751.4, 6);
-      expect(outputs?.raAtRetirement).toBeCloseTo(79_440, 6);
       expect(outputs?.retirementAge).toBe(55);
-      expect(outputs?.lifetimePercent).toBeCloseTo((58_751.4 / 500_000) * 100, 6);
     });
 
     it('follows the Salary inputs live while nothing is edited', () => {
