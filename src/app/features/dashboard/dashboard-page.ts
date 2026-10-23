@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { roundRand } from '../../core/engine';
 import { NAV_ITEMS } from '../../core/navigation/nav-items';
+import { PlanBuilderStore } from '../../core/plan/plan-builder.store';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { SalaryEstimator } from '../../core/salary/salary-estimator';
 import { SalaryInputsStore } from '../../core/salary/salary-inputs.store';
@@ -37,6 +38,34 @@ export class DashboardPage {
   protected readonly store = inject(SalaryInputsStore);
   protected readonly context = inject(PlanContextStore);
   private readonly estimator = inject(SalaryEstimator);
+  private readonly planBuilder = inject(PlanBuilderStore);
+
+  // Why: reachedSummary stays true after Back, so only onSummary means the plan is ready to view.
+  protected readonly planStatus = computed<'new' | 'progress' | 'ready'>(() => {
+    if (this.planBuilder.onSummary()) return 'ready';
+    return this.planBuilder.started() ? 'progress' : 'new';
+  });
+  protected readonly planText = computed(() => {
+    switch (this.planStatus()) {
+      case 'ready':
+        // steps() is lazy, so it is only read once the plan is ready.
+        return `Your plan has ${this.planBuilder.steps().length} steps.`;
+      case 'progress':
+        return `Step ${this.planBuilder.position() + 1} of ${this.planBuilder.progressTotal()} is waiting for you.`;
+      default:
+        return 'Answer a few short questions and get a step-by-step plan.';
+    }
+  });
+  protected readonly planAction = computed(() => {
+    switch (this.planStatus()) {
+      case 'ready':
+        return 'View your plan';
+      case 'progress':
+        return 'Continue your plan';
+      default:
+        return 'Start the Plan Builder';
+    }
+  });
 
   // Null when there is no tax data or the engine rejected the figures.
   protected readonly net = computed(() => {

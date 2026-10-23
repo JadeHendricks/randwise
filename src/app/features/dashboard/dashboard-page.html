@@ -87,6 +87,11 @@
           <p class="dashboard__journey-figure">{{ journeyUnavailable() }}</p>
         }
       </rw-bento-tile>
+    } @else if (item.path === 'plan') {
+      <rw-bento-tile class="dashboard__plan" [item]="item" [action]="planAction()">
+        <p class="dashboard__plan-label">Plan Builder</p>
+        <p class="dashboard__plan-text">{{ planText() }}</p>
+      </rw-bento-tile>
     } @else {
       <rw-bento-tile [item]="item" />
     }

@@ -42,6 +42,17 @@ describe('BentoTile', () => {
     expect(link).toBe(projected + 1);
   });
 
+  it('replaces the link text with a custom action', async () => {
+    const fixture = TestBed.createComponent(BentoTile);
+    fixture.componentRef.setInput('item', navItem('plan'));
+    fixture.componentRef.setInput('action', 'Continue your plan');
+    await fixture.whenStable();
+    const link = (fixture.nativeElement as HTMLElement).querySelector('a') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/plan');
+    expect(link.textContent).toContain('Continue your plan');
+    expect(link.textContent).not.toContain('Open Plan');
+  });
+
   it('adds the wide modifier for a span of 2', async () => {
     const fixture = TestBed.createComponent(BentoTile);
     fixture.componentRef.setInput('item', navItem('plan'));
