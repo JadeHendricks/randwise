@@ -100,6 +100,7 @@ describe('SEND_TARGETS', () => {
       budget: 'Budget',
       journey: 'Journey',
       plan: 'Plan',
+      'emergency-fund': 'Emergency fund',
     });
   });
 });

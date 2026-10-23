@@ -66,7 +66,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     path: 'toolbox',
     label: 'Toolbox',
     heading: 'Toolbox',
-    description: 'Handy calculators and references.',
+    description: 'Small calculators: emergency fund, home loan, two-pot and TFSA.',
     icon: 'toolbox',
   },
 ];

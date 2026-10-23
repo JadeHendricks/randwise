@@ -45,4 +45,27 @@ describe('IconRail', () => {
     expect(current.length).toBe(1);
     expect(current[0].textContent).toContain('RA');
   });
+
+  it('keeps the Toolbox lit on a tool route, and only the Toolbox', async () => {
+    const { fixture, root } = await setup();
+    // The tool routes are siblings of the nav routes, as in app.routes.ts.
+    TestBed.inject(Router).resetConfig([
+      ...NAV_ITEMS.map((item) => ({ path: item.path, component: Blank })),
+      { path: 'toolbox/home-loan', component: Blank },
+    ]);
+    await TestBed.inject(Router).navigateByUrl('/toolbox/home-loan');
+    await fixture.whenStable();
+    const current = root.querySelectorAll('[aria-current="page"]');
+    expect(current.length).toBe(1);
+    expect(current[0].textContent).toContain('Toolbox');
+  });
+
+  it('lights the Dashboard only on the dashboard itself', async () => {
+    const { fixture, root } = await setup();
+    await TestBed.inject(Router).navigateByUrl('/pay');
+    await fixture.whenStable();
+    const current = root.querySelectorAll('[aria-current="page"]');
+    expect(current.length).toBe(1);
+    expect(current[0].textContent).toContain('Pay');
+  });
 });

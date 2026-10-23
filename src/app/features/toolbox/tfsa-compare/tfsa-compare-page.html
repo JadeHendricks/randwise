@@ -1,0 +1,262 @@
+<div class="tool">
+  <rw-card class="tool__inputs" padding="lg">
+    <a rw-button variant="ghost" size="sm" routerLink="/toolbox">Back to Toolbox</a>
+    <div class="tool__head">
+      <h2 class="tool__title">Your investment</h2>
+      @if (store.investmentIsExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button
+          rw-button
+          variant="secondary"
+          size="sm"
+          type="button"
+          (click)="store.resetInvestment()"
+        >
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (store.investmentIsExample()) {
+      <p class="tool__text">{{ intro() }}</p>
+    }
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">What you put in</h3>
+      <rw-amount-field
+        label="Lump sum to invest now"
+        prefix="R"
+        [min]="0"
+        [max]="lumpSumMax"
+        [step]="step"
+        [value]="inputs().lumpSum"
+        (valueChange)="set('lumpSum', $event)"
+      />
+      <rw-amount-field
+        label="Added at the start of every year"
+        prefix="R"
+        [min]="0"
+        [max]="yearlyMax"
+        [step]="step"
+        [value]="inputs().yearlyContribution"
+        hint="Paid in on day one of each year, including the first."
+        (valueChange)="set('yearlyContribution', $event)"
+      />
+      <rw-amount-field
+        label="Years to invest"
+        [min]="limits.years.min"
+        [max]="limits.years.max"
+        [step]="1"
+        [value]="inputs().years"
+        (valueChange)="set('years', $event)"
+      />
+      <rw-amount-field
+        label="Already put into a TFSA"
+        prefix="R"
+        [min]="0"
+        [max]="lifetimeUsedMax"
+        [step]="step"
+        [value]="inputs().tfsaLifetimeUsed"
+        hint="Contributions so far, not growth. They count towards the lifetime limit."
+        (valueChange)="set('tfsaLifetimeUsed', $event)"
+      />
+    </div>
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">What it earns</h3>
+      <rw-amount-field
+        label="Return per year"
+        suffix="%"
+        [min]="limits.returnPercent.min"
+        [max]="limits.returnPercent.max"
+        [step]="percentStep"
+        [value]="inputs().returnPercent"
+        [hint]="returnHint()"
+        (valueChange)="set('returnPercent', $event)"
+      />
+      <rw-amount-field
+        label="Share of the return paid as interest"
+        suffix="%"
+        [min]="limits.interestPercent.min"
+        [max]="limits.interestPercent.max"
+        [step]="percentStep"
+        [value]="inputs().interestPercent"
+        hint="An illustration, not a forecast. A bank account pays mostly interest."
+        (valueChange)="set('interestPercent', $event)"
+      />
+      <rw-amount-field
+        label="Share of the return paid as dividends"
+        suffix="%"
+        [min]="limits.dividendPercent.min"
+        [max]="dividendMax()"
+        [step]="percentStep"
+        [value]="inputs().dividendPercent"
+        hint="An illustration, not a forecast. Interest and dividends together cannot be over 100%."
+        (valueChange)="set('dividendPercent', $event)"
+      />
+      <p class="tool__text">{{ growthShare() }}</p>
+    </div>
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">Your tax</h3>
+      <rw-amount-field
+        label="Your marginal tax rate"
+        suffix="%"
+        [min]="limits.marginalRatePercent.min"
+        [max]="limits.marginalRatePercent.max"
+        [step]="percentStep"
+        [value]="inputs().marginalRatePercent"
+        hint="Starts at your marginal rate on the Pay page. One flat rate is used in every year."
+        (valueChange)="set('marginalRatePercent', $event)"
+      />
+      <rw-amount-field
+        label="Your age"
+        [min]="limits.age.min"
+        [max]="limits.age.max"
+        [step]="1"
+        [value]="inputs().age"
+        hint="Your age on the last day of the first tax year. From 65 you can earn more interest before it is taxed."
+        (valueChange)="set('age', $event)"
+      />
+    </div>
+  </rw-card>
+
+  <section class="tool__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+    @if (store.investmentEstimate() === null) {
+      <rw-card class="tool__unavailable" padding="lg">
+        <p>Tax data is unavailable, so the tax rules cannot be applied.</p>
+      </rw-card>
+    } @else if (failure(); as message) {
+      <p class="tool__error" role="alert">{{ message }}</p>
+    } @else if (result(); as r) {
+      <rw-card class="tool__hero" variant="hero-yellow" padding="lg">
+        <h2 class="tool__eyebrow">What the TFSA gains you</h2>
+        <p class="tool__figure">
+          <rw-money [value]="r.figure" size="hero" />
+        </p>
+        <p class="tool__lead">{{ r.lead }}</p>
+      </rw-card>
+
+      <div class="tool__warnings" role="status">
+        @for (warning of r.warnings; track warning) {
+          <p class="tool__warning">
+            <rw-icon name="warning" size="sm" />
+            <span>{{ warning }}</span>
+          </p>
+        }
+      </div>
+
+      <div class="tool__stats">
+        <rw-stat-card
+          label="Value in the TFSA"
+          [value]="r.tfsaEnd"
+          [secondary]="r.tfsaEndSecondary"
+        />
+        <rw-stat-card
+          label="Value in a taxable account"
+          [value]="r.taxableEnd"
+          [secondary]="r.taxableEndSecondary"
+        />
+      </div>
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">Tax paid in the taxable account</h2>
+        @if (r.hasTax) {
+          <rw-breakdown-bar
+            label="Tax paid in the taxable account: tax on interest, dividends tax and capital gains tax"
+            [segments]="r.taxSegments"
+          />
+        } @else {
+          <p class="tool__text">No tax would be paid in the taxable account with these figures.</p>
+        }
+      </rw-card>
+
+      @if (r.hasChart) {
+        <rw-card class="tool__card" padding="lg">
+          <h2 class="tool__title">How the two grow</h2>
+          <rw-line-chart
+            label="TFSA and taxable account balances over the years"
+            [series]="r.tfsaSeries"
+            [secondSeries]="r.taxableSeries"
+            [formatX]="yearText"
+            [formatXTick]="plain"
+            [formatYTick]="compactRand"
+            xLabel="Year"
+            yLabel="Balance"
+          />
+          <p class="tool__text">
+            The last point of the taxable account is after capital gains tax.
+          </p>
+        </rw-card>
+
+        <rw-card class="tool__card" padding="lg">
+          <details>
+            <summary class="tool-table__summary">Year by year</summary>
+            <div
+              class="tool-table__scroll"
+              role="region"
+              tabindex="0"
+              aria-label="The TFSA and the taxable account, one row for each year"
+            >
+              <table class="tool-table__table">
+                <caption class="tool-table__caption">
+                  The TFSA and the taxable account, one row for each year
+                </caption>
+                <thead>
+                  <tr>
+                    <th class="tool-table__cell tool-table__cell--label" scope="col">Year</th>
+                    <th class="tool-table__cell" scope="col">Paid in</th>
+                    <th class="tool-table__cell" scope="col">Into the TFSA</th>
+                    <th class="tool-table__cell" scope="col">Over the limits</th>
+                    <th class="tool-table__cell" scope="col">TFSA column at year end</th>
+                    <th class="tool-table__cell" scope="col">Taxable account at year end</th>
+                    <th class="tool-table__cell" scope="col">Tax paid, taxable account</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of r.rows; track row.year) {
+                    <tr>
+                      <th class="tool-table__cell tool-table__cell--label" scope="row">
+                        {{ row.year }}
+                      </th>
+                      <td class="tool-table__cell">{{ row.paidIn }}</td>
+                      <td class="tool-table__cell">{{ row.intoTfsa }}</td>
+                      <td class="tool-table__cell">{{ row.overLimit }}</td>
+                      <td class="tool-table__cell">{{ row.tfsaValue }}</td>
+                      <td class="tool-table__cell">{{ row.taxableValue }}</td>
+                      <td class="tool-table__cell">{{ row.taxPaid }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </rw-card>
+      }
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">What this assumes</h2>
+        <ul class="tool__list">
+          @for (item of assumptions(); track item) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      </rw-card>
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">See how it fits</h2>
+        <div class="tool__links">
+          <a rw-button variant="secondary" size="sm" routerLink="/journey">
+            See TFSA savings over the years on the Journey page
+          </a>
+        </div>
+      </rw-card>
+    }
+
+    <p class="tool__note">
+      Estimates only. Returns are not guaranteed and fees are not included. Nothing is saved.
+    </p>
+  </section>
+</div>

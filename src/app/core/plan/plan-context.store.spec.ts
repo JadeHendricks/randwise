@@ -1143,6 +1143,96 @@ describe('PlanContextStore', () => {
     });
   });
 
+  describe('sendFromEmergencyFund', () => {
+    const fund = { months: 6, saved: 1_000, monthly: 2_000 };
+
+    it('sends the choices to the Budget with source emergency-fund, and Undo restores', () => {
+      const { plan } = setup();
+      expect(plan.sendFromEmergencyFund(fund)).toBe(true);
+      expect(plan.budgetFrom()).toBe('emergency-fund');
+      expect(plan.budgetHandoff()?.source).toBe('emergency-fund');
+      expect(plan.budgetCanUndo()).toBe(true);
+      expect(plan.budgetSettings().emergencyMonths).toBe(6);
+      expect(plan.budgetSettings().emergencySaved).toBe(1_000);
+      expect(budgetLines(plan)?.emergency.months).toBe(6);
+      expect(budgetLines(plan)?.emergency.saved).toBe(1_000);
+      expect(budgetLines(plan)?.emergency.monthly).toBe(2_000);
+      plan.undoBudget();
+      expect(plan.budgetFrom()).toBeNull();
+      expect(plan.budgetSettings().emergencyMonths).toBe(3);
+      expect(plan.budgetSettings().emergencySaved).toBe(0);
+      expect(budgetLines(plan)?.emergency.monthly).not.toBe(2_000);
+    });
+
+    it('sends nothing to any other calculator', () => {
+      const { plan } = setup();
+      plan.sendFromEmergencyFund(fund);
+      expect(plan.raHandoff()).toBeNull();
+      expect(plan.retireHandoff()).toBeNull();
+      expect(plan.journeyHandoff()).toBeNull();
+    });
+
+    it('keeps the Budget income: the Budget is not moved onto the Salary figures', () => {
+      const { plan, salary } = setup();
+      plan.updateBudgetIncome({ amount: 50_000, age: 40, otherDeductionsMonthly: 500 });
+      salary.update({ amount: 20_000 });
+      const before = plan.budgetIncome();
+      const netBefore = plan.budgetOutputs()?.netMonthly;
+      expect(plan.sendFromEmergencyFund(fund)).toBe(true);
+      expect(plan.budgetIncome()).toEqual(before);
+      expect(plan.budgetOutputs()?.netMonthly).toBe(netBefore);
+    });
+
+    it('keeps the same person when the Budget income was a take-home entry', () => {
+      const { plan } = setup();
+      plan.switchBudgetBasis('net');
+      const netBefore = plan.budgetOutputs()?.netMonthly;
+      expect(plan.sendFromEmergencyFund(fund)).toBe(true);
+      // The send is a gross monthly amount, which works out to the same take-home.
+      expect(plan.budgetIncome()).toMatchObject({
+        basis: 'gross',
+        period: 'monthly',
+        amount: 30_000,
+      });
+      expect(plan.budgetOutputs()?.netMonthly).toBeCloseTo(netBefore ?? Number.NaN, 2);
+    });
+
+    it('refuses any other call shape and changes nothing', () => {
+      const { plan } = setup();
+      const bad: unknown[] = [
+        null,
+        undefined,
+        {},
+        { months: 6, saved: 1_000 },
+        { months: Number.NaN, saved: 0, monthly: 0 },
+        { months: 6, saved: -1, monthly: 0 },
+        { months: 6, saved: 0, monthly: Number.POSITIVE_INFINITY },
+        { months: '6', saved: 0, monthly: 0 },
+      ];
+      for (const shape of bad) {
+        expect(plan.sendFromEmergencyFund(shape as typeof fund)).toBe(false);
+      }
+      expectNothingSent(plan);
+      expect(plan.budgetFrom()).toBeNull();
+    });
+
+    it('refuses to send a take-home income it cannot work back to a salary', () => {
+      const { plan } = setup();
+      plan.updateBudgetIncome({ basis: 'net', amount: 5e9 });
+      expect(plan.sendFromEmergencyFund(fund)).toBe(false);
+      expect(plan.budgetHandoff()).toBeNull();
+      expect(plan.budgetIncome()).toMatchObject({ basis: 'net', amount: 5e9 });
+    });
+
+    it('every send is a new handoff', () => {
+      const { plan } = setup();
+      plan.sendFromEmergencyFund(fund);
+      const first = plan.budgetHandoff()?.id;
+      plan.sendFromEmergencyFund(fund);
+      expect(plan.budgetHandoff()?.id).not.toBe(first);
+    });
+  });
+
   it('touches no storage and is one root instance', () => {
     const calls = [
       vi.spyOn(Storage.prototype, 'getItem'),

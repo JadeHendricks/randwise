@@ -22,7 +22,7 @@ import { Icon } from '../../atoms/icon/icon';
               [routerLink]="'/' + item.path"
               routerLinkActive="rw-icon-rail__link--active"
               ariaCurrentWhenActive="page"
-              [routerLinkActiveOptions]="{ exact: true }"
+              [routerLinkActiveOptions]="{ exact: item.path === '' }"
             >
               <rw-icon [name]="item.icon" />
               <span class="rw-icon-rail__label">{{ item.label }}</span>

@@ -9,6 +9,10 @@ export type IconName =
   | 'journey'
   | 'plan'
   | 'toolbox'
+  | 'shield'
+  | 'home'
+  | 'unlock'
+  | 'scale'
   | 'sun'
   | 'moon'
   | 'system'
@@ -39,6 +43,10 @@ const PATHS: Record<IconName, readonly string[]> = {
   ],
   plan: ['M9 6h11', 'M9 12h11', 'M9 18h11', 'M4 6l1 1 2-2', 'M4 12l1 1 2-2', 'M4 18l1 1 2-2'],
   toolbox: ['M3 8h18v11H3z', 'M9 8V5h6v3', 'M3 13h18'],
+  shield: ['M12 3l8 3v6c0 4.5-3.4 7.7-8 9-4.6-1.3-8-4.5-8-9V6z', 'M12 9v6', 'M9 12h6'],
+  home: ['M3 11l9-8 9 8', 'M5 10v10h14V10', 'M10 20v-6h4v6'],
+  unlock: ['M5 11h14v10H5z', 'M8 11V7a4 4 0 0 1 7.5-2', 'M12 15v2'],
+  scale: ['M12 4v16', 'M7 20h10', 'M5 7h14', 'M5 7l-3 7a3 3 0 0 0 6 0z', 'M19 7l-3 7a3 3 0 0 0 6 0z'],
   sun: [
     'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
     'M12 2v2',
