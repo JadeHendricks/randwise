@@ -1,7 +1,7 @@
 @use 'mixins';
 
-// Molecule: choice list. Large radio cards. The ring is --rw-color-text-muted (the shared border
-// token is too faint), and the chosen card gets an accent border plus a check, never colour alone.
+// Molecule: choice list. Large radio cards. The option border is --rw-color-border-control and the
+// ring is --rw-color-text-muted. The chosen card gets an accent border plus a check, never colour alone.
 .rw-choice-list {
   display: block;
   min-width: 0;
@@ -31,7 +31,7 @@
     align-items: flex-start;
     gap: var(--rw-space-3);
     padding: var(--rw-space-4);
-    border: 2px solid var(--rw-color-border-strong);
+    border: 2px solid var(--rw-color-border-control);
     border-radius: var(--rw-radius-md);
     background: var(--rw-color-surface-solid);
     color: var(--rw-color-text);

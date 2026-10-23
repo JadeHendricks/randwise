@@ -8,6 +8,8 @@
   --rw-color-surface-solid: #f4fbf7;
   --rw-color-border-glass: rgb(255 255 255 / 70%);
   --rw-color-border-strong: rgb(15 26 21 / 28%);
+  // Form-control boundaries need 3:1 (WCAG 1.4.11); border-strong is decorative.
+  --rw-color-border-control: #6b7a72;
   --rw-color-text: #0f1a15;
   --rw-color-text-muted: #435349;
   --rw-color-accent: #0b6b49;
@@ -110,6 +112,7 @@
   --rw-color-surface-solid: #102a20;
   --rw-color-border-glass: rgb(110 231 183 / 18%);
   --rw-color-border-strong: rgb(167 243 208 / 40%);
+  --rw-color-border-control: #5e7e6f;
   --rw-color-text: #e8f6ef;
   --rw-color-text-muted: #a3c2b3;
   --rw-color-accent: #34d399;
