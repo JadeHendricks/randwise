@@ -215,7 +215,7 @@
 
       <rw-card class="budget__card" padding="lg">
         <h2 class="budget__title">Savings checks</h2>
-        <div class="budget__checks" role="status">
+        <div class="budget__checks">
           @for (check of r.checks; track check.text) {
             <p class="budget__check" [class.budget__check--warn]="check.warn">
               @if (check.warn) {

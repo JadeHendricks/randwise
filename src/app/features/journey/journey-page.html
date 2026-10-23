@@ -235,16 +235,14 @@
         <p class="journey__text">{{ note }}</p>
       }
 
-      @if (r.warnings.length > 0) {
-        <div class="journey__warnings" role="status">
-          @for (warning of r.warnings; track warning) {
-            <p class="journey__warning">
-              <rw-icon name="warning" size="sm" />
-              <span>{{ warning }}</span>
-            </p>
-          }
-        </div>
-      }
+      <div class="journey__warnings" role="status">
+        @for (warning of r.warnings; track warning) {
+          <p class="journey__warning">
+            <rw-icon name="warning" size="sm" />
+            <span>{{ warning }}</span>
+          </p>
+        }
+      </div>
 
       <rw-card class="journey__card" padding="lg">
         <h2 class="journey__title">Your milestones</h2>
@@ -286,7 +284,7 @@
         <rw-card class="journey__card" padding="lg">
           <details class="journey__details">
             <summary class="journey__summary">Year by year</summary>
-            <div class="journey__scroll">
+            <div class="journey__scroll" role="region" tabindex="0" aria-label="Your journey, one row for each year">
               <table class="journey__table">
                 <caption class="journey__caption">
                   Your journey, one row for each year
