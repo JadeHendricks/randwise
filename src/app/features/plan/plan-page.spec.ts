@@ -39,7 +39,7 @@ describe('PlanPage', () => {
   it('starts with the wizard, not the summary', async () => {
     const { root, text } = await render();
     expect(root.querySelector('rw-plan-wizard')).not.toBeNull();
-    expect(root.querySelector('rw-plan-summary-stub')).toBeNull();
+    expect(root.querySelector('rw-plan-summary')).toBeNull();
     expect(text(root.querySelector('h2'))).toBe('How old are you?');
   });
 
@@ -59,7 +59,7 @@ describe('PlanPage', () => {
     const heading = root.querySelector('h2') as HTMLElement;
     expect(text(heading)).toBe('Your plan');
     expect(root.ownerDocument.activeElement).toBe(heading);
-    const titles = Array.from(root.querySelectorAll('li')).map((li) => text(li));
+    const titles = Array.from(root.querySelectorAll('.rw-plan-step__title')).map((el) => text(el));
     expect(titles).toEqual(['Check your take-home pay', 'See what a home could cost you each month']);
   });
 
@@ -70,11 +70,44 @@ describe('PlanPage', () => {
     await fixture.whenStable();
     await click('Back to the questions');
 
-    expect(root.querySelector('rw-plan-summary-stub')).toBeNull();
+    expect(root.querySelector('rw-plan-summary')).toBeNull();
     const heading = root.querySelector('h2') as HTMLElement;
     expect(text(heading)).toBe('What do you want to do with your money?');
     expect(root.ownerDocument.activeElement).toBe(heading);
     expect(plan.answers().age).toBe(44);
+  });
+
+  it('changes an earlier answer: focus goes to the question, and the plan updates on return', async () => {
+    const { click, fixture, plan, root, text } = await render();
+    plan.update({ goal: 'pay-less-tax', surplusMonthly: 10_000 });
+    plan.finish();
+    await fixture.whenStable();
+    const budgetShare = () =>
+      text(
+        root
+          .querySelector('#rw-plan-step-title-budget-fit')
+          ?.closest('.rw-plan-step')
+          ?.querySelector('.rw-plan-step__key-value'),
+      );
+    expect(budgetShare()).toBe('40%');
+
+    root.querySelector<HTMLButtonElement>('button[aria-label="Change Money to invest"]')?.click();
+    await fixture.whenStable();
+    const heading = root.querySelector('h2') as HTMLElement;
+    expect(text(heading)).toBe('How much can you invest each month?');
+    expect(root.ownerDocument.activeElement).toBe(heading);
+
+    const field = Array.from(root.querySelectorAll('label'))
+      .find((label) => text(label) === 'Amount you can invest each month')
+      ?.control as HTMLInputElement;
+    field.value = '5000';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    await fixture.whenStable();
+    await click('See my plan');
+
+    expect(text(root.querySelector('h2'))).toBe('Your plan');
+    expect(root.ownerDocument.activeElement).toBe(root.querySelector('h2'));
+    expect(budgetShare()).toBe('20%');
   });
 
   it('shows the summary again, without moving focus, when the page is opened later', async () => {

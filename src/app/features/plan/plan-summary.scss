@@ -1,0 +1,98 @@
+@use 'mixins';
+
+// Route-only layout for the plan summary: heading, ordered steps, then the supporting cards.
+.plan-summary {
+  display: grid;
+  gap: var(--rw-space-5);
+  max-width: 52rem;
+  margin-inline: auto;
+
+  &__head,
+  &__card {
+    display: grid;
+    gap: var(--rw-space-3);
+  }
+
+  &__heading {
+    font-size: var(--rw-text-xl);
+    line-height: var(--rw-line-tight);
+
+    // A heading focused by code, not by Tab: the section label is enough, so no ring.
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+  }
+
+  &__subtitle {
+    font-size: var(--rw-text-lg);
+  }
+
+  &__lead,
+  &__text {
+    font-size: var(--rw-text-sm);
+  }
+
+  &__lead {
+    color: var(--rw-color-text-muted);
+  }
+
+  &__steps,
+  &__list {
+    display: grid;
+    gap: var(--rw-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__list {
+    gap: var(--rw-space-2);
+  }
+
+  &__error {
+    padding: var(--rw-space-3) var(--rw-space-4);
+    border: 1px solid var(--rw-color-danger-border);
+    border-radius: var(--rw-radius-sm);
+    background: var(--rw-color-danger-surface);
+    color: var(--rw-color-danger-text);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__answers {
+    display: grid;
+    gap: var(--rw-space-2);
+    margin: 0;
+  }
+
+  &__answer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--rw-space-1) var(--rw-space-4);
+    font-size: var(--rw-text-sm);
+  }
+
+  &__term {
+    color: var(--rw-color-text-muted);
+  }
+
+  &__value {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--rw-space-2);
+    margin: 0;
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--rw-space-3);
+  }
+}
