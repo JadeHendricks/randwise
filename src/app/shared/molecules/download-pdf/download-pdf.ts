@@ -65,7 +65,7 @@ export class DownloadPdf {
   private readonly injector = inject(Injector);
   private readonly document = inject(DOCUMENT);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly button = viewChild.required<ElementRef<HTMLButtonElement>>('button');
+  private readonly button = viewChild.required<unknown, ElementRef<HTMLButtonElement>>('button', { read: ElementRef });
 
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
