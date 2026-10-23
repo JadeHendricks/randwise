@@ -1,0 +1,6 @@
+// Route-only layout for the Plan Builder page.
+.plan {
+  display: grid;
+  gap: var(--rw-space-5);
+  min-width: 0;
+}
