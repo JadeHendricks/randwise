@@ -546,6 +546,38 @@ export class PlanContextStore {
     }
   }
 
+  /**
+   * Sends the Emergency fund tool's choices (months to cover, rands already saved and the monthly
+   * line) to the Budget. The Budget's own income goes with them, so its income does not change.
+   * Returns false, and changes nothing, unless all three are finite amounts of 0 or more, or when
+   * the Budget's take-home entry cannot be worked back to a salary (sending would zero its income).
+   */
+  sendFromEmergencyFund(fund: {
+    readonly months: number;
+    readonly saved: number;
+    readonly monthly: number;
+  }): boolean {
+    const usable = (value: unknown): value is number =>
+      typeof value === 'number' && Number.isFinite(value) && value >= 0;
+    if (!fund || !usable(fund.months) || !usable(fund.saved) || !usable(fund.monthly)) {
+      return false;
+    }
+    const income = this.budgetIncome();
+    const estimate = this.budgetEstimate();
+    const good = estimate?.ok ? estimate : null;
+    // Why: a take-home entry only turns back into a gross through a good estimate; without one the
+    // send would replace the Budget income with 0.
+    if (!good && income.basis === 'net') return false;
+    this.send('budget', 'emergency-fund', {
+      ...raHandoffFrom(profileFromSalary(income, good ? good.salary : null)),
+      otherDeductionsMonthly: income.otherDeductionsMonthly,
+      emergencyMonths: fund.months,
+      emergencySaved: fund.saved,
+      emergencyMonthly: fund.monthly,
+    });
+    return true;
+  }
+
   dismiss(target: HandoffTarget): void {
     this.handoffs.update((all) => ({ ...all, [target]: undefined }));
   }
