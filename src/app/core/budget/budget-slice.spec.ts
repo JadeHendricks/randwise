@@ -92,10 +92,42 @@ describe('nextBudgetSlice', () => {
     });
   });
 
-  it('sets the other deductions to 0 when the payload has none', () => {
+  it('keeps the current other deductions when the payload has none', () => {
     const edited = editIncome(freshBudgetSlice(), { otherDeductionsMonthly: 900 }, shared);
     const received = nextBudgetSlice(handoff(1), { source: null, value: edited });
-    expect(received.income?.otherDeductionsMonthly).toBe(0);
+    expect(received.income?.otherDeductionsMonthly).toBe(900);
+  });
+
+  it('keeps the live Salary deductions when the Budget was following them', () => {
+    const received = nextBudgetSlice(handoff(1), undefined, {
+      ...shared,
+      otherDeductionsMonthly: 2_000,
+    });
+    expect(received.income?.otherDeductionsMonthly).toBe(2_000);
+  });
+
+  it('replaces the other deductions when the payload carries them, even at 0', () => {
+    const edited = editIncome(freshBudgetSlice(), { otherDeductionsMonthly: 900 }, shared);
+    const withSome = nextBudgetSlice(handoff(1, { otherDeductionsMonthly: 400 }), {
+      source: null,
+      value: edited,
+    });
+    expect(withSome.income?.otherDeductionsMonthly).toBe(400);
+    const withNone = nextBudgetSlice(handoff(2, { otherDeductionsMonthly: 0 }), {
+      source: null,
+      value: edited,
+    });
+    expect(withNone.income?.otherDeductionsMonthly).toBe(0);
+  });
+
+  it('keeps the deductions through a Salary send followed by a send that has none', () => {
+    const first = step(
+      handoff(1, { grossMonthly: 50_000, otherDeductionsMonthly: 2_000 }),
+      undefined,
+    );
+    const second = nextBudgetSlice(handoff(2, { grossMonthly: 45_000 }), first);
+    expect(second.income?.amount).toBe(45_000);
+    expect(second.income?.otherDeductionsMonthly).toBe(2_000);
   });
 
   it('turns a net or yearly income into a gross monthly one when a handoff arrives', () => {

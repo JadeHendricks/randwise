@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { RatesService } from '../data/rates.service';
 import { TaxYearService } from '../data/tax-year.service';
 import type { BudgetSettings } from '../budget/budget-inputs';
@@ -297,7 +297,10 @@ export class PlanContextStore {
   // Same shape as `raSlice`: a new Budget handoff resets the local income to the sent values.
   private readonly budgetSlice = linkedSignal<Handoff<'budget'> | null, BudgetSlice>({
     source: this.budgetHandoff,
-    computation: (handoff, previous) => nextBudgetSlice(handoff, previous),
+    // Why untracked: the live Salary inputs are only read to keep the other deductions on a send
+    // that has none. A Salary edit must not reset the slice.
+    computation: (handoff, previous) =>
+      nextBudgetSlice(handoff, previous, untracked(() => this.salary.inputs())),
   });
 
   /** The income the Budget page works from: the Salary inputs live until overridden. */

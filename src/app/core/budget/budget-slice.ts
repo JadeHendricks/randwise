@@ -64,20 +64,23 @@ export function freshBudgetSlice(): BudgetSlice {
  * The computation of the slice's linkedSignal, with the Budget handoff as its source.
  * - First run: a fresh slice, with the handoff applied if one is already there.
  * - Same handoff as before: nothing to do.
- * - A new handoff: the income and any sent lines are replaced by the sent values (a new context
- *   resets them), and the pre-handoff state is remembered for Undo.
+ * - A new handoff: the income and any sent lines are replaced by the sent values, and the
+ *   pre-handoff state is remembered for Undo. Other deductions are the exception: only a send that
+ *   carries them (Salary) replaces them; any other send keeps what the Budget was using, so a
+ *   round trip through Journey, RA or Retire at 55 does not change take-home.
  * - Handoff dismissed: the chip and the Undo go, the values stay.
  */
 export function nextBudgetSlice(
   handoff: Handoff<'budget'> | null,
   previous: { readonly source: Handoff<'budget'> | null; readonly value: BudgetSlice } | undefined,
+  shared: SalaryInputs = DEFAULT_SALARY_INPUTS,
 ): BudgetSlice {
   if (!previous) {
     const base = freshBudgetSlice();
-    return handoff ? receive(base, handoff) : base;
+    return handoff ? receive(base, handoff, shared) : base;
   }
   if (handoff === previous.source) return previous.value;
-  if (handoff) return receive(previous.value, handoff);
+  if (handoff) return receive(previous.value, handoff, shared);
   return { ...previous.value, from: null, undo: null };
 }
 
@@ -91,8 +94,15 @@ function usable(amount: number | undefined): number | undefined {
   return amount !== undefined && Number.isFinite(amount) && amount >= 0 ? amount : undefined;
 }
 
-function receive(slice: BudgetSlice, handoff: Handoff<'budget'>): BudgetSlice {
+function receive(
+  slice: BudgetSlice,
+  handoff: Handoff<'budget'>,
+  shared: SalaryInputs,
+): BudgetSlice {
   const v = handoff.values;
+  // Why the effective income: it is what the page was showing, whether an override or the live
+  // Salary inputs.
+  const current = effectiveBudgetIncome(slice, shared);
   const income = sanitiseSalaryInputs(
     {
       basis: 'gross',
@@ -102,7 +112,7 @@ function receive(slice: BudgetSlice, handoff: Handoff<'budget'>): BudgetSlice {
       medicalMembers: v.medicalMembers,
       employeeRetirementMonthly: v.employeeRetirementMonthly,
       employerRetirementMonthly: v.employerRetirementMonthly,
-      otherDeductionsMonthly: v.otherDeductionsMonthly ?? 0,
+      otherDeductionsMonthly: v.otherDeductionsMonthly ?? current.otherDeductionsMonthly,
     },
     slice.income ?? DEFAULT_SALARY_INPUTS,
   );
@@ -196,11 +206,7 @@ export function removeLine(
 ): BudgetSlice {
   const removed = effective.find((line) => line.id === id);
   const held = removed?.kind === 'custom' && removed.amount > 0;
-  return editCategories(
-    slice,
-    removeCategory(effective, id),
-    held ? 'custom' : slice.presetId,
-  );
+  return editCategories(slice, removeCategory(effective, id), held ? 'custom' : slice.presetId);
 }
 
 /** Puts back the state from before the last handoff and clears the chip. No-op without an Undo. */

@@ -755,6 +755,26 @@ describe('PlanContextStore', () => {
       });
     });
 
+    it('keeps the other deductions through Salary to Budget to Journey and back', () => {
+      const { plan, salary } = setup();
+      salary.update({ otherDeductionsMonthly: 500 });
+      expect(plan.sendFromSalary('budget')).toBe(true);
+      const takeHome = plan.budgetOutputs()?.netMonthly;
+      expect(plan.sendFromBudget('journey')).toBe(true);
+      expect(plan.sendFromJourney('budget')).toBe(true);
+      expect(plan.budgetFrom()).toBe('journey');
+      expect(plan.budgetIncome().otherDeductionsMonthly).toBe(500);
+      expect(plan.budgetOutputs()?.netMonthly).toBeCloseTo(takeHome ?? Number.NaN, 2);
+    });
+
+    it('keeps the live Salary deductions when RA sends to a Budget that follows Salary', () => {
+      const { plan, salary } = setup();
+      salary.update({ otherDeductionsMonthly: 500 });
+      plan.updateRa(RA_PLAN);
+      expect(plan.sendFromRa('budget')).toBe(true);
+      expect(plan.budgetIncome().otherDeductionsMonthly).toBe(500);
+    });
+
     it('Salary to Journey carries the salary side', () => {
       const { plan, salary } = setup();
       salary.update({ amount: 40_000 });
