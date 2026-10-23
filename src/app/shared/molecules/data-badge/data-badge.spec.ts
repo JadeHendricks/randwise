@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { formatShortDate } from '../../../core/data/format-date';
 import { normaliseSpaces } from '../../../testing/text';
 import { makeRates, makeTaxYear, provideTestData } from '../../../testing/tax-data-fixtures';
+import { DataBanner } from '../data-banner/data-banner';
 import { DataBadge } from './data-badge';
 
 describe('DataBadge', () => {
@@ -148,6 +149,70 @@ describe('DataBadge', () => {
     expect(text).toContain('Growth portfolio return: 9.5%');
     expect(text).toContain('Assumption: cash earns the repo rate');
     expect(panel.querySelector('input, textarea, select')).toBeNull();
+  });
+
+  describe('when the tax year has ended', () => {
+    const STALE_TODAY = '2027-03-05';
+
+    it('shows Out of date in the chip and the summary instead of verified', async () => {
+      const { text, chip } = await setup(provideTestData({ today: STALE_TODAY }));
+      expect(chip.textContent?.trim()).toBe('Out of date');
+      expect(chip.classList.contains('rw-chip--warning')).toBe(true);
+      expect(text()).toBe(
+        `Tax year 2026/27 · out of date, ended ${formatShortDate('2027-02-28')} · rates ${RATES_ON}`,
+      );
+      expect(text()).not.toContain('verified');
+    });
+
+    it('keeps Out of date for a draft file and shows both sentences in the panel', async () => {
+      const data = makeTaxYear(2027, { status: 'draft' });
+      data.uif.carriedForward = true;
+      const { fixture, toggle, panel, chip } = await setup(
+        provideTestData({ today: STALE_TODAY, taxYears: [{ fileName: '2027.json', data }] }),
+      );
+      toggle.click();
+      await fixture.whenStable();
+      const text = normaliseSpaces(panel.textContent ?? '');
+      expect(chip.textContent?.trim()).toBe('Out of date');
+      expect(text).toContain('Out of date: tax year 2026/27 ended on 28 February 2027');
+      expect(text).toContain('Draft:');
+    });
+
+    it('puts the visible words first in the accessible name', async () => {
+      const { parts, toggle } = await setup(provideTestData({ today: STALE_TODAY }));
+      const name = toggle.getAttribute('aria-label') ?? '';
+      expect(name.startsWith(`${parts().join(', ')}. `)).toBe(true);
+      expect(name).toContain('Status: Out of date');
+    });
+
+    it('is not out of date on the last day of the tax year', async () => {
+      const { chip } = await setup(provideTestData({ today: '2027-02-28' }));
+      expect(chip.textContent?.trim()).toBe('Verified');
+    });
+
+    it('still says Unavailable when there is no tax year', async () => {
+      const { chip } = await setup(provideTestData({ today: STALE_TODAY, taxYears: [] }));
+      expect(chip.textContent?.trim()).toBe('Unavailable');
+    });
+
+    it('stays Out of date after the banner notice is dismissed', async () => {
+      TestBed.configureTestingModule({ providers: provideTestData({ today: STALE_TODAY }) });
+      const banner = TestBed.createComponent(DataBanner);
+      const badge = TestBed.createComponent(DataBadge);
+      document.body.append(banner.nativeElement as HTMLElement, badge.nativeElement as HTMLElement);
+      await banner.whenStable();
+      await badge.whenStable();
+
+      const dismiss = (banner.nativeElement as HTMLElement).querySelector(
+        '[aria-label="Dismiss out-of-date data notice"]',
+      ) as HTMLButtonElement;
+      dismiss.click();
+      await banner.whenStable();
+      await badge.whenStable();
+
+      const chip = (badge.nativeElement as HTMLElement).querySelector('rw-chip') as HTMLElement;
+      expect(chip.textContent?.trim()).toBe('Out of date');
+    });
   });
 
   it('has an accessible name that starts with the visible words', async () => {

@@ -42,6 +42,9 @@ const STATUS: Record<TaxYearStatus | 'unavailable', StatusView> = {
   unavailable: { label: 'Unavailable', tone: 'danger' },
 };
 
+// Shown whenever the selected tax year has ended, so dismissing the banner never hides it.
+const STALE_STATUS: StatusView = { label: 'Out of date', tone: 'warning' };
+
 let nextPanelId = 0;
 
 /** "https://www.sars.gov.za/tax-rates/" -> "sars.gov.za/tax-rates". Falls back to the raw text. */
@@ -171,7 +174,13 @@ export class DataBadge {
   protected readonly taxYear = this.taxYears.taxYear;
   protected readonly carriedForward = this.taxYears.carriedForwardFields;
 
-  protected readonly status = computed<StatusView>(() => STATUS[this.taxYear()?.status ?? 'unavailable']);
+  private readonly stale = this.taxYears.isStale;
+
+  protected readonly status = computed<StatusView>(() => {
+    const data = this.taxYear();
+    if (data !== null && this.stale()) return STALE_STATUS;
+    return STATUS[data?.status ?? 'unavailable'];
+  });
 
   /** The words shown on the button, split so separators can be hidden from assistive tech. */
   protected readonly parts = computed<readonly string[]>(() => {
@@ -181,10 +190,14 @@ export class DataBadge {
     if (data === null) {
       return ['Tax data unavailable', rates];
     }
-    const checked =
-      data.status === 'draft'
-        ? `draft, checked ${formatShortDate(data.verifiedOn)}`
-        : `verified ${formatShortDate(data.verifiedOn)}`;
+    let checked: string;
+    if (this.stale()) {
+      checked = `out of date, ended ${formatShortDate(data.period.end)}`;
+    } else if (data.status === 'draft') {
+      checked = `draft, checked ${formatShortDate(data.verifiedOn)}`;
+    } else {
+      checked = `verified ${formatShortDate(data.verifiedOn)}`;
+    }
     return [`Tax year ${taxYearLabel(data.taxYear)}`, checked, rates];
   });
 
@@ -199,7 +212,12 @@ export class DataBadge {
     if (data === null) {
       return 'Tax-year data is unavailable, so tax figures cannot be shown.';
     }
-    return this.describeStatus(data);
+    const sentence = this.describeStatus(data);
+    if (!this.stale()) return sentence;
+    return (
+      `Out of date: tax year ${taxYearLabel(data.taxYear)} ended on ${formatLongDate(data.period.end)}, ` +
+      `so figures still use its rules until the next year's data is added. ${sentence}`
+    );
   });
 
   protected readonly sources = computed<readonly SourceLink[]>(
