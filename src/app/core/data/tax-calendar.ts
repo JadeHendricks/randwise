@@ -77,6 +77,30 @@ export function taxYearPeriod(endYear: number): TaxYearPeriod {
   };
 }
 
+const MS_PER_DAY = 86_400_000;
+
+/** Whole days from `from` to `to` (negative if `to` is earlier). UTC maths, so DST cannot skew it. */
+export function daysBetween(from: IsoDate, to: IsoDate): number {
+  const utcDay = (iso: IsoDate) => {
+    if (!isIsoDate(iso)) throw new Error(`Not a valid ISO date: ${iso}`);
+    const [year, month, day] = iso.split('-').map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
+  return Math.round((utcDay(to) - utcDay(from)) / MS_PER_DAY);
+}
+
+/** Scouting opens on this day (month-day) of the year the current tax year ends. */
+export const SCOUT_OPENS_ON = '02-20';
+
+/**
+ * The tax year (by end year) the scout should prepare, or null when it is not scouting season.
+ * Scouting runs from 20 February to the end of February, the last days of the current tax year.
+ */
+export function nextTaxYearToScout(today: IsoDate): number | null {
+  const current = taxYearEndingOn(today);
+  return today >= `${current}-${SCOUT_OPENS_ON}` ? current + 1 : null;
+}
+
 /** `2027` -> `2026/27`, `2100` -> `2099/00`. */
 export function taxYearLabel(endYear: number): string {
   return `${endYear - 1}/${pad2(endYear % 100)}`;

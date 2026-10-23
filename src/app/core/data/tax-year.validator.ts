@@ -1,19 +1,15 @@
+import { findBracketProblems, findThresholdProblems } from './bracket-checks';
 import { isIsoDate, taxYearPeriod } from './tax-calendar';
 import {
   BracketRow,
-  Rebates,
   TAX_YEAR_FIELD_KEYS,
   TAX_YEAR_STATUSES,
   TaxYearData,
   TaxYearFieldKey,
 } from './tax-year.schema';
-import { ValidationResult, formatRand, isHttpsUrl, isRecord } from './validation';
+import { ValidationResult, isHttpsUrl, isRecord } from './validation';
 
-/** Bases and thresholds are published rounded to whole rands, so allow R1 either way. */
-const RAND_TOLERANCE = 1;
 const SHARE_TOLERANCE = 1e-9;
-// Absorbs floating-point noise so "off by exactly R1" passes reliably.
-const EPSILON = 1e-6;
 
 type NumberKind = 'money' | 'rate' | 'count';
 
@@ -92,6 +88,19 @@ export function validateTaxYearFile(
     if ('value' in field) values[key] = field['value'];
   }
 
+  // A file with unconfirmed (carried-forward) values must not claim to be verified.
+  const carried = TAX_YEAR_FIELD_KEYS.filter((key) => {
+    const field = data[key];
+    return isRecord(field) && field['carriedForward'] === true;
+  });
+  if ((status === 'verified' || status === 'verified-auto') && carried.length > 0) {
+    fail(
+      `status is "${status}" but ${carried.join(', ')} ${carried.length === 1 ? 'is' : 'are'} ` +
+        `carried forward, so status must be "draft" ` +
+        `(a verified or verified-auto file cannot have carried-forward fields).`,
+    );
+  }
+
   const check = new FieldChecker(fail, values);
 
   const incomeTax = check.brackets('incomeTaxBrackets');
@@ -142,7 +151,7 @@ export function validateTaxYearFile(
   check.single('earliestRaRetirementAge', 'count');
 
   if (incomeTax && rebates && thresholds) {
-    checkThresholds(incomeTax, rebates, thresholds, fail);
+    findThresholdProblems(incomeTax, rebates, thresholds).forEach(fail);
   }
 
   if (twoPot) {
@@ -181,34 +190,6 @@ function checkPeriod(period: unknown, taxYear: number | null, fail: (m: string) 
       `period must run from ${expected.start} to ${expected.end} for tax year ${taxYear} ` +
         `(found ${start} to ${end}).`,
     );
-  }
-}
-
-/*
- * Tax thresholds are the income at which the rebates cancel the lowest-bracket tax:
- * https://www.sars.gov.za/tax-rates/income-tax/rates-of-tax-for-individuals/
- */
-function checkThresholds(
-  brackets: readonly BracketRow[],
-  rebates: Rebates,
-  thresholds: Record<string, number>,
-  fail: (m: string) => void,
-): void {
-  const lowestRate = brackets[0].rate;
-  if (lowestRate <= 0) return;
-  const expected: Record<string, number> = {
-    under65: rebates.primary / lowestRate,
-    age65to74: (rebates.primary + rebates.secondary) / lowestRate,
-    age75plus: (rebates.primary + rebates.secondary + rebates.tertiary) / lowestRate,
-  };
-  for (const key of ['under65', 'age65to74', 'age75plus']) {
-    const actual = thresholds[key];
-    if (Math.abs(actual - expected[key]) > RAND_TOLERANCE + EPSILON) {
-      fail(
-        `thresholds.${key} is ${formatRand(actual)} but the rebates divided by the lowest rate ` +
-          `give ${formatRand(Math.round(expected[key]))} (allowed difference R${RAND_TOLERANCE}).`,
-      );
-    }
   }
 }
 
@@ -264,11 +245,7 @@ class FieldChecker {
     return ok ? result : null;
   }
 
-  /*
-   * Each bracket's base is the tax on all income below it, so it must equal the
-   * running total of the lower rows (SARS rounds these to whole rands):
-   * https://www.sars.gov.za/tax-rates/income-tax/rates-of-tax-for-individuals/
-   */
+  /** Parses each row, then hands the structure and base checks to bracket-checks.ts. */
   brackets(key: TaxYearFieldKey): readonly BracketRow[] | null {
     if (!(key in this.values)) return null;
     const value = this.values[key];
@@ -294,48 +271,8 @@ class FieldChecker {
     });
     if (rows.length !== value.length) return null;
 
-    let ok = true;
-    const problem = (message: string) => {
-      ok = false;
-      this.fail(message);
-    };
-
-    if (rows[0].above !== 0)
-      problem(`${key} row 1 must start at above 0 (found ${rows[0].above}).`);
-    if (rows[0].base !== 0) problem(`${key} row 1 base must be 0 (found ${rows[0].base}).`);
-
-    let cumulative = 0;
-    rows.forEach((row, i) => {
-      const label = `${key} row ${i + 1}`;
-      const isLast = i === rows.length - 1;
-      if (row.upTo === null && !isLast)
-        problem(`${label} has no upper limit but is not the last row.`);
-      if (row.upTo !== null && isLast) problem(`${label} is the last row and must have upTo null.`);
-      if (row.upTo !== null && !(row.upTo > row.above)) {
-        problem(`${label} upTo (${row.upTo}) must be greater than above (${row.above}).`);
-      }
-
-      if (i > 0) {
-        const prev = rows[i - 1];
-        if (prev.upTo !== null && row.above !== prev.upTo) {
-          const kind = row.above > prev.upTo ? 'a gap' : 'an overlap';
-          problem(
-            `${label} starts above ${row.above} but row ${i} ends at ${prev.upTo}, leaving ${kind}.`,
-          );
-        }
-        if (!(row.rate > prev.rate)) {
-          problem(`${label} rate ${row.rate} must be higher than row ${i} rate ${prev.rate}.`);
-        }
-        if (prev.upTo !== null) cumulative += prev.rate * (prev.upTo - prev.above);
-        if (Math.abs(row.base - cumulative) > RAND_TOLERANCE + EPSILON) {
-          problem(
-            `${label} base is ${formatRand(row.base)} but the lower rows add up to ` +
-              `${formatRand(Math.round(cumulative))} (allowed difference R${RAND_TOLERANCE}).`,
-          );
-        }
-      }
-    });
-
-    return ok ? rows : null;
+    const problems = findBracketProblems(key, rows);
+    problems.forEach((p) => this.fail(p.message));
+    return problems.length === 0 ? rows : null;
   }
 }

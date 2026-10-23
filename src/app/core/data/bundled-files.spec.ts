@@ -1,13 +1,26 @@
 import rates from '../../../assets/data/rates.json';
 import taxYear2027 from '../../../assets/data/tax-years/2027.json';
+import { BUNDLED_DATA } from './bundled-data';
 import { validateRatesFile } from './rates.validator';
-import { TAX_YEAR_FIELD_KEYS } from './tax-year.schema';
+import { TAX_YEAR_FIELD_KEYS, TaxYearData } from './tax-year.schema';
 import { validateTaxYearFile } from './tax-year.validator';
 
 describe('bundled data files', () => {
-  it('2027.json passes the tax-year validator', () => {
-    const result = validateTaxYearFile(taxYear2027, '2027.json');
-    expect(result.ok ? [] : result.errors).toEqual([]);
+  it('every bundled tax-year file passes the tax-year validator', () => {
+    expect(BUNDLED_DATA.taxYears.length).toBeGreaterThan(0);
+    for (const { fileName, data } of BUNDLED_DATA.taxYears) {
+      const result = validateTaxYearFile(data, fileName);
+      expect(result.ok ? [] : result.errors, fileName).toEqual([]);
+    }
+  });
+
+  it('no verified bundled tax-year file has a carried-forward field', () => {
+    for (const { fileName, data } of BUNDLED_DATA.taxYears) {
+      const file = data as TaxYearData;
+      if (file.status === 'draft') continue;
+      const carried = TAX_YEAR_FIELD_KEYS.filter((key) => file[key].carriedForward);
+      expect(carried, fileName).toEqual([]);
+    }
   });
 
   it('rates.json passes the rates validator', () => {

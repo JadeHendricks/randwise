@@ -1,0 +1,26 @@
+{
+  "_help": "Edit a URL here when SARS moves a page. If the page layout changed, the matching extractor in lib/parse-sars.mjs needs a fix too (see README).",
+  "sarb": {
+    "url": "https://custom.resbank.co.za/SarbWebApi/WebIndicators/HomePageRates",
+    "series": {
+      "repo": "MMRD002A",
+      "prime": "MMRD000A",
+      "cpi": "CPI1000F",
+      "r2030": "MMRD708A",
+      "r209": "MMRD709A",
+      "zaronia": "MMRD855A"
+    }
+  },
+  "sars": {
+    "individuals": "https://www.sars.gov.za/tax-rates/income-tax/rates-of-tax-for-individuals/",
+    "medicalCredits": "https://www.sars.gov.za/tax-rates/medical-tax-credit-rates/",
+    "uif": "https://www.sars.gov.za/types-of-tax/unemployment-insurance-fund/",
+    "tfsa": "https://www.sars.gov.za/types-of-tax/personal-income-tax/tax-free-investments/",
+    "retirementLumpSum": "https://www.sars.gov.za/tax-rates/income-tax/retirement-lump-sum-benefits/",
+    "interestAndDividends": "https://www.sars.gov.za/tax-rates/income-tax/interest-and-dividends/",
+    "cgt": "https://www.sars.gov.za/tax-rates/income-tax/capital-gains-tax-cgt/",
+    "dividendsTax": "https://www.sars.gov.za/types-of-tax/dividends-tax/",
+    "twoPot": "https://www.sars.gov.za/latest-news/tax-directives-enhancements-and-tax-implications-of-the-two-pot-retirement-system/",
+    "annuitisation": "https://www.sars.gov.za/latest-news/tax-directives-legislative-changes-and-system-enhancements/"
+  }
+}

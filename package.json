@@ -3,10 +3,13 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "prestart": "node scripts/tax-season/check.mjs",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test --watch=false",
+    "test": "ng test --watch=false && npm run test:scripts",
+    "test:scripts": "vitest run --config vitest.scripts.config.mjs",
+    "tax:scout": "node scripts/tax-season/scout.mjs",
     "lint": "ng lint"
   },
   "private": true,
@@ -27,6 +30,7 @@
     "@angular/compiler-cli": "22.2.0",
     "@eslint/js": "10.0.1",
     "angular-eslint": "22.6.0",
+    "cheerio": "1.2.0",
     "eslint": "10.13.0",
     "jsdom": "30.0.0",
     "prettier": "3.8.1",
