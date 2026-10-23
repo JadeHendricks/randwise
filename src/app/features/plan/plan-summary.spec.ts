@@ -108,10 +108,12 @@ describe('PlanSummary', () => {
     ]);
   });
 
-  it('says the home calculator is coming for a home goal', async () => {
+  it('says the Toolbox has a home calculator for a home goal', async () => {
     const { root, titles } = await render({ goal: 'buy-home' });
     expect(titles()).toEqual(['Check your take-home pay', 'See what a home could cost you each month']);
-    expect(normaliseSpaces(root.textContent)).toContain('coming to the Toolbox');
+    expect(normaliseSpaces(root.textContent)).toContain(
+      'The Toolbox has a home-loan calculator',
+    );
   });
 
   it('lists the assumptions, including the CPI-based growth sentence', async () => {

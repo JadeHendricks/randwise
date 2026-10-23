@@ -436,8 +436,10 @@ describe('buildPlan: buy a home', () => {
     expect(step.key.unit).toBe('rand-month');
   });
 
-  it('says the home-loan calculator is coming to the Toolbox', () => {
-    expect(stepOf(steps, 'home-budget').notes.join(' ')).toContain('Toolbox');
+  it('says the Toolbox has a home-loan calculator', () => {
+    expect(stepOf(steps, 'home-budget').notes.join(' ')).toContain(
+      'The Toolbox has a home-loan calculator',
+    );
   });
 
   it('opens the Budget with the Salary figures and no other deductions', () => {

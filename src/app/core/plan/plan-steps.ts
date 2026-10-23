@@ -472,7 +472,7 @@ export function homeBudgetStep(ctx: PlanContext): PlanStep | null {
     key: figure('home-housing-monthly', 'Housing a month', housing.amount, 'rand-month'),
     details: [figure('take-home-monthly', 'Take-home pay a month', estimate.net, 'rand-month')],
     notes: [
-      'A dedicated home-loan calculator is coming to the Toolbox. Until then the Budget shows how much room you have for housing.',
+      'The Toolbox has a home-loan calculator for the bond you could afford and what it would cost. The Budget shows how much room you have for housing.',
       'Essentials are assumed to be 50% of your take-home pay (a 50/30/20 budget).',
     ],
     open: { calculator: 'budget', values: budgetBase(ctx) },
