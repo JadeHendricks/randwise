@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test --watch=false && npm run test:scripts",
     "test:scripts": "vitest run --config vitest.scripts.config.mjs",
+    "tax:scout": "node scripts/tax-season/scout.mjs",
     "lint": "ng lint"
   },
   "private": true,
