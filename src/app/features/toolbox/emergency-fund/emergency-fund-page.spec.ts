@@ -6,6 +6,7 @@ import { routes } from '../../../app.routes';
 import { TODAY } from '../../../core/data/data-source';
 import { SEND_TARGETS } from '../../../core/plan/handoff';
 import { PlanContextStore } from '../../../core/plan/plan-context.store';
+import { LIVE_REGION_SETTLE_MS } from '../../../shared/atoms/live-region/live-region';
 import { FakeMatchMedia, installFakeMatchMedia } from '../../../testing/fake-match-media';
 import { normaliseSpaces } from '../../../testing/text';
 import { BudgetPage } from '../../budget/budget-page';
@@ -22,6 +23,7 @@ describe('EmergencyFundPage', () => {
     fake = installFakeMatchMedia({ reducedMotion: true });
     TestBed.configureTestingModule({
       providers: [
+        { provide: LIVE_REGION_SETTLE_MS, useValue: 0 },
         provideRouter([
           { path: 'toolbox/emergency-fund', component: EmergencyFundPage },
           { path: 'toolbox', component: ToolboxPage },

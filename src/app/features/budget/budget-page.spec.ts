@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 
 import { TODAY } from '../../core/data/data-source';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
+import { LIVE_REGION_SETTLE_MS } from '../../shared/atoms/live-region/live-region';
 import { FakeMatchMedia, installFakeMatchMedia } from '../../testing/fake-match-media';
 import { provideTestData } from '../../testing/tax-data-fixtures';
 import { normaliseSpaces } from '../../testing/text';
@@ -31,6 +32,7 @@ describe('BudgetPage', () => {
   async function render(withData = true) {
     TestBed.configureTestingModule({
       providers: [
+        { provide: LIVE_REGION_SETTLE_MS, useValue: 0 },
         provideRouter([]),
         withData
           ? { provide: TODAY, useValue: () => new Date(TODAY_PINNED) }
@@ -174,6 +176,14 @@ describe('BudgetPage', () => {
     expect(button(root, '60/20/20').getAttribute('aria-pressed')).toBe('true');
     expect(button(root, '50/30/20').getAttribute('aria-pressed')).toBe('false');
     expect(text(root.querySelector('.budget__lead'))).toBe('Every rand has a job');
+  });
+
+  it('marks the pressed preset with a tick as well as its fill colour', async () => {
+    const { fixture, root } = await render();
+    button(root, '60/20/20').click();
+    await fixture.whenStable();
+    expect(button(root, '60/20/20').querySelector('rw-icon')).not.toBeNull();
+    expect(button(root, '50/30/20').querySelector('rw-icon')).toBeNull();
   });
 
   it('exposes the presets as a labelled group of toggle buttons and marks Custom after an edit', async () => {

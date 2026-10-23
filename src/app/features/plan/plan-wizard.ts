@@ -19,6 +19,7 @@ import { type AmountBasis, SALARY_LIMITS } from '../../core/salary/salary-inputs
 import { AmountField } from '../../shared/atoms/amount-field/amount-field';
 import { Button } from '../../shared/atoms/button/button';
 import { Card } from '../../shared/atoms/card/card';
+import { LiveRegion } from '../../shared/atoms/live-region/live-region';
 import { formatRandWhole } from '../../shared/format/format-rand';
 import { ChoiceList, ChoiceOption } from '../../shared/molecules/choice-list/choice-list';
 import {
@@ -68,7 +69,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'rw-plan-wizard',
-  imports: [AmountField, Button, Card, ChoiceList, SegmentedControl, StepProgress],
+  imports: [AmountField, Button, Card, ChoiceList, LiveRegion, SegmentedControl, StepProgress],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './plan-wizard.html',
   styleUrl: './plan-wizard.scss',

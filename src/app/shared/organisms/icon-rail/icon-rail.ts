@@ -18,11 +18,13 @@ import { Icon } from '../../atoms/icon/icon';
         @for (item of items; track item.path) {
           <li class="rw-icon-rail__item">
             <a
+              #link
               class="rw-icon-rail__link"
               [routerLink]="'/' + item.path"
               routerLinkActive="rw-icon-rail__link--active"
               ariaCurrentWhenActive="page"
               [routerLinkActiveOptions]="{ exact: item.path === '' }"
+              (isActiveChange)="onActiveChange($event, link)"
             >
               <rw-icon [name]="item.icon" />
               <span class="rw-icon-rail__label">{{ item.label }}</span>
@@ -35,4 +37,20 @@ import { Icon } from '../../atoms/icon/icon';
 })
 export class IconRail {
   protected readonly items = NAV_ITEMS;
+
+  /**
+   * Why: the mobile bar scrolls sideways, so the current page's link can sit off screen. Scroll
+   * the nav itself (instant, so reduced motion is respected). Element.scrollIntoView would also
+   * move the browser's Tab starting point to this link, so the first Tab press after a page load
+   * would skip the skip link and every nav link before it.
+   */
+  protected onActiveChange(active: boolean, link: HTMLElement): void {
+    const nav = link.closest('nav');
+    if (!active || !nav) return;
+    const box = nav.getBoundingClientRect();
+    const rect = link.getBoundingClientRect();
+    nav.scrollLeft += rect.left + rect.width / 2 - (box.left + box.width / 2);
+    if (rect.top < box.top) nav.scrollTop -= box.top - rect.top;
+    else if (rect.bottom > box.bottom) nav.scrollTop += rect.bottom - box.bottom;
+  }
 }

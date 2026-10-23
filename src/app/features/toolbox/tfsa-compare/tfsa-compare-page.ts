@@ -19,6 +19,7 @@ import { Card } from '../../../shared/atoms/card/card';
 import { Chip } from '../../../shared/atoms/chip/chip';
 import { Icon } from '../../../shared/atoms/icon/icon';
 import { LineChart, LinePoint, LineSeries } from '../../../shared/atoms/line-chart/line-chart';
+import { LiveRegion } from '../../../shared/atoms/live-region/live-region';
 import { Money } from '../../../shared/atoms/money/money';
 import {
   formatPercent,
@@ -66,6 +67,7 @@ const yearsText = (years: number): string => `${years} ${years === 1 ? 'year' : 
     DownloadPdf,
     Icon,
     LineChart,
+    LiveRegion,
     Money,
     RouterLink,
     StatCard,

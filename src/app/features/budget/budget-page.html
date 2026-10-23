@@ -130,7 +130,7 @@
 
   <section class="budget__results" aria-label="Results">
     <!-- Always rendered so screen readers pick up changes when an input is edited. -->
-    <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+    <rw-live-region [text]="announcement()" />
     @if (context.budgetEstimate() === null) {
       <rw-card class="budget__unavailable" padding="lg">
         <p>Tax data is unavailable, so the budget cannot be worked out.</p>
@@ -171,6 +171,10 @@
               [attr.aria-label]="preset.aria"
               (click)="context.applyBudgetPreset(preset.id)"
             >
+              @if (presetId() === preset.id) {
+                <!-- Pressed is also shown by a tick, not by the fill colour alone. -->
+                <rw-icon name="check" size="sm" />
+              }
               {{ preset.label }}
             </button>
           }

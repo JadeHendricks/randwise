@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { TODAY } from '../../core/data/data-source';
 import type { PlanAnswers } from '../../core/plan/plan-answers';
 import { PlanBuilderStore } from '../../core/plan/plan-builder.store';
+import { LIVE_REGION_SETTLE_MS } from '../../shared/atoms/live-region/live-region';
 import { FakeMatchMedia, installFakeMatchMedia } from '../../testing/fake-match-media';
 import { provideTestData } from '../../testing/tax-data-fixtures';
 import { normaliseSpaces } from '../../testing/text';
@@ -25,6 +26,7 @@ describe('PlanSummary', () => {
   async function render(profile: Partial<PlanAnswers>, withData = true) {
     TestBed.configureTestingModule({
       providers: [
+        { provide: LIVE_REGION_SETTLE_MS, useValue: 0 },
         provideRouter([]),
         withData
           ? { provide: TODAY, useValue: () => new Date(TODAY_PINNED) }
@@ -197,7 +199,11 @@ describe('PlanSummary', () => {
 
     it('takes focus on its heading when the move asked for it', async () => {
       TestBed.configureTestingModule({
-        providers: [provideRouter([]), { provide: TODAY, useValue: () => new Date(TODAY_PINNED) }],
+        providers: [
+          provideRouter([]),
+          { provide: LIVE_REGION_SETTLE_MS, useValue: 0 },
+          { provide: TODAY, useValue: () => new Date(TODAY_PINNED) },
+        ],
       });
       const plan = TestBed.inject(PlanBuilderStore);
       plan.update(TAX_PROFILE);

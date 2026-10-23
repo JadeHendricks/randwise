@@ -18,7 +18,7 @@
     gap: var(--rw-space-1);
     max-width: 100%;
     padding: var(--rw-space-1);
-    border: 1px solid var(--rw-color-border-strong);
+    border: 1px solid var(--rw-color-border-control);
     border-radius: var(--rw-radius-pill);
     background: var(--rw-color-surface-solid);
   }
@@ -33,6 +33,10 @@
     font-size: var(--rw-text-sm);
     font-weight: var(--rw-weight-bold);
     cursor: pointer;
+
+    @include mixins.coarse-pointer {
+      min-height: var(--rw-tap-target-min);
+    }
 
     &:hover {
       background: var(--rw-color-accent-soft);

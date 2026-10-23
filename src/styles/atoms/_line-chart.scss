@@ -156,11 +156,6 @@
     }
   }
 
-  // Fill under the second series, drawn over the primary area so the gap between the lines reads
-  // as the difference (for the RA chart: growth).
-  &__area--secondary {
-    fill: var(--rw-chart-area-secondary);
-  }
 
   &__line--primary {
     stroke: var(--rw-chart-accent);

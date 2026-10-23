@@ -1,3 +1,5 @@
+@use 'mixins';
+
 // Design tokens. Light is the default; dark overrides via the single
 // [data-theme='dark'] attribute selector on <html>.
 :root {
@@ -8,6 +10,8 @@
   --rw-color-surface-solid: #f4fbf7;
   --rw-color-border-glass: rgb(255 255 255 / 70%);
   --rw-color-border-strong: rgb(15 26 21 / 28%);
+  // Form-control boundaries need 3:1 (WCAG 1.4.11); border-strong is decorative.
+  --rw-color-border-control: #6b7a72;
   --rw-color-text: #0f1a15;
   --rw-color-text-muted: #435349;
   --rw-color-accent: #0b6b49;
@@ -22,6 +26,7 @@
   --rw-color-focus: #0d0f0e;
   --rw-color-glow: transparent;
   --rw-color-track: rgb(15 26 21 / 18%);
+  --rw-scroll-shadow: rgb(15 26 21 / 24%);
 
   // Status colours are opaque so contrast can be measured exactly. Each tone
   // is a surface, the text on it and a border (>= 3:1 against both).
@@ -95,6 +100,7 @@
   // Layout
   --rw-rail-width: 96px;
   --rw-bottom-bar-height: 72px;
+  --rw-tap-target-min: 44px;
 }
 
 [data-theme='dark'] {
@@ -104,6 +110,7 @@
   --rw-color-surface-solid: #102a20;
   --rw-color-border-glass: rgb(110 231 183 / 18%);
   --rw-color-border-strong: rgb(167 243 208 / 40%);
+  --rw-color-border-control: #5e7e6f;
   --rw-color-text: #e8f6ef;
   --rw-color-text-muted: #a3c2b3;
   --rw-color-accent: #34d399;
@@ -118,6 +125,7 @@
   --rw-color-focus: #a7f3d0;
   --rw-color-glow: rgb(52 211 153 / 35%);
   --rw-color-track: rgb(167 243 208 / 22%);
+  --rw-scroll-shadow: rgb(0 0 0 / 55%);
   --rw-color-success-surface: #0f3b2a;
   --rw-color-success-text: #a7f3d0;
   --rw-color-success-border: #34a275;
@@ -139,4 +147,12 @@
   --rw-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
   --rw-shadow-md: 0 12px 32px rgb(0 0 0 / 45%);
   --rw-shadow-glow: 0 0 36px rgb(52 211 153 / 28%), 0 12px 32px rgb(0 0 0 / 45%);
+}
+
+@include mixins.reduced-motion {
+  :root {
+    --rw-duration-fast: 0.01ms;
+    --rw-duration-base: 0.01ms;
+    --rw-duration-slow: 0.01ms;
+  }
 }

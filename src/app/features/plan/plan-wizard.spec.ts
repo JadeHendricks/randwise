@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { TODAY } from '../../core/data/data-source';
 import type { PlanGoal } from '../../core/plan/plan-answers';
 import { PlanBuilderStore } from '../../core/plan/plan-builder.store';
+import { LIVE_REGION_SETTLE_MS } from '../../shared/atoms/live-region/live-region';
 import { FakeMatchMedia, installFakeMatchMedia } from '../../testing/fake-match-media';
 import { normaliseSpaces } from '../../testing/text';
 import { QUESTION_COPY } from './plan-format';
@@ -18,7 +19,11 @@ describe('PlanWizard', () => {
   beforeEach(() => {
     fake = installFakeMatchMedia({ reducedMotion: true });
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: TODAY, useValue: () => new Date(TODAY_PINNED) }],
+      providers: [
+        provideRouter([]),
+        { provide: LIVE_REGION_SETTLE_MS, useValue: 0 },
+        { provide: TODAY, useValue: () => new Date(TODAY_PINNED) },
+      ],
     });
   });
   afterEach(() => fake.uninstall());

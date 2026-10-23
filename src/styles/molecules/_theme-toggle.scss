@@ -43,6 +43,10 @@
     font-size: var(--rw-text-sm);
     font-weight: var(--rw-weight-bold);
 
+    @include mixins.coarse-pointer {
+      min-height: var(--rw-tap-target-min);
+    }
+
     @include mixins.motion-safe {
       transition: color var(--rw-duration-base) var(--rw-ease-out);
     }

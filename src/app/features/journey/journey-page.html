@@ -214,7 +214,7 @@
 
   <section class="journey__results" aria-label="Results">
     <!-- Always rendered so screen readers pick up changes when an input is edited. -->
-    <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+    <rw-live-region [text]="announcement()" />
     @if (context.journeyEstimate() === null) {
       <rw-card class="journey__unavailable" padding="lg">
         <p>Tax data is unavailable, so the journey cannot be worked out.</p>

@@ -1,12 +1,24 @@
 # Randwise
-A South African personal-finance planner (RA, TFSA, tax, budgeting). Frontend-only, runs locally, nothing is saved.
+
+A South African personal-finance planner. Frontend-only, runs locally, nothing is saved.
 Estimates only, not financial advice.
 
 ## What it is
 
-Randwise helps salaried South Africans explore their money in rand (ZAR). It is a frontend-only Angular app: no backend, database or API keys, and nothing is persisted. The theme follows your system setting, the toggle overrides it in memory only, and a reload starts fresh.
+Randwise helps salaried South Africans plan their money in rand (ZAR). It is a frontend-only Angular app: no backend, no database, no API keys. Nothing is persisted or sent anywhere; theme override is in memory only and a reload starts fresh.
 
-So far it has the app shell and design system (a left icon rail, a bento dashboard, lazy feature routes, and light and dark themes), the tax-year and rates data layer behind a status badge in the header, the Pay page, which turns a salary into take-home pay, and the RA calculator, which projects a retirement annuity and its tax saving. The dashboard's yellow card shows the same take-home estimate, and its RA, Retire at 55, Budget and Journey tiles show live figures. Retire at 55 is live too: it works out the monthly contribution needed to retire on a target income and how that income holds up through retirement. Budget turns your take-home pay into a spending plan with RA, TFSA and emergency-fund checks, and Journey follows an RA contribution, its tax refund and a TFSA year by year to retirement. Pay, RA, Retire at 55, Budget and Journey can send figures to each other. Plan is live too: the guided Plan Builder asks a few questions and turns them into an ordered, step-by-step plan. The Toolbox is live too: four small calculators for an emergency fund, a home loan, a two-pot savings withdrawal and a TFSA against a taxable account. Every calculator, the Journey and the Plan can export a PDF of its result.
+**Calculators** (with their routes):
+- **Pay** (`/pay`): net pay from gross, with PAYE, UIF, medical aid credit, marginal and effective rates.
+- **RA** (`/ra`): retirement annuity projection, tax deduction room, tax saving and two-pot split.
+- **Retire at 55** (`/retire`): monthly contribution needed to retire on a target income, drawdown strategy and money longevity.
+- **Budget** (`/budget`): spending plan from take-home with RA, TFSA and emergency-fund checks.
+- **Journey** (`/journey`): RA and TFSA, year by year, with tax refunds invested.
+- **Plan Builder** (`/plan`): guided wizard for your money goal, from age and income to a step-by-step plan.
+- **Toolbox** (`/toolbox`): four tools—emergency fund, home loan, two-pot withdrawal, TFSA vs taxable account.
+- **Dashboard** (`/`): quick view of your current take-home, RA, Retire at 55, Budget and Journey.
+- **PDF export**: every calculator and plan can download its result as a PDF.
+
+All calculators use the shared tax-year data and can send figures to each other. See each [calculator page](#pay-page-and-charts) for details.
 
 ## Requirements
 
@@ -34,6 +46,8 @@ In PowerShell, run npm scripts that take options as `cmd /c "npm run tax:scout -
 - `src/app/shared`: `atoms`, `molecules` and `organisms`, plus `charts` (chart geometry helpers) and `format` (rand and percent formatters).
 - `src/app/testing`: fakes and helpers for specs.
 - `src/styles`: design tokens, mixins, base styles, and one partial per atom, molecule and organism.
+- `scripts/tax-season`: Node scripts that update tax and rates JSON (see [How the data updates each tax season](#how-the-data-updates-each-tax-season)).
+- `scripts/a11y`: accessibility guard specs (contrast, motion); run as part of `npm run test:scripts`.
 
 ## Tax and rates data
 
@@ -50,18 +64,46 @@ Tax rules and interest rates are plain JSON, checked at startup. Nothing is fetc
 
 ## How the data updates each tax season
 
-The app never fetches data itself. Two Node scripts in `scripts/tax-season` update the local JSON files for you.
+The app never fetches data itself. Two Node scripts in `scripts/tax-season` update the local JSON files for you. Every statement here matches the scripts, so read the [privacy](#privacy) section first if the automation concerns you.
 
-- **On `npm start`**, `prestart` runs `scripts/tax-season/check.mjs` first. It does two things.
-  1. It refreshes `src/assets/data/rates.json` from the SARB HomePageRates endpoint when `fetchedOn` is more than 7 days old. The new rates are validated before anything is written.
-  2. On or after 20 February, if next year's `src/assets/data/tax-years/<YYYY>.json` is missing or `draft`, it runs the scout for it, at most once a day.
+### On `npm start`
 
-  It prints a short summary. If anything fails (no network, SARS or SARB changed a page) it warns and carries on, and it never blocks the dev server. It changes tracked JSON, so commit the refreshed files if you want to keep them.
-- **By hand**, run `npm run tax:scout -- --year 2028` (PowerShell: `cmd /c "npm run tax:scout -- --year 2028"`). The scout reads the SARS pages listed in `scripts/tax-season/sources.json` and parses them. It then runs the consistency checks: each bracket base equals the tax on the lower brackets (within R1), each threshold equals its rebate divided by the lowest rate (within R1), brackets are contiguous with strictly rising rates, and every value is within 25% of last year's. Then it writes the new file, registers it in `bundled-data.ts`, prints a diff against last year and writes `scripts/tax-season/last-report.md` (gitignored).
-- **Statuses.** `verified` means a person confirmed every value. `verified-auto` means the scout scraped every value and every check passed. `draft` means at least one value could not be scraped or failed a check, so it is copied from last year with `carriedForward: true`. The scout never guesses and never overwrites a verified file.
-- **Known limit.** There is no HTML source today for the retirement deduction, the living-annuity drawdown limits, the earliest RA age and the CGT inclusion rate, so scout output stays `draft` until you confirm those by hand: edit the file, set `carriedForward: false` and the real `source` on each, then set `status` to `verified`.
-- **When SARS moves a page.** Open the page in a browser and copy the new address into the matching key in `scripts/tax-season/sources.json`. Run the scout for the current year with `--year` and read `last-report.md`. If a field now shows as "not found", the page layout changed: fix the matching extractor in `scripts/tax-season/lib/parse-sars.mjs` and update the fixture in `scripts/tax-season/__fixtures__`.
-- **Privacy.** Nothing is sent anywhere. The scripts only read public SARS and SARB pages and rewrite local JSON.
+`prestart` runs `scripts/tax-season/check.mjs` first. It does two things.
+
+1. **Rates refresh.** It refreshes `src/assets/data/rates.json` from the [SARB HomePageRates endpoint](https://custom.resbank.co.za/SarbWebApi/WebIndicators/HomePageRates) when `fetchedOn` is more than 7 days old. The new rates are validated before anything is written.
+
+2. **Next year's scout** (from 20 February only). If next year's `src/assets/data/tax-years/<YYYY>.json` is missing or `draft`, it runs the scout for it at most once a day.
+
+It prints a short summary. If anything fails (no network, SARS or SARB changed a page) it warns and carries on, and it never blocks the dev server. It changes tracked JSON, so commit the refreshed files if you want to keep them.
+
+### By hand
+
+Run the scout with `npm run tax:scout -- --year 2028` (in PowerShell: `cmd /c "npm run tax:scout -- --year 2028"`). Elsewhere or on Node directly: `node scripts/tax-season/scout.mjs --year 2028`. The `--year` argument is the year the tax year ends (e.g. `2028` = 1 March 2027 to 29 February 2028).
+
+The scout reads the SARS pages listed in `scripts/tax-season/sources.json`, parses them and then runs consistency checks: each bracket base equals the tax on the lower brackets (within R1), each threshold equals its rebate divided by the lowest rate (within R1), brackets are contiguous with strictly rising rates, and every value is within 25% of last year's. Then it writes the new file, registers it in `bundled-data.ts`, prints a diff against last year and writes `scripts/tax-season/last-report.md` (gitignored).
+
+For manual testing of the check script, set `TAX_SEASON_TODAY=YYYY-MM-DD` in the shell before running `npm start` or `node scripts/tax-season/check.mjs` to override "today"'s date for checking whether to scout.
+
+### Statuses: verified, verified-auto, draft
+
+| Status | Meaning | UI |
+| --- | --- | --- |
+| `verified` | A person confirmed every value | Header: **Verified** chip (success); banner: (hidden unless other notices) |
+| `verified-auto` | The scout scraped every value and every check passed | Header: **Verified (auto)** chip (success); banner: (hidden unless other notices) |
+| `draft` | At least one value could not be scraped or failed a check, so it is copied from last year with `carriedForward: true` | Header: **Draft** chip (warning); banner: "Draft tax data" lists carried-forward fields |
+| (year has ended) | The tax year's end date has passed | Header: **Out of date** chip (warning); banner: "Tax year has ended" |
+
+The scout never guesses and never overwrites a `verified` file. Invalid files are left out of the bundle and shown in an alert banner.
+
+**Known limit:** There is no HTML source today for the retirement deduction, the living-annuity drawdown limits, the earliest RA age and the CGT inclusion rate, so scout output stays `draft` until you confirm those by hand. Edit the file, set `carriedForward: false` and the real `source` on each, then set `status` to `verified`.
+
+### When SARS moves a page
+
+Open the page in a browser and copy the new address into the matching key under `sars` in `scripts/tax-season/sources.json`. Run the scout for the current year and read `last-report.md`. If a field now shows as "not found", the page layout changed: fix the matching extractor in `scripts/tax-season/lib/parse-sars.mjs` and update the fixture in `scripts/tax-season/__fixtures__/`.
+
+### Privacy
+
+Nothing is sent anywhere. The scripts only read public [SARS](https://www.sars.gov.za) and [SARB](https://www.resbank.co.za) pages and rewrite local JSON. The only endpoint contacted is `https://custom.resbank.co.za/SarbWebApi/WebIndicators/HomePageRates` for the rates refresh (read-only).
 
 ## Tax engine
 
@@ -81,7 +123,9 @@ The app never fetches data itself. Two Node scripts in `scripts/tax-season` upda
 - Dashboard: the yellow hero card shows the same net pay, labelled "Example take-home pay" until you edit the inputs and "Your take-home pay" afterwards, with a dot matrix of the gross split and a link to the Pay page. Without tax data it shows text instead of a figure.
 - Chart atoms live in `shared/atoms` and are plain SVG with no chart library: `rw-breakdown-bar`, `rw-ring-gauge`, `rw-line-chart` and `rw-dot-matrix`. Each draws an `svg` with `role="img"` and a full `aria-label`, and sits beside a visually hidden data table with the same numbers. Negative, NaN and infinite values are clamped to 0 and positive values always stay visible. Colours come from the `--rw-chart-*` tokens (at least 3:1 against the surface in both themes) and animations switch off with reduced motion.
 - Nothing is persisted: inputs live in memory and a reload returns to the example.
+
 ## RA calculator and handoff
+
 - The RA page (`/ra`) projects a retirement annuity: tax-deductible room this year, the tax saving from a monthly contribution, and the balance at retirement in future and today's money, with a growth chart, a two-pot split and a year-by-year table. It starts from an example (R2 000 a month, rising 5% a year, retiring at 55) until you change something.
 - Engine: `core/engine/ra.ts` is pure TypeScript. Rates are effective annual rates, converted to a monthly rate with `(1 + R)^(1/12) - 1`. Contributions are paid at the end of each month and rise once a year. Today's money is nominal / (1 + inflation)^t.
 - Headroom comes from the s11F deduction (the same calculation as the Pay page). The tax saving is the PAYE difference with and without the RA, worked out with `payslip`. A quick estimate (contribution x marginal rate) is shown when it differs, which happens when the contribution crosses a bracket or when rebates and the medical credit already reduce your tax.
@@ -93,7 +137,9 @@ The app never fetches data itself. Two Node scripts in `scripts/tax-season` upda
 - `rw-send-to` appears on the Pay, RA, Retire at 55, Budget and Journey results. Every target works (Retirement annuity, Retire at 55, Budget and Journey), and each page leaves itself out. The component can still show a target without a route as "Coming soon", but none of the shipped targets does.
 - Dashboard: the RA tile reads the store and is labelled "Illustrative RA" until you change or send figures, then "Your RA". It is plain text, so the dashboard still has one money figure.
 - Nothing is persisted: the handoff and RA edits live in memory and a reload returns to the examples. Estimates only.
+
 ## Retire at 55
+
 - The Retire at 55 page (`/retire`) starts from an example (R50 000 a month after tax from age 55, on a R30 000 salary, R2 000 a month saved today) and works out the monthly RA contribution that reaches it, the capital needed at retirement, how on track the current contribution is, the return you would need to keep today's contribution, and how long the money lasts. Nothing is saved.
 - Engine: `core/engine/retire.ts` is pure TypeScript. Accumulation reuses `raProjection` from the RA engine (yearly rates compounded monthly, contributions at the end of each month rising once a year), so there is one compounding loop. The contribution and return solvers are bounded bisections over that projection.
 - Order of the maths: the net income goal is inflated to the retirement year, grossed up for annuity tax, divided by the drawdown rate to get the living annuity capital, and, if a lump sum is taken, grossed up again so that two thirds still buy that annuity. The result is also shown in today's money.
@@ -107,6 +153,7 @@ The app never fetches data itself. Two Node scripts in `scripts/tax-season` upda
 - Handoffs: Pay can send the Salary figures to Retire at 55 ("From Salary"). RA sends its contribution, yearly increase, balance, returns and retirement age ("From RA"). Retire at 55 sends the solved contribution (to the cent) and the same plan figures to RA ("From Retire at 55"). Each send shows a chip with Undo that restores the earlier figures. Sending from Salary to RA is unchanged.
 - Dashboard: the Retire at 55 tile reads the store and is labelled "Illustrative plan" until you change or send figures, then "Your plan". It shows the contribution needed and "On track" as plain text, so the dashboard still has one money figure.
 - Estimates only; nothing is persisted.
+
 ## Budget
 
 - The Budget page (`/budget`) starts from an example: a 50/30/20 split of the take-home pay on the Salary figures (R25 141,88 on the bundled data) until you change something. You can enter a gross or a take-home amount, per month or per year. Switching keeps the same person.
@@ -134,6 +181,7 @@ The app never fetches data itself. Two Node scripts in `scripts/tax-season` upda
 - Handoffs: Journey sends the salary side and the RA plan to RA and Retire at 55, and its RA and TFSA amounts to the Budget. A Budget send adds a note about the budget that is shown but not used in the maths.
 - Dashboard: the Budget and Journey tiles read the store, are labelled "Illustrative" until you change or send figures, then "Your budget" and "Your journey", and are plain text, so the dashboard still has one money figure.
 - Estimates only; nothing is persisted.
+
 ## Plan Builder
 
 - The Plan Builder (`/plan`) is a short wizard. It asks your age, income (gross or take-home, per month or per year) and a goal: retire early, pay less tax, build tax-free savings, build an emergency fund or plan for a home. It then asks only what that goal needs, up to 6 questions: how much you can put away each month (a suggested amount is used if you skip it), your risk comfort, and goal details such as retirement age and income, a TFSA target and monthly amount, emergency-fund months and savings, and existing RA or TFSA balances. You can go back, change an answer from the summary, or start again.
@@ -161,6 +209,7 @@ The app never fetches data itself. Two Node scripts in `scripts/tax-season` upda
 - Simplifications: all four are estimates on this year's tax tables with no fees. See the notes on each page.
 
 ## PDF export
+
 - Where: a **Download PDF** button sits under the headline result on Pay, RA, Retire at 55, Budget and Journey, in the action row of the Plan summary, and under the headline result on the four Toolbox tools. The Toolbox landing page has no results, so it has no button.
 - What a PDF holds (A4, light colours whatever the theme): the app name and report title, a subtitle, **Inputs** (what you entered), **Results** (key figures in en-ZA format, e.g. `R 25 141,88`), **Charts** (the charts on the page, as vector graphics), **Warnings** and **Notes**. Every page has a footer with the tax-year label, its status and the date it was checked, the SARB rates date, `Estimates only, not financial advice.`, the date generated and page numbers. Long reports run over several pages. The file is named like `randwise-pay-2026-10-23.pdf`.
 - Left out: year-by-year tables (too wide for A4 portrait) and the Budget dot matrix (it repeats the bar). Text uses the built-in Helvetica font, so characters outside Windows-1252 are dropped and arrows are written as "to".
@@ -180,4 +229,60 @@ The app never fetches data itself. Two Node scripts in `scripts/tax-season` upda
 
 ## Accessibility
 
-Skip-to-content link, header/nav/main/footer landmarks, `aria-current` on the active nav link, labelled inputs, visible focus rings, AA contrast in both themes, and reduced-motion support (count-up animation and transitions switch off).
+**Landmarks and keyboard support:** Skip-to-content link, header, navigation (`aria-label="Primary"`), main (id `main-content` with skip-link focus), footer. Every link and button is keyboard reachable and visually indicated. `aria-current="page"` on the active nav link. `Escape` closes the data-badge panel and returns focus.
+
+**Text alternatives:** Every chart (`rw-line-chart`, `rw-breakdown-bar`, `rw-ring-gauge`, `rw-dot-matrix`) is an `<svg role="img" aria-label="...">` with a visually hidden data table sibling. Tables scroll in focusable `role="region" tabindex="0"` wrappers with `aria-label`.
+
+**Live regions:** Every calculator page has a polite live region that announces the result when inputs change (throttled to reduce announcement bursts). Route changes announce the page heading.
+
+**Reduced motion:** When `prefers-reduced-motion: reduce` is set, all CSS animations and transitions (600ms chart fade/grow, button hover, chevron rotate, stagger, spinner) are disabled. The Money count-up (JavaScript animation) switches off and shows the final value instantly. Animations never convey information on their own.
+
+**Contrast:** Measured with `scripts/a11y/contrast.mjs` in both light and dark themes. All text and interactive elements meet WCAG 2.x AA (text 4.5:1, non-text parts 3:1). The unfilled slider/progress track (1.46–1.86:1) carries no information on its own (the value is also text). No focusable control sits on a dark-themed card, and no chart sits there either (both guarded by specs). Exemptions documented in `src/styles/_tokens.scss`.
+
+**Guard specs:** Run as part of `npm run test:scripts` (included in `npm test`):
+- `scripts/a11y/__tests__/contrast.spec.mjs`: every colour pair against solid and gradient backgrounds meets the ratio.
+- `scripts/a11y/__tests__/motion-guard.spec.mjs`: every CSS animation/transition is inside `@include mixins.motion-safe` or `@include mixins.reduced-motion` blocks, never written inline.
+- `src/app/app.a11y.spec.ts`: one h1 and it matches the route heading; every input/select/textarea has a label; every chart has an aria-label or data table; no tabindex > 0; no heading level skips; links and buttons have accessible names.
+
+**Responsive:** The navigation bar fixes to the bottom on phones (under 640px) with scrollable items. Tables scroll in focusable regions with a sticky year/label column. Charts and form fields wrap and scale on small screens.
+
+## Optional: Kiro review hook for a new tax-year file
+
+This is an example of how to use Kiro Agent Hooks to review tax files. No hook file is committed to the repository, because the hook schema differs between Kiro versions (0.x uses `*.kiro.hook`, 1.x uses `.kiro/hooks/*.json`). To use it, check your Kiro version and create the hook in the Agent Hooks panel of your workspace, or paste the JSON into `.kiro/hooks/` using your version's schema.
+
+The hook triggers when a new tax file is created under `src/assets/data/tax-years/`, asking the agent to cross-check it against that year's official SARS tax tables and Budget Review figures.
+
+**Example hook definition (JSON):**
+
+```json
+{
+  "event": "fileCreated",
+  "patterns": ["src/assets/data/tax-years/*.json"],
+  "action": "ask"
+}
+```
+
+**Prompt for the agent:**
+
+```
+Your task: review a newly created tax-year file and cross-check it against official SARS tax tables and Budget Review figures.
+
+1. Parse the tax-year JSON and read its `sources` field to find the official reference pages.
+2. For each value in the file, compare it with its cited source page.
+3. Only change a value when the official page shows a different number and you cite it in the `source` field.
+4. When every field is confirmed and all values match their sources, set `status` to "verified" and `carriedForward` to false. Set `verifiedOn` to today (YYYY-MM-DD).
+5. If some values could not be confirmed (field missing on the page, page layout changed, source is a PDF you cannot parse), leave the file as `draft` and list what is unconfirmed.
+6. Never edit any file under `src/app/core/engine/**` or change the bundled-data.ts registrations.
+7. When done, run `npm test` and report the result.
+8. If the tests pass, the file is ready to commit. If any test fails, list the failures and suggest next steps.
+
+Note: the tax-season scout writes draft files on `npm start` from 20 February onwards if the file is missing or draft, at most once a day. Each draft triggers this hook, so you may review the same year multiple times as it is improved.
+```
+
+**Installation:**
+1. Open your Kiro workspace settings and find the Agent Hooks panel.
+2. Click **Add hook** and paste the JSON definition above (or use your Kiro version's format).
+3. Set the prompt text above (Kiro 1.x wraps it in an "ask" action).
+4. Save and the hook will fire on the next `npm start` or `npm run tax:scout`.
+
+Alternatively, place a hook file directly in `.kiro/hooks/` using your Kiro version's schema. This method requires manual file management and is less reliable than the panel.
