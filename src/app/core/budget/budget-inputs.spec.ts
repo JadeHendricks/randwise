@@ -93,6 +93,20 @@ describe('withSentLines', () => {
     expect(amountOf(lines, 'tfsa')).toBe(2_000);
   });
 
+  it('sets the emergency line to the sent amount', () => {
+    const base = deepFreeze(exampleCategories(NET));
+    const lines = withSentLines(base, { emergencyMonthly: 2_000 });
+    expect(amountOf(lines, 'emergency')).toBe(2_000);
+    expect(amountOf(lines, 'ra')).toBe(amountOf(base, 'ra'));
+    expect(amountOf(lines, 'tfsa')).toBe(amountOf(base, 'tfsa'));
+  });
+
+  it('leaves the emergency line alone when no emergency amount was sent', () => {
+    const base = exampleCategories(NET);
+    const lines = withSentLines(base, { raMonthly: 3_000 });
+    expect(amountOf(lines, 'emergency')).toBe(amountOf(base, 'emergency'));
+  });
+
   it('returns a copy for null and for lines that do not exist', () => {
     const base = deepFreeze(setCategoryAmount(defaultBudgetCategories(), 'housing', 100));
     const copy = withSentLines(base, null);

@@ -56,13 +56,14 @@ export function exampleCategories(net: number): BudgetCategory[] {
   return distributeToGroups(defaultBudgetCategories(), applyPreset(net, '50-30-20'));
 }
 
-/** Monthly RA and TFSA amounts sent from another page; they replace the matching budget lines. */
+/** Monthly RA, TFSA and emergency amounts sent from another page; they replace the matching budget lines. */
 export interface BudgetSentLines {
   readonly raMonthly?: number;
   readonly tfsaMonthly?: number;
+  readonly emergencyMonthly?: number;
 }
 
-/** Sets the first RA line and the first TFSA line to the sent amounts; other lines stay as they are. */
+/** Sets the first RA, TFSA and emergency lines to the sent amounts; other lines stay as they are. */
 export function withSentLines(
   categories: readonly BudgetCategory[],
   sent: BudgetSentLines | null,
@@ -72,6 +73,7 @@ export function withSentLines(
   for (const [kind, amount] of [
     ['ra', sent.raMonthly],
     ['tfsa', sent.tfsaMonthly],
+    ['emergency', sent.emergencyMonthly],
   ] as const) {
     const line = lines.find((candidate) => candidate.kind === kind);
     if (line && amount !== undefined) lines = setCategoryAmount(lines, line.id, amount);

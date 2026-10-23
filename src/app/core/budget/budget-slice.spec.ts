@@ -161,6 +161,72 @@ describe('nextBudgetSlice', () => {
     expect(received.settings.emergencyMonths).toBe(3);
   });
 
+  it('applies the emergency months, amount saved and monthly line, and Undo restores them', () => {
+    const received = nextBudgetSlice(
+      handoff(1, { emergencyMonths: 6, emergencySaved: 1_000, emergencyMonthly: 2_000 }),
+      undefined,
+    );
+    expect(received.settings).toEqual({
+      emergencyMonths: 6,
+      emergencySaved: 1_000,
+      tfsaLifetimeUsed: 0,
+    });
+    expect(received.sentLines).toEqual({
+      raMonthly: undefined,
+      tfsaMonthly: undefined,
+      emergencyMonthly: 2_000,
+    });
+    expect(received.presetId).toBe('custom');
+    const restored = undoBudget(received);
+    expect(restored.settings).toEqual(freshBudgetSlice().settings);
+    expect(restored.sentLines).toBeNull();
+  });
+
+  it('sanitises the emergency settings: months are rounded and clamped', () => {
+    expect(
+      nextBudgetSlice(handoff(1, { emergencyMonths: 40 }), undefined).settings.emergencyMonths,
+    ).toBe(12);
+    expect(
+      nextBudgetSlice(handoff(1, { emergencyMonths: 5.6 }), undefined).settings.emergencyMonths,
+    ).toBe(6);
+  });
+
+  it('ignores invalid emergency values', () => {
+    const received = nextBudgetSlice(
+      handoff(1, {
+        emergencyMonths: Number.NaN,
+        emergencySaved: -5,
+        emergencyMonthly: -1,
+      }),
+      undefined,
+    );
+    expect(received.settings).toEqual(freshBudgetSlice().settings);
+    expect(received.sentLines).toBeNull();
+    expect(received.presetId).toBe('50-30-20');
+  });
+
+  it('leaves the settings object untouched when a send carries no settings fields', () => {
+    const base = editSettings(freshBudgetSlice(), { emergencyMonths: 9, emergencySaved: 4_000 });
+    const received = nextBudgetSlice(handoff(1, { raMonthly: 3_000 }), {
+      source: null,
+      value: base,
+    });
+    expect(received.settings).toBe(base.settings);
+  });
+
+  it('keeps the emergency settings when only the TFSA lifetime amount is sent', () => {
+    const base = editSettings(freshBudgetSlice(), { emergencyMonths: 9, emergencySaved: 4_000 });
+    const received = nextBudgetSlice(handoff(1, { tfsaLifetimeUsed: 7_000 }), {
+      source: null,
+      value: base,
+    });
+    expect(received.settings).toEqual({
+      emergencyMonths: 9,
+      emergencySaved: 4_000,
+      tfsaLifetimeUsed: 7_000,
+    });
+  });
+
   it('marks saved lines custom, because the new income no longer matches their amounts', () => {
     const saved = editCategories(freshBudgetSlice(), exampleCategories(NET), '50-30-20');
     const received = nextBudgetSlice(handoff(1), { source: null, value: saved });

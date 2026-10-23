@@ -1065,6 +1065,84 @@ describe('PlanContextStore', () => {
     });
   });
 
+  describe('plan handoffs', () => {
+    const salaryValues = {
+      grossMonthly: 30_000,
+      age: 35,
+      medicalMembers: 0,
+      employeeRetirementMonthly: 0,
+      employerRetirementMonthly: 0,
+    };
+
+    it('sends to the RA with source plan, and Undo restores', () => {
+      const { plan } = setup();
+      plan.send('ra', 'plan', { ...salaryValues, contributionMonthly: 8_250 });
+      expect(plan.raFrom()).toBe('plan');
+      expect(plan.raCanUndo()).toBe(true);
+      expect(plan.ra().contributionMonthly).toBe(8_250);
+      plan.undoRa();
+      expect(plan.raFrom()).toBeNull();
+      expect(plan.raCanUndo()).toBe(false);
+      expect(plan.ra().contributionMonthly).not.toBe(8_250);
+    });
+
+    it('sends to Retire at 55 with source plan, and Undo restores', () => {
+      const { plan } = setup();
+      plan.send('retire', 'plan', { ...salaryValues, contributionMonthly: 5_000 });
+      expect(plan.retireFrom()).toBe('plan');
+      expect(plan.retire().contributionMonthly).toBe(5_000);
+      plan.undoRetire();
+      expect(plan.retireFrom()).toBeNull();
+      expect(plan.retire().contributionMonthly).not.toBe(5_000);
+    });
+
+    it('sends to the Journey with source plan, and Undo restores', () => {
+      const { plan } = setup();
+      plan.send('journey', 'plan', { ...salaryValues, tfsaTopUpMonthly: 1_750 });
+      expect(plan.journeyFrom()).toBe('plan');
+      expect(plan.journeyCanUndo()).toBe(true);
+      expect(plan.journey().tfsaTopUpMonthly).toBe(1_750);
+      plan.undoJourney();
+      expect(plan.journeyFrom()).toBeNull();
+      expect(plan.journey().tfsaTopUpMonthly).not.toBe(1_750);
+    });
+
+    it('sends the emergency fund to the Budget, and Undo puts the months back to 3', () => {
+      const { plan } = setup();
+      plan.send('budget', 'plan', {
+        ...salaryValues,
+        otherDeductionsMonthly: 0,
+        emergencyMonths: 6,
+        emergencySaved: 1_000,
+        emergencyMonthly: 2_000,
+      });
+      expect(plan.budgetFrom()).toBe('plan');
+      expect(plan.budgetSettings().emergencyMonths).toBe(6);
+      expect(plan.budgetSettings().emergencySaved).toBe(1_000);
+      expect(budgetLines(plan)?.emergency.months).toBe(6);
+      expect(budgetLines(plan)?.emergency.monthly).toBe(2_000);
+      plan.undoBudget();
+      expect(plan.budgetFrom()).toBeNull();
+      expect(plan.budgetSettings().emergencyMonths).toBe(3);
+      expect(plan.budgetSettings().emergencySaved).toBe(0);
+    });
+
+    it('touches no storage', () => {
+      const calls = [
+        vi.spyOn(Storage.prototype, 'getItem'),
+        vi.spyOn(Storage.prototype, 'setItem'),
+        vi.spyOn(Storage.prototype, 'removeItem'),
+        vi.spyOn(Storage.prototype, 'clear'),
+      ];
+      const { plan } = setup();
+      plan.send('ra', 'plan', salaryValues);
+      plan.send('retire', 'plan', salaryValues);
+      plan.send('journey', 'plan', salaryValues);
+      plan.send('budget', 'plan', { ...salaryValues, emergencyMonths: 6 });
+      for (const spy of calls) expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
   it('touches no storage and is one root instance', () => {
     const calls = [
       vi.spyOn(Storage.prototype, 'getItem'),

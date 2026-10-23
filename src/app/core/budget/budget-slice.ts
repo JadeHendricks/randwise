@@ -118,18 +118,30 @@ function receive(
   );
   const raMonthly = usable(v.raMonthly);
   const tfsaMonthly = usable(v.tfsaMonthly);
-  const hasSentLines = raMonthly !== undefined || tfsaMonthly !== undefined;
+  const emergencyMonthly = usable(v.emergencyMonthly);
+  const hasSentLines =
+    raMonthly !== undefined || tfsaMonthly !== undefined || emergencyMonthly !== undefined;
+  const hasSettings =
+    v.tfsaLifetimeUsed !== undefined ||
+    v.emergencyMonths !== undefined ||
+    v.emergencySaved !== undefined;
   return {
     ...slice,
     income,
-    sentLines: hasSentLines ? { raMonthly, tfsaMonthly } : slice.sentLines,
+    sentLines: hasSentLines ? { raMonthly, tfsaMonthly, emergencyMonthly } : slice.sentLines,
     // Why 'custom': a sent line, or an income that no longer matches the saved amounts, means the
     // lines are no longer a preset.
     presetId: hasSentLines || slice.categories !== null ? 'custom' : slice.presetId,
-    settings:
-      v.tfsaLifetimeUsed === undefined
-        ? slice.settings
-        : sanitiseBudgetSettings({ tfsaLifetimeUsed: v.tfsaLifetimeUsed }, slice.settings),
+    settings: hasSettings
+      ? sanitiseBudgetSettings(
+          {
+            tfsaLifetimeUsed: v.tfsaLifetimeUsed,
+            emergencyMonths: v.emergencyMonths,
+            emergencySaved: v.emergencySaved,
+          },
+          slice.settings,
+        )
+      : slice.settings,
     from: handoff.source,
     undo: localStateOf(slice),
   };
