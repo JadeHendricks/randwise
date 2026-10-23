@@ -1,0 +1,21 @@
+@use 'mixins';
+
+// Route-only layout for the Toolbox landing: two tiles across, one column on a phone.
+.toolbox {
+  display: grid;
+  gap: var(--rw-space-5);
+
+  &__intro {
+    max-width: 60ch;
+    font-size: var(--rw-text-lg);
+  }
+
+  &__tiles {
+    @include mixins.bento-columns(2, 2, 1);
+  }
+
+  &__note {
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-sm);
+  }
+}

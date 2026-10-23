@@ -50,5 +50,39 @@ export const routes: Routes = [
     data: { heading: 'Toolbox' },
     loadComponent: () => import('./features/toolbox/toolbox-page').then((m) => m.ToolboxPage),
   },
+  // The Toolbox tools are siblings of the landing route (not children), so each is its own lazy
+  // chunk and the landing keeps its plain loadComponent route.
+  {
+    path: 'toolbox/emergency-fund',
+    title: 'Emergency fund · Randwise',
+    data: { heading: 'Emergency fund' },
+    loadComponent: () =>
+      import('./features/toolbox/emergency-fund/emergency-fund-page').then(
+        (m) => m.EmergencyFundPage,
+      ),
+  },
+  {
+    path: 'toolbox/home-loan',
+    title: 'Home loan · Randwise',
+    data: { heading: 'Home loan' },
+    loadComponent: () =>
+      import('./features/toolbox/home-loan/home-loan-page').then((m) => m.HomeLoanPage),
+  },
+  {
+    path: 'toolbox/two-pot-withdrawal',
+    title: 'Two-pot withdrawal · Randwise',
+    data: { heading: 'Two-pot withdrawal' },
+    loadComponent: () =>
+      import('./features/toolbox/two-pot/two-pot-page').then((m) => m.TwoPotPage),
+  },
+  {
+    path: 'toolbox/tfsa-vs-taxable',
+    title: 'TFSA vs taxable account · Randwise',
+    data: { heading: 'TFSA vs taxable account' },
+    loadComponent: () =>
+      import('./features/toolbox/tfsa-compare/tfsa-compare-page').then(
+        (m) => m.TfsaComparePage,
+      ),
+  },
   { path: '**', redirectTo: '' },
 ];

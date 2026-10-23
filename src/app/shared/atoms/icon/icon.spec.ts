@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { Icon } from './icon';
+import { Icon, type IconName } from './icon';
 
 describe('Icon', () => {
   function render(inputs: Record<string, string>) {
@@ -18,6 +18,39 @@ describe('Icon', () => {
     expect(host.getAttribute('aria-hidden')).toBe('true');
     expect(host.getAttribute('role')).toBeNull();
     expect(host.querySelectorAll('path').length).toBeGreaterThan(0);
+  });
+
+  it('draws at least one path for every icon name', async () => {
+    // A Record forces a new IconName to be listed here, so no icon ships without a path.
+    const names: Record<IconName, true> = {
+      dashboard: true,
+      pay: true,
+      ra: true,
+      retire: true,
+      budget: true,
+      journey: true,
+      plan: true,
+      toolbox: true,
+      shield: true,
+      home: true,
+      unlock: true,
+      scale: true,
+      sun: true,
+      moon: true,
+      system: true,
+      close: true,
+      'arrow-right': true,
+      info: true,
+      warning: true,
+      check: true,
+      'chevron-down': true,
+    };
+    for (const name of Object.keys(names)) {
+      const fixture = render({ name });
+      await fixture.whenStable();
+      const host = fixture.nativeElement as HTMLElement;
+      expect(host.querySelectorAll('path').length, `icon "${name}"`).toBeGreaterThan(0);
+    }
   });
 
   it('is exposed as an image when labelled', async () => {
