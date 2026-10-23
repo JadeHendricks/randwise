@@ -6,6 +6,7 @@ import {
   type InvestmentInputs,
   type TwoPotInputs,
   emergencyFundDefaults,
+  growthPercent,
   homeLoanDefaults,
   investmentDefaults,
   marginFromRate,
@@ -237,6 +238,16 @@ describe('rateFromMargin and marginFromRate', () => {
     expect(marginFromRate(10.75, 10.25)).toBe(-0.5);
     expect(marginFromRate(10.75, 11.5)).toBe(0.75);
     expect(marginFromRate(10.1, 10.3)).toBe(0.2);
+  });
+});
+
+describe('growthPercent', () => {
+  it('is whatever the interest and dividend shares leave', () => {
+    expect(growthPercent({ interestPercent: 30, dividendPercent: 20 })).toBe(50);
+    expect(growthPercent({ interestPercent: 100, dividendPercent: 0 })).toBe(0);
+    expect(growthPercent({ interestPercent: 0, dividendPercent: 0 })).toBe(100);
+    // Never below 0, even if a caller skips the sanitiser.
+    expect(growthPercent({ interestPercent: 80, dividendPercent: 40 })).toBe(0);
   });
 });
 

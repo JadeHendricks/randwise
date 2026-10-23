@@ -4,7 +4,7 @@ import {
   compareTfsaDiscretionary,
   roundRand,
 } from '../engine';
-import type { InvestmentInputs } from './toolbox-inputs';
+import { type InvestmentInputs, growthPercent } from './toolbox-inputs';
 
 /** Things worth telling the user about, in plain words on the page. */
 export type InvestmentWarning = 'capped' | 'interest-above-exemption' | 'rates-unavailable';
@@ -49,8 +49,7 @@ export function estimateInvestment(
         split: {
           interest: inputs.interestPercent / 100,
           dividends: inputs.dividendPercent / 100,
-          // Worked in whole percent points so 30 + 20 leaves exactly 50.
-          growth: Math.max(0, 100 - inputs.interestPercent - inputs.dividendPercent) / 100,
+          growth: growthPercent(inputs) / 100,
         },
         marginalRate: inputs.marginalRatePercent / 100,
         age: inputs.age,

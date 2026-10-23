@@ -1,0 +1,230 @@
+<div class="tool">
+  <rw-card class="tool__inputs" padding="lg">
+    <a rw-button variant="ghost" size="sm" routerLink="/toolbox">Back to Toolbox</a>
+    <div class="tool__head">
+      <h2 class="tool__title">Your withdrawal</h2>
+      @if (store.twoPotIsExample()) {
+        <rw-chip label="Example" />
+      } @else {
+        <button rw-button variant="secondary" size="sm" type="button" (click)="store.resetTwoPot()">
+          Reset to example
+        </button>
+      }
+    </div>
+    @if (store.twoPotIsExample()) {
+      <p class="tool__text">{{ intro() }}</p>
+    }
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">The withdrawal</h3>
+      <rw-amount-field
+        label="Amount to withdraw"
+        prefix="R"
+        [min]="0"
+        [max]="withdrawalMax"
+        [step]="step"
+        [value]="inputs().withdrawal"
+        hint="Taken from your savings pot. The smallest withdrawal is R2 000."
+        (valueChange)="set('withdrawal', $event)"
+      />
+    </div>
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">Your tax</h3>
+      <rw-amount-field
+        label="Taxable income per year"
+        prefix="R"
+        [min]="0"
+        [max]="incomeMax"
+        [step]="step"
+        [value]="inputs().taxableIncomeAnnual"
+        hint="Before this withdrawal. Starts at your taxable income on the Pay page. Changes here only affect this page."
+        (valueChange)="set('taxableIncomeAnnual', $event)"
+      />
+      <rw-amount-field
+        label="Your age"
+        [min]="limits.age.min"
+        [max]="limits.age.max"
+        [step]="1"
+        [value]="inputs().age"
+        hint="Your age on the last day of the tax year. From 65 your tax rebate is bigger."
+        (valueChange)="set('age', $event)"
+      />
+      <rw-amount-field
+        label="Medical aid members"
+        [min]="limits.medicalMembers.min"
+        [max]="limits.medicalMembers.max"
+        [step]="1"
+        [value]="inputs().medicalMembers"
+        hint="Count yourself and your dependants. It sets your medical scheme fees tax credit."
+        (valueChange)="set('medicalMembers', $event)"
+      />
+    </div>
+
+    <div class="tool__block">
+      <h3 class="tool__subtitle">If you left it invested</h3>
+      <rw-amount-field
+        label="Years until you retire"
+        [min]="limits.yearsToRetirement.min"
+        [max]="limits.yearsToRetirement.max"
+        [step]="1"
+        [value]="inputs().yearsToRetirement"
+        (valueChange)="set('yearsToRetirement', $event)"
+      />
+      <rw-amount-field
+        label="Growth above inflation per year"
+        suffix="%"
+        [min]="limits.realGrowthPercent.min"
+        [max]="limits.realGrowthPercent.max"
+        [step]="percentStep"
+        [value]="inputs().realGrowthPercent"
+        [hint]="growthHint()"
+        (valueChange)="set('realGrowthPercent', $event)"
+      />
+      <rw-amount-field
+        label="Inflation per year"
+        suffix="%"
+        [min]="limits.inflationPercent.min"
+        [max]="limits.inflationPercent.max"
+        [step]="percentStep"
+        [value]="inputs().inflationPercent"
+        [hint]="inflationHint()"
+        (valueChange)="set('inflationPercent', $event)"
+      />
+    </div>
+  </rw-card>
+
+  <section class="tool__results" aria-label="Results">
+    <!-- Always rendered so screen readers pick up changes when an input is edited. -->
+    <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+    @if (store.twoPotEstimate() === null) {
+      <rw-card class="tool__unavailable" padding="lg">
+        <p>Tax data is unavailable, so the tax on a withdrawal cannot be worked out.</p>
+      </rw-card>
+    } @else if (failure(); as message) {
+      <p class="tool__error" role="alert">{{ message }}</p>
+    } @else if (rejection(); as message) {
+      <p class="tool__error" role="alert">{{ message }}</p>
+    } @else if (result(); as r) {
+      <rw-card class="tool__hero" variant="hero-yellow" padding="lg">
+        <h2 class="tool__eyebrow">What this withdrawal really costs, in today's money</h2>
+        <p class="tool__figure">
+          <rw-money [value]="r.figure" size="hero" />
+        </p>
+        <p class="tool__lead">{{ r.lead }}</p>
+        @if (r.perRand) {
+          <p class="tool__text">{{ r.perRand }}</p>
+        }
+      </rw-card>
+
+      <div class="tool__warnings" role="status">
+        @for (warning of r.warnings; track warning) {
+          <p class="tool__warning">
+            <rw-icon name="warning" size="sm" />
+            <span>{{ warning }}</span>
+          </p>
+        }
+      </div>
+
+      <div class="tool__stats">
+        <rw-stat-card label="Tax on the withdrawal" [value]="r.tax" [secondary]="r.effectiveRate" />
+        <rw-stat-card label="Cash you receive" [value]="r.netCash" />
+        <rw-stat-card
+          label="Growth you give up"
+          [value]="r.lostGrowth"
+          [secondary]="r.lostGrowthFuture"
+          hint="In today's money, if the money stayed invested until you retire."
+        />
+        <rw-stat-card
+          label="Tax rate on the withdrawal"
+          [text]="r.rate"
+          hint="Your marginal rate: the rate on each extra rand of income."
+        />
+      </div>
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">What the money could have become</h2>
+        <rw-breakdown-bar
+          label="The parts of the withdrawal's value at retirement, in today's money: cash you receive, tax now and lost growth"
+          [segments]="r.segments"
+        />
+        <p class="tool__text">{{ r.growthText }}</p>
+      </rw-card>
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">Where the withdrawal lands in the tax brackets</h2>
+        <div
+          class="tool-table__scroll"
+          role="region"
+          tabindex="0"
+          aria-label="The tax brackets the withdrawal falls in"
+        >
+          <table class="tool-table__table">
+            <caption class="tool-table__caption">
+              The slices of the withdrawal in each tax bracket, before rebates and credits
+            </caption>
+            <thead>
+              <tr>
+                <th class="tool-table__cell tool-table__cell--label" scope="col">Income above</th>
+                <th class="tool-table__cell" scope="col">Up to</th>
+                <th class="tool-table__cell" scope="col">Withdrawal in this bracket</th>
+                <th class="tool-table__cell" scope="col">Tax rate</th>
+                <th class="tool-table__cell" scope="col">Tax</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (band of r.bands; track band.key) {
+                <tr>
+                  <th class="tool-table__cell tool-table__cell--label" scope="row">
+                    {{ band.from }}
+                  </th>
+                  <td class="tool-table__cell">{{ band.to }}</td>
+                  <td class="tool-table__cell">{{ band.amount }}</td>
+                  <td class="tool-table__cell">{{ band.rate }}</td>
+                  <td class="tool-table__cell">{{ band.tax }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </rw-card>
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">Good to know</h2>
+        <ul class="tool__list">
+          <li>
+            {{ r.oneAYear }}, of at least {{ r.minimum }}, and only up to what your savings pot
+            holds.
+          </li>
+          <li>
+            SARS adds the withdrawal to your other income and taxes it at your marginal rate, not
+            with the lump-sum tables used at retirement or resignation. Source: SARS, tax
+            implications of withdrawing from the two-pot retirement system (sars.gov.za).
+          </li>
+          <li>
+            Your fund may hold back tax at a different rate and the difference is settled when SARS
+            assesses you.
+          </li>
+          <li>Fund fees are not included.</li>
+        </ul>
+      </rw-card>
+
+      <rw-card class="tool__card" padding="lg">
+        <h2 class="tool__title">See how it fits</h2>
+        <div class="tool__links">
+          <a rw-button variant="secondary" size="sm" routerLink="/pay">
+            Change your income on the Pay page
+          </a>
+          <a rw-button variant="secondary" size="sm" routerLink="/ra">
+            See the two-pot split on the RA page
+          </a>
+        </div>
+      </rw-card>
+    }
+
+    <p class="tool__note">
+      Estimates only. Growth compounds once a year and nothing is added or taken out before you
+      retire. Nothing is saved.
+    </p>
+  </section>
+</div>

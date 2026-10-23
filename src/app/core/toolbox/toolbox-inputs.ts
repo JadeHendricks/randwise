@@ -297,6 +297,16 @@ export function sanitiseInvestment(
   };
 }
 
+/**
+ * The share of the return that is capital growth, as a percent: whatever the interest and dividend
+ * shares leave. Worked in whole percent points so 30 + 20 leaves exactly 50.
+ */
+export function growthPercent(
+  inputs: Pick<InvestmentInputs, 'interestPercent' | 'dividendPercent'>,
+): number {
+  return Math.max(0, 100 - inputs.interestPercent - inputs.dividendPercent);
+}
+
 /** Rounds to 2 decimal places, so 0.1075 × 100 does not show as 10.750000000000002. */
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
