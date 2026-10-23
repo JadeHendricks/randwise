@@ -35,6 +35,24 @@ module.exports = defineConfig([
     },
   },
   {
+    // The tax engine must stay pure TypeScript so it can be unit-tested and reused without Angular.
+    files: ['src/app/core/engine/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@angular/*', 'rxjs', 'rxjs/*'],
+              message: 'core/engine is pure TypeScript: no Angular or RxJS imports.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
     rules: {},
