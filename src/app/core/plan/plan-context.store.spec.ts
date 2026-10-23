@@ -224,6 +224,183 @@ describe('PlanContextStore', () => {
     });
   });
 
+  describe('retire at 55', () => {
+    it('starts as the example with the defaults from the rates', () => {
+      const { plan } = setup();
+      expect(plan.retire()).toMatchObject({
+        goalNetMonthly: 50_000,
+        retirementAge: 55,
+        inflationPercent: 4.5,
+        returnPercent: 9.5,
+        retirementReturnPercent: 7.5,
+        drawdownPercent: 5,
+        takeLumpSum: false,
+        startingBalance: 0,
+        contributionMonthly: 2_000,
+        escalationPercent: 5,
+        grossMonthly: 30_000,
+        age: 35,
+      });
+      expect(plan.retireIsExample()).toBe(true);
+      expect(plan.retireFrom()).toBeNull();
+      expect(plan.retireCanUndo()).toBe(false);
+      expect(plan.retireRules()?.earliestRetirementAge).toBe(55);
+    });
+
+    it('follows CPI when the rates change: 6 gives return 11 and retirement return 9', () => {
+      const base = makeRates();
+      const rates = makeRates({
+        rates: { ...base.rates, cpi: { ...base.rates.cpi, valuePercent: 6 } },
+      });
+      TestBed.configureTestingModule({
+        providers: provideTestData({
+          today: '2026-10-22',
+          rates: { fileName: 'rates.json', data: rates },
+        }),
+      });
+      const plan = TestBed.inject(PlanContextStore);
+      expect(plan.retire().inflationPercent).toBe(6);
+      expect(plan.retire().returnPercent).toBe(11);
+      expect(plan.retire().retirementReturnPercent).toBe(9);
+    });
+
+    it('follows the Salary profile live until overridden', () => {
+      const { plan, salary } = setup();
+      salary.update({ amount: 40_000 });
+      expect(plan.retire().grossMonthly).toBe(40_000);
+      plan.updateRetire({ grossMonthly: 55_000 });
+      salary.update({ amount: 45_000 });
+      expect(plan.retire().grossMonthly).toBe(55_000);
+    });
+
+    it('keeps its own slice apart from the RA slice', () => {
+      const { plan } = setup();
+      plan.updateRetire({ contributionMonthly: 3_000, grossMonthly: 50_000 });
+      expect(plan.ra().contributionMonthly).toBe(2_000);
+      expect(plan.ra().grossMonthly).toBe(30_000);
+      expect(plan.raIsExample()).toBe(true);
+      plan.updateRa({ contributionMonthly: 4_000 });
+      expect(plan.retire().contributionMonthly).toBe(3_000);
+    });
+
+    it('publishes the required contribution and how funded the plan is (G10)', () => {
+      const { plan } = setup();
+      const outputs = plan.retireOutputs();
+      expect(outputs?.requiredMonthly).toBeCloseTo(46_864.264013, 2);
+      expect(outputs?.fundedPercent).toBeCloseTo(4.267644, 4);
+      expect(outputs?.ringPercent).toBeCloseTo(4.267644, 4);
+      expect(outputs?.retirementAge).toBe(55);
+      expect(outputs?.goalNetMonthly).toBe(50_000);
+    });
+
+    it('does not change the RA outputs shape', () => {
+      const { plan } = setup();
+      expect(Object.keys(plan.outputs())).toEqual(['ra']);
+    });
+
+    it('has no outputs when the figures fail, but still has an estimate', () => {
+      const { plan } = setup();
+      plan.updateRetire({ drawdownPercent: 2.4 });
+      expect(plan.retireEstimate()?.ok).toBe(false);
+      expect(plan.retireOutputs()).toBeNull();
+    });
+
+    it('has no rules, estimate or outputs without tax data', () => {
+      TestBed.configureTestingModule({
+        providers: provideTestData({ taxYears: [], today: TODAY_PINNED }),
+      });
+      const plan = TestBed.inject(PlanContextStore);
+      expect(plan.retireRules()).toBeNull();
+      expect(plan.retireEstimate()).toBeNull();
+      expect(plan.retireOutputs()).toBeNull();
+    });
+
+    it('flags the example as edited after a change and back after a reset', () => {
+      const { plan } = setup();
+      plan.updateRetire({ goalNetMonthly: 20_000 });
+      expect(plan.retireIsExample()).toBe(false);
+      expect(plan.retireOutputs()?.requiredMonthly).toBeCloseTo(16_049.233515, 2);
+      plan.resetRetire();
+      expect(plan.retireIsExample()).toBe(true);
+      expect(plan.retire().goalNetMonthly).toBe(50_000);
+      plan.updateRetire({ takeLumpSum: true });
+      expect(plan.retireIsExample()).toBe(false);
+    });
+
+    it('takes a handoff, marks the source and Undo restores the earlier local values', () => {
+      const { plan } = setup();
+      plan.updateRetire({ grossMonthly: 50_000, age: 45 });
+      plan.send('retire', 'salary', {
+        grossMonthly: 30_000,
+        age: 40,
+        medicalMembers: 0,
+        employeeRetirementMonthly: 0,
+        employerRetirementMonthly: 0,
+      });
+      expect(plan.retireFrom()).toBe('salary');
+      expect(plan.retireCanUndo()).toBe(true);
+      expect(plan.retireIsExample()).toBe(false);
+      expect(plan.retire().age).toBe(40);
+
+      plan.undoRetire();
+      expect(plan.retire().grossMonthly).toBe(50_000);
+      expect(plan.retire().age).toBe(45);
+      expect(plan.retireFrom()).toBeNull();
+      expect(plan.retireHandoff()).toBeNull();
+      expect(plan.retireCanUndo()).toBe(false);
+
+      plan.undoRetire();
+      expect(plan.retire().age).toBe(45);
+    });
+
+    it('applies plan values carried by a handoff', () => {
+      const { plan } = setup();
+      plan.send('retire', 'salary', {
+        grossMonthly: 30_000,
+        age: 35,
+        medicalMembers: 0,
+        employeeRetirementMonthly: 0,
+        employerRetirementMonthly: 0,
+        contributionMonthly: 3_000,
+        startingBalance: 100_000,
+      });
+      expect(plan.retire().contributionMonthly).toBe(3_000);
+      expect(plan.retire().startingBalance).toBe(100_000);
+      plan.undoRetire();
+      expect(plan.retire().contributionMonthly).toBe(2_000);
+      expect(plan.retire().startingBalance).toBe(0);
+      expect(plan.retireIsExample()).toBe(true);
+    });
+
+    it('resetRetire clears a handoff and its chip', () => {
+      const { plan } = setup();
+      plan.send('retire', 'salary', {
+        grossMonthly: 30_000,
+        age: 40,
+        medicalMembers: 0,
+        employeeRetirementMonthly: 0,
+        employerRetirementMonthly: 0,
+      });
+      plan.resetRetire();
+      expect(plan.retireHandoff()).toBeNull();
+      expect(plan.retireFrom()).toBeNull();
+      expect(plan.retire().age).toBe(35);
+    });
+
+    it('touches no storage', () => {
+      const calls = [
+        vi.spyOn(Storage.prototype, 'getItem'),
+        vi.spyOn(Storage.prototype, 'setItem'),
+        vi.spyOn(Storage.prototype, 'removeItem'),
+        vi.spyOn(Storage.prototype, 'clear'),
+      ];
+      const { plan } = setup();
+      plan.updateRetire({ goalNetMonthly: 20_000 });
+      plan.undoRetire();
+      plan.resetRetire();
+      for (const spy of calls) expect(spy).not.toHaveBeenCalled();
+    });
+  });
   it('touches no storage and is one root instance', () => {
     const calls = [
       vi.spyOn(Storage.prototype, 'getItem'),

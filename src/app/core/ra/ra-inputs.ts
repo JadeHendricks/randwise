@@ -102,16 +102,16 @@ export function sanitiseRaProfile(
   };
 }
 
-function amountOr(value: number | undefined, fallback: number): number {
+export function amountOr(value: number | undefined, fallback: number): number {
   return value !== undefined && Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
-function percentOr(value: number | undefined, fallback: number, limits: Limits): number {
+export function percentOr(value: number | undefined, fallback: number, limits: Limits): number {
   if (value === undefined || !Number.isFinite(value)) return fallback;
   return Math.min(limits.max, Math.max(limits.min, value));
 }
 
-function wholeOr(value: number | undefined, fallback: number, limits: Limits): number {
+export function wholeOr(value: number | undefined, fallback: number, limits: Limits): number {
   if (value === undefined || !Number.isFinite(value)) return fallback;
   return Math.min(limits.max, Math.max(limits.min, Math.round(value)));
 }

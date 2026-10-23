@@ -1,4 +1,5 @@
 import { navItem } from '../navigation/nav-items';
+import type { RetirePlanFields } from '../retire/retire-inputs';
 import type { RaHandoffValues } from './plan-profile';
 
 /** Where a handoff came from. Later tasks add more sources. */
@@ -7,9 +8,16 @@ export type HandoffSource = 'salary';
 /** The word shown in the "From ..." chip. */
 export const HANDOFF_SOURCE_LABELS: Record<HandoffSource, string> = { salary: 'Salary' };
 
-/** Values each target receives. Later tasks add retire, budget and journey entries. */
+/**
+ * What a handoff to Retire at 55 carries: the Salary figures, and optionally retirement plan values
+ * (a later task sends those from the RA page).
+ */
+export type RetireHandoffPayload = RaHandoffValues & Partial<RetirePlanFields>;
+
+/** Values each target receives. Later tasks add budget and journey entries. */
 export interface HandoffValuesByTarget {
   readonly ra: RaHandoffValues;
+  readonly retire: RetireHandoffPayload;
 }
 
 export type HandoffTarget = keyof HandoffValuesByTarget;
