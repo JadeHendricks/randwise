@@ -109,3 +109,14 @@ export type {
   BudgetTfsaLimit,
   BudgetWarning,
 } from './budget';
+export { journey, toJourneyRules } from './journey';
+export type {
+  JourneyInput,
+  JourneyMilestone,
+  JourneyMilestoneKind,
+  JourneyResult,
+  JourneyRules,
+  JourneyTotals,
+  JourneyYear,
+  RefundMode,
+} from './journey';
