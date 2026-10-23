@@ -17,7 +17,8 @@ export interface TimelineItem {
   encapsulation: ViewEncapsulation.None,
   host: { class: 'rw-timeline' },
   template: `
-    <ol class="rw-timeline__list">
+    <!-- role="list" restores the list semantics Safari drops when list-style is none. -->
+    <ol class="rw-timeline__list" role="list">
       @for (item of items(); track item.id) {
         <li class="rw-timeline__item">
           <span class="rw-timeline__marker" aria-hidden="true"></span>
