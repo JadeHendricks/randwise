@@ -5,6 +5,7 @@ import {
   MONTHS_PER_YEAR,
   type PayPeriod,
   addCategory,
+  removeCategory,
   roundRand,
 } from '../engine';
 import type { Handoff, HandoffSource } from '../plan/handoff';
@@ -197,7 +198,7 @@ export function removeLine(
   const held = removed?.kind === 'custom' && removed.amount > 0;
   return editCategories(
     slice,
-    effective.filter((line) => line.id !== id || line.kind !== 'custom'),
+    removeCategory(effective, id),
     held ? 'custom' : slice.presetId,
   );
 }

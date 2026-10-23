@@ -34,6 +34,7 @@ describe('tfsaContribution', () => {
       allowed: 46_000,
       excess: 4_000,
       penalty: 1_600,
+      overAnnualBy: 4_000,
       overAnnual: true,
       overLifetime: false,
     });
@@ -58,6 +59,7 @@ describe('tfsaContribution', () => {
     expect(result.allowed).toBe(40_000);
     expect(result.excess).toBe(6_000);
     expect(result.penalty).toBeCloseTo(2_400, 6);
+    expect(result.overAnnualBy).toBe(0);
     expect(result.overAnnual).toBe(false);
     expect(result.overLifetime).toBe(true);
   });
@@ -71,6 +73,7 @@ describe('tfsaContribution', () => {
     expect(result.allowed).toBe(20_000);
     expect(result.excess).toBe(30_000);
     expect(result.penalty).toBeCloseTo(12_000, 6);
+    expect(result.overAnnualBy).toBe(4_000);
     expect(result.overAnnual).toBe(true);
     expect(result.overLifetime).toBe(true);
   });

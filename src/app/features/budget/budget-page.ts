@@ -194,7 +194,7 @@ export class BudgetPage {
     const { summary, limits, categories } = estimate;
     const rand = (value: number) => formatRand(roundRand(value));
     const pct = (percent: number) => formatPercent(percent / 100, 1);
-    const unallocated = Math.max(0, summary.unallocated);
+    const unallocated = summary.underAllocated;
 
     const amountOf = (group: BudgetGroup) =>
       summary.groups.find((entry) => entry.group === group)?.amount ?? 0;
@@ -248,7 +248,7 @@ export class BudgetPage {
     }
     if (has('tfsa-over-annual')) {
       warn(
-        `Your TFSA line is ${rand(tfsa.annual)} a year, ${rand(tfsa.annual - tfsa.annualLimit)} over the ${rand(tfsa.annualLimit)} annual limit (about ${rand(tfsa.annualLimitMonthly)} a month).`,
+        `Your TFSA line is ${rand(tfsa.annual)} a year, ${rand(tfsa.contribution.overAnnualBy)} over the ${rand(tfsa.annualLimit)} annual limit (about ${rand(tfsa.annualLimitMonthly)} a month).`,
       );
     }
     if (has('tfsa-over-lifetime')) {
@@ -261,10 +261,9 @@ export class BudgetPage {
         `SARS taxes the excess at ${formatPercent(rules.penaltyRate, 0)}: ${rand(tfsa.contribution.penalty)} on the ${rand(tfsa.contribution.excess)} that is over.`,
       );
     } else if (tfsa.yearsToLifetime !== null) {
+      const years = Math.max(1, Math.round(tfsa.yearsToLifetime));
       info(
-        tfsa.yearsToLifetime === 0
-          ? 'Your TFSA lifetime room is used up.'
-          : `At this pace you would fill the TFSA lifetime limit in about ${Math.max(1, Math.round(tfsa.yearsToLifetime))} years.`,
+        `At this pace you would fill the TFSA lifetime limit in about ${years} ${years === 1 ? 'year' : 'years'}.`,
       );
     }
 

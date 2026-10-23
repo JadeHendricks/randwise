@@ -45,6 +45,8 @@ export interface TfsaContribution {
   readonly excess: number;
   /** excess × penaltyRate. */
   readonly penalty: number;
+  /** max(0, desired − annualLimit): how far the wanted amount is over the annual limit. */
+  readonly overAnnualBy: number;
   /** True when desired is over the annual limit by at least a cent. */
   readonly overAnnual: boolean;
   /** True when desired is over the lifetime room by at least a cent. */
@@ -67,6 +69,7 @@ export function tfsaContribution(input: TfsaContributionInput, rules: TfsaRules)
   // the larger of the two excesses.
   // Source: https://www.sars.gov.za/types-of-tax/personal-income-tax/tax-free-investments/
   const penalty = excess * rules.penaltyRate;
+  const overAnnualBy = Math.max(0, desired - rules.annualLimit);
   return {
     desired,
     lifetimeRoom,
@@ -74,7 +77,8 @@ export function tfsaContribution(input: TfsaContributionInput, rules: TfsaRules)
     allowed,
     excess,
     penalty,
-    overAnnual: roundRand(desired - rules.annualLimit) > 0,
+    overAnnualBy,
+    overAnnual: roundRand(overAnnualBy) > 0,
     overLifetime: roundRand(desired - lifetimeRoom) > 0,
   };
 }

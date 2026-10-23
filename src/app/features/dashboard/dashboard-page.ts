@@ -93,13 +93,12 @@ export class DashboardPage {
     const budget = this.context.budgetOutputs();
     if (!budget) return null;
     const percent = (value: number) => formatPercent(value / 100, 0);
-    const gap = roundRand(budget.unallocated);
     const balance =
       budget.status === 'balanced'
         ? 'Every rand has a job'
         : budget.status === 'under'
-          ? `${formatRand(gap)} unallocated`
-          : `Over by ${formatRand(-gap)}`;
+          ? `${formatRand(roundRand(budget.unallocated))} unallocated`
+          : `Over by ${formatRand(roundRand(budget.overAllocated))}`;
     return {
       net: formatRand(roundRand(budget.netMonthly)),
       needs: percent(budget.groupPercents.needs),

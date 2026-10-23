@@ -141,21 +141,19 @@ export interface RetireOutputs {
 }
 
 /**
- * What the dashboard (and later Journey) reads from the Budget. Full precision; round at the edge.
+ * What the dashboard reads from the Budget. Full precision; round at the edge.
  * Separate from `PlanOutputs` for the same reason as `RetireOutputs`.
  */
 export interface BudgetOutputs {
   /** Take-home pay a month: the base of the budget. */
   readonly netMonthly: number;
-  /** net - total; negative when over. */
+  /** max(0, net - total): what is still free to give a job. */
   readonly unallocated: number;
+  /** max(0, total - net): how far the lines go past take-home. */
+  readonly overAllocated: number;
   readonly status: BudgetStatus;
   /** Each group as a percent of take-home (0 to 100). */
   readonly groupPercents: Readonly<Record<BudgetGroup, number>>;
-  /** The RA, TFSA and emergency-fund lines, rands a month. */
-  readonly raMonthly: number;
-  readonly tfsaMonthly: number;
-  readonly emergencyMonthly: number;
 }
 /** What the dashboard reads from the Journey. Full precision; round at the edge. */
 export interface JourneyOutputs {
@@ -243,12 +241,15 @@ export class PlanContextStore {
     };
   });
 
-  readonly retireHandoff = computed<Handoff<'retire'> | null>(() => this.handoffs().retire ?? null);
+  readonly retireHandoff = computed<Handoff<'retire'> | null>(
+    () => this.handoffs().retire ?? null,
+  );
 
   // Same shape as `raSlice`: a new Retire handoff resets local salary edits to the sent values.
   private readonly retireSlice = linkedSignal<Handoff<'retire'> | null, RetireSlice>({
     source: this.retireHandoff,
-    computation: (handoff, previous) => nextRetireSlice(handoff, previous, this.retirePlanDefaults),
+    computation: (handoff, previous) =>
+      nextRetireSlice(handoff, previous, this.retirePlanDefaults),
   });
 
   /** The inputs the Retire at 55 page works from: the Salary profile live until overridden. */
@@ -340,21 +341,19 @@ export class PlanContextStore {
   readonly budgetOutputs = computed<BudgetOutputs | null>(() => {
     const estimate = this.budgetEstimate();
     if (!estimate?.ok) return null;
-    const { summary, limits } = estimate;
+    const { summary } = estimate;
     const percentOf = (group: BudgetGroup) =>
       summary.groups.find((entry) => entry.group === group)?.percent ?? 0;
     return {
       netMonthly: estimate.net,
-      unallocated: summary.unallocated,
+      unallocated: summary.underAllocated,
+      overAllocated: summary.overAllocated,
       status: summary.status,
       groupPercents: {
         needs: percentOf('needs'),
         wants: percentOf('wants'),
         savings: percentOf('savings'),
       },
-      raMonthly: limits.ra.monthly,
-      tfsaMonthly: limits.tfsa.monthly,
-      emergencyMonthly: limits.emergency.monthly,
     };
   });
   readonly journeyHandoff = computed<Handoff<'journey'> | null>(

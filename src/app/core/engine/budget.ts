@@ -210,6 +210,8 @@ export interface BudgetSummary {
   readonly total: number;
   /** net − total; negative when over. */
   readonly unallocated: number;
+  /** max(0, net − total): what is still free to give a job. */
+  readonly underAllocated: number;
   /** max(0, total − net). */
   readonly overAllocated: number;
   readonly percentAllocated: number;
@@ -232,6 +234,7 @@ export function summarise(categories: readonly BudgetCategory[], net: number): B
     net,
     total,
     unallocated: net - total,
+    underAllocated: Math.max(0, net - total),
     overAllocated: Math.max(0, total - net),
     percentAllocated: percentOfNet(total, net),
     status: difference > 0 ? 'under' : difference < 0 ? 'over' : 'balanced',

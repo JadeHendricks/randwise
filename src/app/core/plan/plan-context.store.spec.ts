@@ -8,6 +8,11 @@ import { PlanContextStore } from './plan-context.store';
 const TODAY_PINNED = new Date(2026, 9, 22);
 
 /** Nothing was sent to any calculator. */
+/** The Budget's RA, TFSA and emergency lines, from the estimate. */
+function budgetLines(plan: PlanContextStore) {
+  const estimate = plan.budgetEstimate();
+  return estimate?.ok ? estimate.limits : undefined;
+}
 function expectNothingSent(plan: PlanContextStore) {
   expect(plan.raHandoff()).toBeNull();
   expect(plan.retireHandoff()).toBeNull();
@@ -522,9 +527,9 @@ describe('PlanContextStore', () => {
       expect(outputs?.groupPercents.wants).toBeCloseTo(30, 6);
       expect(outputs?.groupPercents.savings).toBeCloseTo(20, 6);
       // 25 141.88 x 0.2 = 5 028.376 for savings; RA takes 0.3 (1 508.5128), emergency 0.2.
-      expect(outputs?.raMonthly).toBeCloseTo(1_508.5128, 4);
-      expect(outputs?.tfsaMonthly).toBeCloseTo(1_508.5128, 4);
-      expect(outputs?.emergencyMonthly).toBeCloseTo(1_005.6752, 4);
+      expect(budgetLines(plan)?.ra.monthly).toBeCloseTo(1_508.5128, 4);
+      expect(budgetLines(plan)?.tfsa.monthly).toBeCloseTo(1_508.5128, 4);
+      expect(budgetLines(plan)?.emergency.monthly).toBeCloseTo(1_005.6752, 4);
     });
 
     it('follows the Salary inputs live while nothing is edited', () => {
@@ -650,13 +655,13 @@ describe('PlanContextStore', () => {
         tfsaMonthly: 2_000,
         tfsaLifetimeUsed: 120_000,
       });
-      expect(plan.budgetOutputs()?.raMonthly).toBe(3_000);
-      expect(plan.budgetOutputs()?.tfsaMonthly).toBe(2_000);
+      expect(budgetLines(plan)?.ra.monthly).toBe(3_000);
+      expect(budgetLines(plan)?.tfsa.monthly).toBe(2_000);
       expect(plan.budgetSettings().tfsaLifetimeUsed).toBe(120_000);
       expect(plan.budgetPresetId()).toBe('custom');
       expect(plan.budgetFrom()).toBe('ra');
       plan.undoBudget();
-      expect(plan.budgetOutputs()?.raMonthly).toBeCloseTo(1_508.5128, 4);
+      expect(budgetLines(plan)?.ra.monthly).toBeCloseTo(1_508.5128, 4);
       expect(plan.budgetSettings().tfsaLifetimeUsed).toBe(0);
       expect(plan.budgetPresetId()).toBe('50-30-20');
     });
@@ -765,7 +770,7 @@ describe('PlanContextStore', () => {
       expect(plan.sendFromRa('budget')).toBe(true);
       expect(plan.budgetFrom()).toBe('ra');
       expect(plan.budgetIncome()).toMatchObject({ amount: 50_000, age: 40 });
-      expect(plan.budgetOutputs()?.raMonthly).toBe(3_000);
+      expect(budgetLines(plan)?.ra.monthly).toBe(3_000);
     });
 
     it('RA to Journey carries the salary side and the six RA values', () => {
@@ -783,7 +788,7 @@ describe('PlanContextStore', () => {
       plan.updateRetire({ startingBalance: 0, retirementAge: 55 });
       expect(plan.sendFromRetire('budget')).toBe(true);
       expect(plan.budgetFrom()).toBe('retire');
-      expect(plan.budgetOutputs()?.raMonthly).toBe(46_864.26);
+      expect(budgetLines(plan)?.ra.monthly).toBe(46_864.26);
     });
 
     it('Retire at 55 to Journey carries the solved contribution and the plan figures', () => {
@@ -860,9 +865,8 @@ describe('PlanContextStore', () => {
       expect(plan.sendFromJourney('budget')).toBe(true);
       expect(plan.budgetFrom()).toBe('journey');
       expect(plan.budgetIncome()).toMatchObject({ amount: 50_000, age: 40 });
-      const outputs = plan.budgetOutputs();
-      expect(outputs?.raMonthly).toBe(3_000);
-      expect(outputs?.tfsaMonthly).toBe(2_500);
+      expect(budgetLines(plan)?.ra.monthly).toBe(3_000);
+      expect(budgetLines(plan)?.tfsa.monthly).toBe(2_500);
       expect(plan.budgetSettings().tfsaLifetimeUsed).toBe(90_000);
     });
 
