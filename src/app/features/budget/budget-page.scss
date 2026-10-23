@@ -73,6 +73,12 @@
     overflow-wrap: anywhere;
   }
 
+  // Why: the atom fills its width, so four columns would balloon the dots and push the
+  // breakdown far below the fold. Same cap as the dashboard hero.
+  &__matrix {
+    max-width: 14rem;
+  }
+
   &__lead {
     font-size: var(--rw-text-lg);
     font-weight: var(--rw-weight-bold);
