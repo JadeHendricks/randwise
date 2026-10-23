@@ -92,6 +92,19 @@ export function validateTaxYearFile(
     if ('value' in field) values[key] = field['value'];
   }
 
+  // A file with unconfirmed (carried-forward) values must not claim to be verified.
+  const carried = TAX_YEAR_FIELD_KEYS.filter((key) => {
+    const field = data[key];
+    return isRecord(field) && field['carriedForward'] === true;
+  });
+  if ((status === 'verified' || status === 'verified-auto') && carried.length > 0) {
+    fail(
+      `status is "${status}" but ${carried.join(', ')} ${carried.length === 1 ? 'is' : 'are'} ` +
+        `carried forward, so status must be "draft" ` +
+        `(a verified or verified-auto file cannot have carried-forward fields).`,
+    );
+  }
+
   const check = new FieldChecker(fail, values);
 
   const incomeTax = check.brackets('incomeTaxBrackets');

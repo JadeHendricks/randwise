@@ -175,6 +175,32 @@ describe('validateTaxYearFile', () => {
     expect(errors.some((e) => e.includes('earliestRaRetirementAge'))).toBe(true);
   });
 
+  describe('carried-forward fields', () => {
+    it('rejects a verified file with a carried-forward field', () => {
+      const data = makeTaxYear(2027, { status: 'verified' });
+      data.uif.carriedForward = true;
+      expectError(data, 'uif', 'draft', 'is carried forward');
+    });
+
+    it('lists every carried-forward field for verified-auto', () => {
+      const data = makeTaxYear(2027, { status: 'verified-auto' });
+      data.uif.carriedForward = true;
+      data.twoPot.carriedForward = true;
+      expectError(data, 'uif, twoPot', 'are carried forward', '"verified-auto"');
+    });
+
+    it('accepts a draft file with or without carried-forward fields', () => {
+      const carried = makeTaxYear(2027, { status: 'draft' });
+      carried.uif.carriedForward = true;
+      expect(errorsOf(carried)).toEqual([]);
+      expect(errorsOf(makeTaxYear(2027, { status: 'draft' }))).toEqual([]);
+    });
+
+    it('accepts a verified file with nothing carried forward', () => {
+      expect(errorsOf(makeTaxYear(2027, { status: 'verified' }))).toEqual([]);
+    });
+  });
+
   it('reports every problem at once', () => {
     const data: Record<string, unknown> = makeTaxYear();
     data['status'] = 'nope';
