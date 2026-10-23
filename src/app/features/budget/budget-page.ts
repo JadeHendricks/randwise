@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+} from '@angular/core';
 
 import { BUDGET_LIMITS, BudgetSettings } from '../../core/budget/budget-inputs';
 import { formatShortDate } from '../../core/data/format-date';
@@ -134,6 +142,8 @@ const round2 = (value: number) => Math.round(value * 100) / 100;
 })
 export class BudgetPage {
   protected readonly context = inject(PlanContextStore);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   private readonly taxYears = inject(TaxYearService);
 
   protected readonly limits = BUDGET_LIMITS;
@@ -312,6 +322,24 @@ export class BudgetPage {
 
   protected sendTo(target: SendTargetId): void {
     this.context.sendFromBudget(target);
+  }
+
+  /**
+   * The cap for one line: the shared cap, or the line's own amount when a handoff sent more (for
+   * example the RA line from Retire at 55), so the field never shows a value above its max.
+   */
+  protected lineMaxFor(amount: number): number {
+    return Math.max(this.lineMax(), Math.ceil(roundRand(amount) / 1_000) * 1_000);
+  }
+
+  // Why: the Remove button that had focus is destroyed with its row, so focus would fall to the
+  // top of the page. Move it to the group's Add button, which is always still there.
+  protected removeLine(id: string, group: BudgetGroup): void {
+    this.context.removeBudgetLine(id);
+    afterNextRender(
+      () => this.host.nativeElement.querySelector<HTMLElement>(`[data-add-group="${group}"]`)?.focus(),
+      { injector: this.injector },
+    );
   }
 
   protected set(field: NumberField, value: number): void {

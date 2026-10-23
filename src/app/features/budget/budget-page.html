@@ -144,7 +144,7 @@
           <rw-money [value]="r.net" size="hero" />
         </p>
         <p class="budget__lead">{{ r.sentence }}</p>
-        <rw-dot-matrix class="budget__matrix" label="Where your take-home goes" [columns]="r.columns" />
+        <rw-dot-matrix class="budget__matrix" label="Take-home pay by group, as dots" [columns]="r.columns" />
         <p class="budget__text">{{ r.caption }}</p>
       </rw-card>
 
@@ -188,13 +188,13 @@
                   [name]="line.name"
                   [amount]="line.amount"
                   [percent]="line.percent"
-                  [max]="lineMax()"
+                  [max]="lineMaxFor(line.amount)"
                   [editable]="line.custom"
                   [removable]="line.custom"
                   (amountChange)="context.setBudgetAmount(line.id, $event)"
                   (percentChange)="context.setBudgetPercent(line.id, $event)"
                   (nameChange)="context.renameBudgetLine(line.id, $event)"
-                  (remove)="context.removeBudgetLine(line.id)"
+                  (remove)="removeLine(line.id, group.group)"
                 />
               }
             </div>
@@ -204,6 +204,7 @@
                 variant="secondary"
                 size="sm"
                 type="button"
+                [attr.data-add-group]="group.group"
                 (click)="context.addBudgetLine(group.group)"
               >
                 {{ group.addLabel }}

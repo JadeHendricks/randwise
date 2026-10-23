@@ -224,6 +224,33 @@ describe('BudgetPage', () => {
     expect(inputByLabel(root, 'Housing per month').value).toBe('5028.38');
   });
 
+  it('moves focus to the group Add button when a custom line is removed', async () => {
+    const { fixture, root } = await render();
+    // Focus only moves in an attached document.
+    document.body.appendChild(root);
+    try {
+      button(root, 'Add a need').click();
+      await fixture.whenStable();
+      button(root, 'Remove New need').focus();
+      button(root, 'Remove New need').click();
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(button(root, 'Add a need'));
+    } finally {
+      root.remove();
+    }
+  });
+
+  it('lets a line hold a sent amount above the take-home cap', async () => {
+    const { fixture, root } = await render();
+    // Take-home is R 25 141,88, so the shared cap is R 26 000; a handoff can carry more.
+    TestBed.inject(PlanContextStore).setBudgetAmount('housing', 46_864);
+    await fixture.whenStable();
+    const field = inputByLabel(root, 'Housing per month');
+    expect(field.value).toBe('46864');
+    expect(Number(field.max)).toBeGreaterThanOrEqual(46_864);
+    expect(Number(inputByLabel(root, 'Transport per month').max)).toBe(26_000);
+  });
+
   it('shows R 32 138,13 for a gross pay of R40 000', async () => {
     const { fixture, root } = await render();
     await type(fixture, 'Gross pay per month', 40_000);
