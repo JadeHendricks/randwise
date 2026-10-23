@@ -47,9 +47,14 @@ export class DashboardPage {
   });
   protected readonly planText = computed(() => {
     switch (this.planStatus()) {
-      case 'ready':
+      case 'ready': {
         // steps() is lazy, so it is only read once the plan is ready.
-        return `Your plan has ${this.planBuilder.steps().length} steps.`;
+        const count = this.planBuilder.steps().length;
+        // Why: without tax data the summary opens empty and explains why, so "0 steps" would mislead.
+        return count === 0
+          ? 'Your plan could not be worked out yet.'
+          : `Your plan has ${count} steps.`;
+      }
       case 'progress':
         return `Step ${this.planBuilder.position() + 1} of ${this.planBuilder.progressTotal()} is waiting for you.`;
       default:

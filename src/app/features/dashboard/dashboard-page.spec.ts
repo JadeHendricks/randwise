@@ -336,4 +336,14 @@ describe('DashboardPage without tax data', () => {
       );
     }
   });
+
+  it('does not claim a plan with 0 steps on the Plan tile', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    const store = TestBed.inject(PlanBuilderStore);
+    store.update({ goal: 'buy-home' });
+    store.finish();
+    await fixture.whenStable();
+    const text = fixture.nativeElement.querySelector('.dashboard__plan-text')?.textContent;
+    expect(normaliseSpaces(text)).toBe('Your plan could not be worked out yet.');
+  });
 });
