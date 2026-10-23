@@ -323,7 +323,7 @@
       </rw-card>
 
       <rw-card class="ra__card" padding="lg">
-        <rw-send-to [exclude]="'ra'" />
+        <rw-send-to [exclude]="'ra'" (sendTo)="sendTo($event)" />
       </rw-card>
     }
 

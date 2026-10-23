@@ -6,7 +6,7 @@ import { taxYearLabel } from '../../core/data/tax-calendar';
 import { TaxYearStatus } from '../../core/data/tax-year.schema';
 import { TaxYearService } from '../../core/data/tax-year.service';
 import { roundRand } from '../../core/engine';
-import { HANDOFF_SOURCE_LABELS } from '../../core/plan/handoff';
+import { HANDOFF_SOURCE_LABELS, SendTargetId } from '../../core/plan/handoff';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { RA_LIMITS, RaInputs } from '../../core/ra/ra-inputs';
 import { AmountField } from '../../shared/atoms/amount-field/amount-field';
@@ -224,6 +224,10 @@ export class RaPage {
 
   protected rand(amount: number): string {
     return formatRand(amount);
+  }
+
+  protected sendTo(target: SendTargetId): void {
+    this.context.sendFromRa(target);
   }
 
   protected set(field: keyof RaInputs, value: number): void {

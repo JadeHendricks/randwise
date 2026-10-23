@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { TODAY } from '../../core/data/data-source';
+import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { SalaryInputsStore } from '../../core/salary/salary-inputs.store';
 import { FakeMatchMedia, installFakeMatchMedia } from '../../testing/fake-match-media';
 import { normaliseSpaces } from '../../testing/text';
@@ -95,8 +96,9 @@ describe('DashboardPage', () => {
     expect(root.querySelectorAll('.rw-money__figure').length).toBe(1);
     const clone = root.cloneNode(true) as HTMLElement;
     clone.querySelector('.dashboard__hero')?.remove();
-    // The RA tile is live now, so this covers the placeholder tiles only.
+    // The RA and Retire at 55 tiles are live now, so this covers the placeholder tiles only.
     clone.querySelector('.dashboard__ra')?.remove();
+    clone.querySelector('.dashboard__retire')?.remove();
     expect(normaliseSpaces(clone.textContent)).not.toMatch(/R\s?\d/);
   });
 
@@ -123,6 +125,46 @@ describe('DashboardPage', () => {
     const tile = raTile(fixture.nativeElement as HTMLElement);
     expect(tile).toContain('R 132 000,00');
     expect(tile).toContain('R 7 440,00');
+  });
+
+  const retireTile = (root: HTMLElement) =>
+    normaliseSpaces(root.querySelector('.dashboard__retire')?.textContent);
+
+  it('shows a live illustrative Retire at 55 tile with the required contribution', async () => {
+    const root = (await render()).nativeElement as HTMLElement;
+    const tile = retireTile(root);
+    expect(tile).toContain('Illustrative plan');
+    expect(tile).toContain(
+      "R 46 864 a month to retire at 55 on R 50 000 a month (today's money)",
+    );
+    expect(tile).toContain('On track: 4%');
+    // Plain text only: the dashboard keeps one money figure.
+    expect(root.querySelector('.dashboard__retire .rw-money__figure')).toBeNull();
+    const card = root.querySelector('.dashboard__retire .rw-bento-tile__card') as HTMLElement;
+    const order = Array.from(card.children).map((c) => c.className);
+    expect(order.indexOf('rw-bento-tile__text')).toBeLessThan(
+      order.findIndex((c) => c.includes('dashboard__retire-label')),
+    );
+  });
+
+  it('labels the Retire at 55 tile "Your plan" once the plan is edited', async () => {
+    const fixture = await render();
+    TestBed.inject(PlanContextStore).updateRetire({ goalNetMonthly: 20_000 });
+    await fixture.whenStable();
+    const tile = retireTile(fixture.nativeElement as HTMLElement);
+    expect(tile).toContain('Your plan');
+    expect(tile).not.toContain('Illustrative plan');
+    expect(tile).toContain("R 16 049 a month to retire at 55 on R 20 000 a month (today's money)");
+    expect(tile).toContain('On track: 12%');
+  });
+
+  it('asks to check the figures when the Retire at 55 plan fails', async () => {
+    const fixture = await render();
+    TestBed.inject(PlanContextStore).updateRetire({ drawdownPercent: 2.4 });
+    await fixture.whenStable();
+    const tile = retireTile(fixture.nativeElement as HTMLElement);
+    expect(tile).toContain('Check the figures on the Retire at 55 page.');
+    expect(tile).not.toContain('a month to retire at');
   });
 
   it('links to every other lazy route and keeps the privacy card', async () => {
@@ -156,6 +198,9 @@ describe('DashboardPage without tax data', () => {
       'Tax data is unavailable',
     );
     expect(normaliseSpaces(root.querySelector('.dashboard__ra')?.textContent)).toContain(
+      'Tax data is unavailable.',
+    );
+    expect(normaliseSpaces(root.querySelector('.dashboard__retire')?.textContent)).toContain(
       'Tax data is unavailable.',
     );
   });

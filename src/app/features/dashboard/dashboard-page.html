@@ -43,6 +43,21 @@
           <p class="dashboard__ra-figure">Tax data is unavailable.</p>
         }
       </rw-bento-tile>
+    } @else if (item.path === 'retire') {
+      <rw-bento-tile class="dashboard__retire" [item]="item">
+        @if (retireFigures(); as retire) {
+          <p class="dashboard__retire-label">
+            {{ context.retireIsExample() ? 'Illustrative plan' : 'Your plan' }}
+          </p>
+          <p class="dashboard__retire-figure">
+            {{ retire.required }} a month to retire at {{ retire.age }} on {{ retire.goal }} a
+            month (today's money)
+          </p>
+          <p class="dashboard__retire-figure">On track: {{ retire.onTrack }}</p>
+        } @else {
+          <p class="dashboard__retire-figure">{{ retireUnavailable() }}</p>
+        }
+      </rw-bento-tile>
     } @else {
       <rw-bento-tile [item]="item" />
     }

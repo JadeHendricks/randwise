@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { RatesService } from '../data/rates.service';
 import { TaxYearService } from '../data/tax-year.service';
-import { type RaRules, toRaRules } from '../engine';
+import { type RaRules, type RetireRules, roundRand, toRaRules, toRetireRules } from '../engine';
 import { type RaEstimate, estimateRa } from '../ra/estimate-ra';
 import type { RaInputs } from '../ra/ra-inputs';
 import { raPlanDefaults } from '../ra/ra-inputs';
@@ -13,6 +13,17 @@ import {
   nextRaSlice,
   undoRa as undoRaSlice,
 } from '../ra/ra-slice';
+import { type RetireEstimate, estimateRetire } from '../retire/estimate-retire';
+import type { RetireInputs } from '../retire/retire-inputs';
+import { retirePlanDefaults } from '../retire/retire-inputs';
+import {
+  type RetireSlice,
+  editRetire,
+  effectiveRetireInputs,
+  freshRetireSlice,
+  nextRetireSlice,
+  undoRetire as undoRetireSlice,
+} from '../retire/retire-slice';
 import { SalaryEstimator } from '../salary/salary-estimator';
 import { SalaryInputsStore } from '../salary/salary-inputs.store';
 import type {
@@ -22,7 +33,23 @@ import type {
   HandoffValuesByTarget,
   SendTargetId,
 } from './handoff';
-import { type PlanProfile, profileFromSalary, raHandoffFrom } from './plan-profile';
+import {
+  type PlanProfile,
+  type RaHandoffValues,
+  profileFromSalary,
+  raHandoffFrom,
+} from './plan-profile';
+
+/** Just the Salary side of a calculator's inputs, for a handoff. */
+function salaryFields(inputs: RaHandoffValues): RaHandoffValues {
+  return {
+    grossMonthly: inputs.grossMonthly,
+    age: inputs.age,
+    medicalMembers: inputs.medicalMembers,
+    employeeRetirementMonthly: inputs.employeeRetirementMonthly,
+    employerRetirementMonthly: inputs.employerRetirementMonthly,
+  };
+}
 
 /** What other calculators (the dashboard now, Journey later) read from the RA. Full precision. */
 export interface RaOutputs {
@@ -36,20 +63,39 @@ export interface PlanOutputs {
   readonly ra: RaOutputs | null;
 }
 
+/**
+ * What the dashboard (and later Journey) reads from Retire at 55. Full precision; round at the
+ * edge. It is a separate computed, not a key of `PlanOutputs`, so the RA outputs shape stays put.
+ */
+export interface RetireOutputs {
+  /** The contribution a month that reaches the goal, in the first year. */
+  readonly requiredMonthly: number;
+  /** Projected capital at the current contribution as a percent of the capital needed. */
+  readonly fundedPercent: number;
+  /** `fundedPercent` clamped to 0..100, for a ring. */
+  readonly ringPercent: number;
+  readonly retirementAge: number;
+  /** The income goal, rands a month in today's money. */
+  readonly goalNetMonthly: number;
+}
+
 type Handoffs = { readonly [T in HandoffTarget]?: Handoff<T> };
 
 /**
  * The one place calculators share figures. It reads the Salary situation, carries "Send to"
- * handoffs, and holds each calculator's slice (the RA one for now). The slice logic lives in pure
- * files under `core/ra`, so this store is only wiring. In memory only: nothing is persisted.
+ * handoffs, and holds each calculator's slice (RA and Retire at 55). The slice logic lives in pure
+ * files under `core/ra` and `core/retire`, so this store is only wiring. In memory only: nothing
+ * is persisted.
  */
 @Injectable({ providedIn: 'root' })
 export class PlanContextStore {
   private readonly salary = inject(SalaryInputsStore);
   private readonly estimator = inject(SalaryEstimator);
   private readonly taxYears = inject(TaxYearService);
+  private readonly assumptions = inject(RatesService).assumptions();
   // Read once: the bundled rates never change while the app runs.
-  private readonly raPlanDefaults = raPlanDefaults(inject(RatesService).assumptions());
+  private readonly raPlanDefaults = raPlanDefaults(this.assumptions);
+  private readonly retirePlanDefaults = retirePlanDefaults(this.assumptions);
 
   private readonly handoffs = signal<Handoffs>({});
   private nextId = 1;
@@ -107,6 +153,57 @@ export class PlanContextStore {
     };
   });
 
+  readonly retireHandoff = computed<Handoff<'retire'> | null>(
+    () => this.handoffs().retire ?? null,
+  );
+
+  // Same shape as `raSlice`: a new Retire handoff resets local salary edits to the sent values.
+  private readonly retireSlice = linkedSignal<Handoff<'retire'> | null, RetireSlice>({
+    source: this.retireHandoff,
+    computation: (handoff, previous) =>
+      nextRetireSlice(handoff, previous, this.retirePlanDefaults),
+  });
+
+  /** The inputs the Retire at 55 page works from: the Salary profile live until overridden. */
+  readonly retire = computed<RetireInputs>(() =>
+    effectiveRetireInputs(this.retireSlice(), raHandoffFrom(this.profile())),
+  );
+  /** Who sent the figures in use, for the "From ..." chip. */
+  readonly retireFrom = computed<HandoffSource | null>(() => this.retireSlice().from);
+  readonly retireCanUndo = computed(() => this.retireSlice().undo !== null);
+  /** True while the Retire at 55 figures are the untouched example. */
+  readonly retireIsExample = computed(() => {
+    const slice = this.retireSlice();
+    return !slice.planEdited && slice.profile === null && slice.from === null;
+  });
+
+  /** Two-pot shares, drawdown limits, de minimis, lump-sum table and earliest age; null without tax data. */
+  readonly retireRules = computed<RetireRules | null>(() => {
+    const data = this.taxYears.taxYear();
+    return data ? toRetireRules(data) : null;
+  });
+
+  /** Null only when there is no tax data; a figure the engine rejects comes back as `ok: false`. */
+  readonly retireEstimate = computed<RetireEstimate | null>(() => {
+    const tables = this.estimator.tables();
+    const rules = this.retireRules();
+    return tables && rules ? estimateRetire(this.retire(), tables, rules) : null;
+  });
+
+  /** Figures the dashboard can show; null when there is no tax data or the figures fail. */
+  readonly retireOutputs = computed<RetireOutputs | null>(() => {
+    const estimate = this.retireEstimate();
+    if (!estimate?.ok) return null;
+    const { result } = estimate;
+    return {
+      requiredMonthly: result.requiredContribution.monthly,
+      fundedPercent: result.current.fundedPercent,
+      ringPercent: result.current.ringPercent,
+      retirementAge: result.retirementAge,
+      goalNetMonthly: result.goal.todayMonthly,
+    };
+  });
+
   /** Sends figures to a calculator. Each call is a new handoff, even with identical values. */
   send<T extends HandoffTarget>(
     target: T,
@@ -122,8 +219,48 @@ export class PlanContextStore {
    * not built yet.
    */
   sendFromSalary(target: SendTargetId): boolean {
+    if (target !== 'ra' && target !== 'retire') return false;
+    this.send(target, 'salary', raHandoffFrom(this.profile()));
+    return true;
+  }
+
+  /**
+   * Sends the RA figures (the salary side and the contribution plan) to Retire at 55. Returns
+   * false, and changes nothing, for any other target.
+   */
+  sendFromRa(target: SendTargetId): boolean {
+    if (target !== 'retire') return false;
+    const ra = this.ra();
+    this.send('retire', 'ra', {
+      ...salaryFields(ra),
+      contributionMonthly: ra.contributionMonthly,
+      escalationPercent: ra.escalationPercent,
+      startingBalance: ra.startingBalance,
+      returnPercent: ra.returnPercent,
+      inflationPercent: ra.inflationPercent,
+      retirementAge: ra.retirementAge,
+    });
+    return true;
+  }
+
+  /**
+   * Sends the Retire at 55 figures to the RA calculator, with the contribution a month that the
+   * plan needs (rounded to the cent), or the current one when there is no result. Returns false,
+   * and changes nothing, for any other target.
+   */
+  sendFromRetire(target: SendTargetId): boolean {
     if (target !== 'ra') return false;
-    this.send('ra', 'salary', raHandoffFrom(this.profile()));
+    const retire = this.retire();
+    const required = this.retireOutputs()?.requiredMonthly;
+    this.send('ra', 'retire', {
+      ...salaryFields(retire),
+      contributionMonthly: required === undefined ? retire.contributionMonthly : roundRand(required),
+      escalationPercent: retire.escalationPercent,
+      startingBalance: retire.startingBalance,
+      returnPercent: retire.returnPercent,
+      inflationPercent: retire.inflationPercent,
+      retirementAge: retire.retirementAge,
+    });
     return true;
   }
 
@@ -149,5 +286,25 @@ export class PlanContextStore {
   resetRa(): void {
     this.dismiss('ra');
     this.raSlice.set(freshRaSlice(this.raPlanDefaults));
+  }
+
+  updateRetire(patch: Partial<RetireInputs>): void {
+    this.retireSlice.update((slice) => editRetire(slice, patch, raHandoffFrom(this.profile())));
+  }
+
+  undoRetire(): void {
+    const slice = this.retireSlice();
+    if (!slice.undo) return;
+    const restored = undoRetireSlice(slice);
+    // Why this order: dismissing changes the linkedSignal source, which queues a recomputation
+    // that would keep the sent values. Setting AFTER the dismissal makes the restored state win,
+    // because a linkedSignal `set` first brings the signal up to date and then overwrites it.
+    this.dismiss('retire');
+    this.retireSlice.set(restored);
+  }
+
+  resetRetire(): void {
+    this.dismiss('retire');
+    this.retireSlice.set(freshRetireSlice(this.retirePlanDefaults));
   }
 }

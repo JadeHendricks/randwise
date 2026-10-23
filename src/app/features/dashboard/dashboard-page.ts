@@ -11,7 +11,7 @@ import { Card } from '../../shared/atoms/card/card';
 import { DotMatrix, type DotColumn } from '../../shared/atoms/dot-matrix/dot-matrix';
 import { Icon } from '../../shared/atoms/icon/icon';
 import { Money } from '../../shared/atoms/money/money';
-import { formatRand } from '../../shared/format/format-rand';
+import { formatPercent, formatRand } from '../../shared/format/format-rand';
 import { BentoTile } from '../../shared/molecules/bento-tile/bento-tile';
 
 // Whole rands where possible ("R30 000"); cents only when the amount has them.
@@ -77,6 +77,23 @@ export class DashboardPage {
     };
   });
 
+  // Plain text too. Null when there is no tax data or the Retire at 55 figures fail.
+  protected readonly retireFigures = computed(() => {
+    const retire = this.context.retireOutputs();
+    if (!retire) return null;
+    return {
+      required: WHOLE_RAND.format(retire.requiredMonthly),
+      goal: WHOLE_RAND.format(retire.goalNetMonthly),
+      age: retire.retirementAge,
+      onTrack: formatPercent(retire.ringPercent / 100, 0),
+    };
+  });
+  // Why: the estimate is null for "no tax data"; any other missing output means the figures failed.
+  protected readonly retireUnavailable = computed(() =>
+    this.context.retireEstimate() === null
+      ? 'Tax data is unavailable.'
+      : 'Check the figures on the Retire at 55 page.',
+  );
   // Why: the estimator returns null for "no tax data" and a message for a failed estimate.
   protected readonly unavailable = computed(() => {
     const estimate = this.estimator.estimate();
