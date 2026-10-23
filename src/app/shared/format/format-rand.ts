@@ -5,6 +5,17 @@ export function formatRand(amount: number): string {
   return ZAR.format(amount);
 }
 
+const ZAR_WHOLE = new Intl.NumberFormat('en-ZA', {
+  style: 'currency',
+  currency: 'ZAR',
+  maximumFractionDigits: 0,
+});
+
+/** South African rand without cents, e.g. `R 8 250`. For plan sentences, not exact figures. */
+export function formatRandWhole(amount: number): string {
+  return ZAR_WHOLE.format(amount);
+}
+
 const ZAR_COMPACT = new Intl.NumberFormat('en-ZA', {
   style: 'currency',
   currency: 'ZAR',
