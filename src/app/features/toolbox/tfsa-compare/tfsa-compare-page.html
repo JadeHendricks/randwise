@@ -139,6 +139,8 @@
         <p class="tool__lead">{{ r.lead }}</p>
       </rw-card>
 
+      <rw-download-pdf class="tool__download" [report]="report()" />
+
       <div class="tool__warnings" role="status">
         @for (warning of r.warnings; track warning) {
           <p class="tool__warning">
@@ -165,6 +167,7 @@
         <h2 class="tool__title">Tax paid in the taxable account</h2>
         @if (r.hasTax) {
           <rw-breakdown-bar
+            data-pdf-chart="tfsa-tax"
             label="Tax paid in the taxable account: tax on interest, dividends tax and capital gains tax"
             [segments]="r.taxSegments"
           />
@@ -177,6 +180,7 @@
         <rw-card class="tool__card" padding="lg">
           <h2 class="tool__title">How the two grow</h2>
           <rw-line-chart
+            data-pdf-chart="tfsa-growth"
             label="TFSA and taxable account balances over the years"
             [series]="r.tfsaSeries"
             [secondSeries]="r.taxableSeries"

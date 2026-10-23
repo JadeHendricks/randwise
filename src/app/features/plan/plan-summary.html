@@ -69,6 +69,9 @@
       Back to the questions
     </button>
     <button rw-button variant="ghost" type="button" (click)="startAgain()">Start again</button>
+    @if (!unavailable()) {
+      <rw-download-pdf [report]="report()" />
+    }
   </div>
 
   <!-- Always rendered so screen readers pick up the plan when the answers change. -->

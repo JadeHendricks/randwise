@@ -35,6 +35,27 @@ module.exports = defineConfig([
     },
   },
   {
+    // jspdf and svg2pdf.js are large. Only pdf-libs.ts may import them (with `await import`), so
+    // they stay in a lazy chunk and never reach the initial bundle.
+    files: ['src/**/*.ts'],
+    ignores: ['src/app/core/pdf/pdf-libs.ts', '**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['jspdf', 'jspdf/*', 'svg2pdf.js'],
+              message:
+                'Load the PDF libraries only through core/pdf/pdf-libs.ts so they stay in a lazy chunk.',
+              allowTypeImports: true,
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // The tax engine must stay pure TypeScript so it can be unit-tested and reused without Angular.
     files: ['src/app/core/engine/**/*.ts'],
     ignores: ['**/*.spec.ts'],

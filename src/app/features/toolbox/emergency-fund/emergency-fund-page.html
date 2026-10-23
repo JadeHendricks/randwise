@@ -95,6 +95,8 @@
         }
       </rw-card>
 
+      <rw-download-pdf class="tool__download" [report]="report()" />
+
       <div class="tool__warnings" role="status">
         @for (warning of r.warnings; track warning) {
           <p class="tool__warning">
@@ -132,6 +134,7 @@
         <rw-card class="tool__card" padding="lg">
           <h2 class="tool__title">Your balance over time</h2>
           <rw-line-chart
+            data-pdf-chart="emergency-balance"
             label="Emergency fund balance over time"
             [series]="r.balance"
             [secondSeries]="r.targetSeries"

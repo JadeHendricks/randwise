@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { RatesService } from '../../../core/data/rates.service';
 import { TaxYearService } from '../../../core/data/tax-year.service';
 import { roundRand, toInvestmentTaxRules } from '../../../core/engine';
+import { ReportModel } from '../../../core/pdf/report-model';
 import { InvestmentWarning } from '../../../core/toolbox/estimate-investment';
 import {
   INVESTMENT_LIMITS,
@@ -25,7 +26,9 @@ import {
   formatRandCompact,
   formatRandWhole,
 } from '../../../shared/format/format-rand';
+import { DownloadPdf } from '../../../shared/molecules/download-pdf/download-pdf';
 import { StatCard } from '../../../shared/molecules/stat-card/stat-card';
+import { buildTfsaCompareReport } from './tfsa-compare-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -60,6 +63,7 @@ const yearsText = (years: number): string => `${years} ${years === 1 ? 'year' : 
     Button,
     Card,
     Chip,
+    DownloadPdf,
     Icon,
     LineChart,
     Money,
@@ -207,6 +211,12 @@ export class TfsaComparePage {
         : 'Dividends are local dividends with dividends tax.',
       'Money goes in at the start of each year, and the return is a yearly rate before fees.',
     ];
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    return r ? buildTfsaCompareReport(this.inputs(), r, this.assumptions()) : null;
   });
 
   // Read out politely after each edit; empty while there is no result (the alert covers errors).

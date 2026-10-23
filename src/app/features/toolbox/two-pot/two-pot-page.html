@@ -117,6 +117,8 @@
         }
       </rw-card>
 
+      <rw-download-pdf class="tool__download" [report]="report()" />
+
       <div class="tool__warnings" role="status">
         @for (warning of r.warnings; track warning) {
           <p class="tool__warning">
@@ -145,6 +147,7 @@
       <rw-card class="tool__card" padding="lg">
         <h2 class="tool__title">What the money could have become</h2>
         <rw-breakdown-bar
+          data-pdf-chart="two-pot-parts"
           label="The parts of the withdrawal's value at retirement, in today's money: cash you receive, tax now and lost growth"
           [segments]="r.segments"
         />

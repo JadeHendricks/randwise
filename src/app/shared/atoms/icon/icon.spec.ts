@@ -44,6 +44,7 @@ describe('Icon', () => {
       warning: true,
       check: true,
       'chevron-down': true,
+      download: true,
     };
     for (const name of Object.keys(names)) {
       const fixture = render({ name });

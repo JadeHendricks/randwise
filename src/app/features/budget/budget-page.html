@@ -148,12 +148,18 @@
         <p class="budget__text">{{ r.caption }}</p>
       </rw-card>
 
+      <rw-download-pdf class="budget__download" [report]="report()" />
+
       @if (r.status === 'over') {
         <p class="budget__error" role="alert">{{ r.overText }}</p>
       }
 
       <rw-card class="budget__card" padding="lg">
-        <rw-breakdown-bar label="Where your take-home goes" [segments]="r.segments" />
+        <rw-breakdown-bar
+          data-pdf-chart="budget-split"
+          label="Where your take-home goes"
+          [segments]="r.segments"
+        />
         <div class="budget__presets" role="group" aria-label="Start from a preset">
           @for (preset of presets; track preset.id) {
             <button
@@ -229,6 +235,7 @@
         <div class="budget__track">
           <rw-ring-gauge
             class="budget__ring"
+            data-pdf-chart="budget-emergency"
             label="Emergency fund saved so far"
             [value]="r.emergencyPercent"
             caption="of target"

@@ -25,6 +25,15 @@
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
+            "allowedCommonJsDependencies": [
+              "core-js",
+              "cssesc",
+              "font-family-papandreou",
+              "html2canvas",
+              "raf",
+              "rgbcolor",
+              "svgpath"
+            ],
             "stylePreprocessorOptions": {
               "includePaths": ["src/styles"]
             },

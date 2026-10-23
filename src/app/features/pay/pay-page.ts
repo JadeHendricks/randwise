@@ -6,6 +6,7 @@ import { TaxYearStatus } from '../../core/data/tax-year.schema';
 import { TaxYearService } from '../../core/data/tax-year.service';
 import { PayPeriod, PayslipAmounts, roundRand } from '../../core/engine';
 import type { SendTargetId } from '../../core/plan/handoff';
+import { ReportModel } from '../../core/pdf/report-model';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { BreakdownKey } from '../../core/salary/estimate-salary';
 import { SalaryEstimator } from '../../core/salary/salary-estimator';
@@ -25,8 +26,10 @@ import {
   SegmentedControl,
   SegmentedOption,
 } from '../../shared/molecules/segmented-control/segmented-control';
+import { DownloadPdf } from '../../shared/molecules/download-pdf/download-pdf';
 import { SendTo } from '../../shared/molecules/send-to/send-to';
 import { StatCard } from '../../shared/molecules/stat-card/stat-card';
+import { buildPayReport } from './pay-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -75,6 +78,7 @@ interface TableRow {
     Button,
     Card,
     Chip,
+    DownloadPdf,
     LineChart,
     Money,
     RingGauge,
@@ -203,6 +207,12 @@ export class PayPage {
     const members = this.inputs().medicalMembers;
     if (members === 0) return 'No medical aid';
     return `${members} ${members === 1 ? 'member' : 'members'}`;
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    return r ? buildPayReport(this.inputs(), r, this.amountLabel(), this.medicalWords()) : null;
   });
 
   protected readonly taxNote = computed(() => {

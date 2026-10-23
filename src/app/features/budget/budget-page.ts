@@ -22,6 +22,7 @@ import {
   PayPeriod,
   roundRand,
 } from '../../core/engine';
+import { ReportModel } from '../../core/pdf/report-model';
 import { HANDOFF_SOURCE_LABELS, SendTargetId } from '../../core/plan/handoff';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { AmountBasis, SalaryInputs } from '../../core/salary/salary-inputs';
@@ -36,12 +37,14 @@ import { Money } from '../../shared/atoms/money/money';
 import { RingGauge } from '../../shared/atoms/ring-gauge/ring-gauge';
 import { formatPercent, formatRand } from '../../shared/format/format-rand';
 import { CategoryRow } from '../../shared/molecules/category-row/category-row';
+import { DownloadPdf } from '../../shared/molecules/download-pdf/download-pdf';
 import { HandoffChip } from '../../shared/molecules/handoff-chip/handoff-chip';
 import {
   SegmentedControl,
   SegmentedOption,
 } from '../../shared/molecules/segmented-control/segmented-control';
 import { SendTo } from '../../shared/molecules/send-to/send-to';
+import { buildBudgetReport } from './budget-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -129,6 +132,7 @@ const round2 = (value: number) => Math.round(value * 100) / 100;
     Card,
     Chip,
     DotMatrix,
+    DownloadPdf,
     HandoffChip,
     Icon,
     Money,
@@ -307,6 +311,12 @@ export class BudgetPage {
   protected readonly announcement = computed(() => {
     const r = this.result();
     return r ? `Take-home ${formatRand(r.net)} a month. ${r.sentence}.` : '';
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    return r ? buildBudgetReport(this.inputs(), this.settings(), r, this.amountLabel()) : null;
   });
 
   protected readonly taxNote = computed(() => {

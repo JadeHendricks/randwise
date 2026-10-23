@@ -21,7 +21,8 @@ export type IconName =
   | 'info'
   | 'warning'
   | 'check'
-  | 'chevron-down';
+  | 'chevron-down'
+  | 'download';
 
 export type IconSize = 'sm' | 'md' | 'lg';
 
@@ -66,6 +67,7 @@ const PATHS: Record<IconName, readonly string[]> = {
   warning: ['M12 3l10 18H2z', 'M12 10v5', 'M12 18h.01'],
   check: ['M5 12.5l4.5 4.5L19 7.5'],
   'chevron-down': ['M6 9l6 6 6-6'],
+  download: ['M12 4v10', 'M7 10l5 5 5-5', 'M4 20h16'],
 };
 
 @Component({

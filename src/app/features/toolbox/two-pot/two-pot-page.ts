@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { GROWTH_PREMIUM_PP } from '../../../core/data/assumptions';
 import { RatesService } from '../../../core/data/rates.service';
 import { roundRand } from '../../../core/engine';
+import { ReportModel } from '../../../core/pdf/report-model';
 import { TwoPotWarning } from '../../../core/toolbox/estimate-two-pot';
 import { TWO_POT_LIMITS, TwoPotInputs } from '../../../core/toolbox/toolbox-inputs';
 import { ToolboxStore } from '../../../core/toolbox/toolbox.store';
@@ -15,7 +16,9 @@ import { Chip } from '../../../shared/atoms/chip/chip';
 import { Icon } from '../../../shared/atoms/icon/icon';
 import { Money } from '../../../shared/atoms/money/money';
 import { formatPercent, formatRand, formatRandWhole } from '../../../shared/format/format-rand';
+import { DownloadPdf } from '../../../shared/molecules/download-pdf/download-pdf';
 import { StatCard } from '../../../shared/molecules/stat-card/stat-card';
+import { buildTwoPotReport } from './two-pot-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -42,7 +45,18 @@ const yearsText = (years: number): string => `${years} ${years === 1 ? 'year' : 
  */
 @Component({
   selector: 'rw-two-pot-page',
-  imports: [AmountField, BreakdownBar, Button, Card, Chip, Icon, Money, RouterLink, StatCard],
+  imports: [
+    AmountField,
+    BreakdownBar,
+    Button,
+    Card,
+    Chip,
+    DownloadPdf,
+    Icon,
+    Money,
+    RouterLink,
+    StatCard,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './two-pot-page.html',
   styleUrls: ['../tool-page.scss', '../tool-table.scss'],
@@ -143,6 +157,12 @@ export class TwoPotPage {
           : `You can make ${result.withdrawalsPerTaxYear} savings withdrawals in a tax year`,
       minimum: formatRandWhole(result.minimum),
     };
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    return r ? buildTwoPotReport(this.inputs(), r) : null;
   });
 
   // Read out politely after each edit; empty while there is no result (the alert covers the rest).

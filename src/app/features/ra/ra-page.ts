@@ -6,6 +6,7 @@ import { taxYearLabel } from '../../core/data/tax-calendar';
 import { TaxYearStatus } from '../../core/data/tax-year.schema';
 import { TaxYearService } from '../../core/data/tax-year.service';
 import { roundRand } from '../../core/engine';
+import { ReportModel } from '../../core/pdf/report-model';
 import { HANDOFF_SOURCE_LABELS, SendTargetId } from '../../core/plan/handoff';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { RA_LIMITS, RaInputs } from '../../core/ra/ra-inputs';
@@ -19,9 +20,11 @@ import { LineChart, LineSeries } from '../../shared/atoms/line-chart/line-chart'
 import { Money } from '../../shared/atoms/money/money';
 import { RingGauge } from '../../shared/atoms/ring-gauge/ring-gauge';
 import { formatPercent, formatRand, formatRandCompact } from '../../shared/format/format-rand';
+import { DownloadPdf } from '../../shared/molecules/download-pdf/download-pdf';
 import { HandoffChip } from '../../shared/molecules/handoff-chip/handoff-chip';
 import { SendTo } from '../../shared/molecules/send-to/send-to';
 import { StatCard } from '../../shared/molecules/stat-card/stat-card';
+import { buildRaReport } from './ra-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -60,6 +63,7 @@ interface YearRow {
     Button,
     Card,
     Chip,
+    DownloadPdf,
     HandoffChip,
     Icon,
     LineChart,
@@ -214,6 +218,12 @@ export class RaPage {
     return r
       ? `Projected balance ${formatRand(r.nominal)} at ${r.retirementAge}, ${formatRand(r.real)} in today's money.`
       : '';
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    return r ? buildRaReport(this.inputs(), r) : null;
   });
 
   protected readonly taxNote = computed(() => {

@@ -174,6 +174,8 @@
         }
       </rw-card>
 
+      <rw-download-pdf class="ra__download" [report]="report()" />
+
       @if (r.overCap || r.belowEarliest || r.pastAge) {
         <div class="ra__warnings">
           @if (r.overCap) {
@@ -260,6 +262,7 @@
         <h2 class="ra__title">How your RA grows</h2>
         @if (r.years > 0) {
           <rw-line-chart
+            data-pdf-chart="ra-growth"
             label="How your RA grows"
             [series]="r.balanceSeries"
             [secondSeries]="r.paidInSeries"
@@ -288,7 +291,11 @@
 
       <rw-card class="ra__card" padding="lg">
         <h2 class="ra__title">Two-pot split at {{ r.retirementAge }}</h2>
-        <rw-breakdown-bar [label]="'Two-pot split at ' + r.retirementAge" [segments]="r.segments" />
+        <rw-breakdown-bar
+          data-pdf-chart="ra-two-pot"
+          [label]="'Two-pot split at ' + r.retirementAge"
+          [segments]="r.segments"
+        />
         <p class="ra__text">{{ r.twoPotNote }}</p>
       </rw-card>
 

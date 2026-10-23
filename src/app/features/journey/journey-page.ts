@@ -8,6 +8,7 @@ import { TaxYearService } from '../../core/data/tax-year.service';
 import { JourneyMilestoneKind, RefundMode, roundRand } from '../../core/engine';
 import { JourneyWarning } from '../../core/journey/estimate-journey';
 import { JOURNEY_LIMITS, JourneyInputs } from '../../core/journey/journey-inputs';
+import { ReportModel } from '../../core/pdf/report-model';
 import { HANDOFF_SOURCE_LABELS, SendTargetId } from '../../core/plan/handoff';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { AmountField } from '../../shared/atoms/amount-field/amount-field';
@@ -19,6 +20,7 @@ import { LineChart, LinePoint, LineSeries } from '../../shared/atoms/line-chart/
 import { Money } from '../../shared/atoms/money/money';
 import { RingGauge } from '../../shared/atoms/ring-gauge/ring-gauge';
 import { formatPercent, formatRand, formatRandCompact } from '../../shared/format/format-rand';
+import { DownloadPdf } from '../../shared/molecules/download-pdf/download-pdf';
 import { HandoffChip } from '../../shared/molecules/handoff-chip/handoff-chip';
 import {
   SegmentedControl,
@@ -26,6 +28,7 @@ import {
 } from '../../shared/molecules/segmented-control/segmented-control';
 import { SendTo } from '../../shared/molecules/send-to/send-to';
 import { Timeline, TimelineItem } from '../../shared/molecules/timeline/timeline';
+import { buildJourneyReport } from './journey-report';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
 const MONEY_STEP = 1;
@@ -87,6 +90,7 @@ function randText(amount: number): string {
     Button,
     Card,
     Chip,
+    DownloadPdf,
     HandoffChip,
     Icon,
     LineChart,
@@ -296,6 +300,15 @@ export class JourneyPage {
     return r
       ? `Tax saved by ${r.retirementAge}: ${formatRand(r.taxSaved)}. ${r.tfsaSentence}.`
       : '';
+  });
+
+  // PDF export: formats this page's own result(), nothing is recomputed.
+  protected readonly report = computed<ReportModel | null>(() => {
+    const r = this.result();
+    if (!r) return null;
+    const inputs = this.inputs();
+    const mode = MODE_OPTIONS.find((option) => option.value === inputs.refundMode);
+    return buildJourneyReport(inputs, r, mode?.label ?? inputs.refundMode);
   });
 
   protected readonly taxNote = computed(() => {

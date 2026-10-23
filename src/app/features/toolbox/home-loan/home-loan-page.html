@@ -149,6 +149,8 @@
         <p class="tool__lead">{{ r.lead }}</p>
       </rw-card>
 
+      <rw-download-pdf class="tool__download" [report]="report()" />
+
       <div class="tool__warnings" role="status">
         @for (warning of r.warnings; track warning) {
           <p class="tool__warning">
@@ -191,6 +193,7 @@
         <rw-card class="tool__card" padding="lg">
           <h2 class="tool__title">Your first year of repayments</h2>
           <rw-breakdown-bar
+            data-pdf-chart="home-loan-first-year"
             label="Capital and interest in the first year of the bond"
             [segments]="r.firstYearSegments"
           />
@@ -205,6 +208,7 @@
         <rw-card class="tool__card" padding="lg">
           <h2 class="tool__title">What you still owe</h2>
           <rw-line-chart
+            data-pdf-chart="home-loan-balance"
             label="Bond balance over the term"
             [series]="r.balance"
             [formatX]="yearText"
