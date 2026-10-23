@@ -1,0 +1,44 @@
+@use 'mixins';
+
+// Only `from` is given so each column ends on its resting opacity.
+@keyframes rw-dot-matrix-in {
+  from {
+    opacity: 0;
+  }
+}
+
+// Atom: dot matrix. Dots use currentColor so the chart inherits the card's text colour.
+.rw-dot-matrix {
+  display: block;
+  width: 100%;
+  color: inherit;
+
+  &__svg {
+    width: 100%;
+    height: auto;
+  }
+
+  &__column {
+    @include mixins.motion-safe {
+      animation: rw-dot-matrix-in var(--rw-duration-slow) var(--rw-ease-out) both;
+      animation-delay: calc(var(--rw-dot-column, 0) * 40ms);
+    }
+  }
+
+  // Non-highlighted columns recede, but the highlight is also stated in text.
+  &__column--dim {
+    opacity: 0.6;
+  }
+
+  &__dot {
+    fill: currentcolor;
+  }
+
+  &__dot--on {
+    opacity: 1;
+  }
+
+  &__dot--off {
+    opacity: 0.2;
+  }
+}

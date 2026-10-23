@@ -35,6 +35,17 @@
   --rw-color-danger-text: #8a1c17;
   --rw-color-danger-border: #b3403a;
 
+  // Chart series colours. Each measures >= 3:1 (WCAG 1.4.11) against the solid
+  // surface and both page-gradient ends. Grid and area are decorative.
+  --rw-chart-accent: #0b6b49;
+  --rw-chart-sun: #8f6a00;
+  --rw-chart-sky: #1d5fa8;
+  --rw-chart-rose: #b3403a;
+  --rw-chart-violet: #6a3fb5;
+  --rw-chart-muted: #5b6b62;
+  --rw-chart-grid: rgb(15 26 21 / 14%);
+  --rw-chart-area: rgb(11 107 73 / 16%);
+
   // Radius
   --rw-radius-sm: 12px;
   --rw-radius-md: 20px;
@@ -115,6 +126,14 @@
   --rw-color-danger-surface: #3f1513;
   --rw-color-danger-text: #fecaca;
   --rw-color-danger-border: #d4635c;
+  --rw-chart-accent: #34d399;
+  --rw-chart-sun: #fcd977;
+  --rw-chart-sky: #7cb7ff;
+  --rw-chart-rose: #ff8f88;
+  --rw-chart-violet: #b79cff;
+  --rw-chart-muted: #8fa89b;
+  --rw-chart-grid: rgb(167 243 208 / 18%);
+  --rw-chart-area: rgb(52 211 153 / 20%);
   --rw-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
   --rw-shadow-md: 0 12px 32px rgb(0 0 0 / 45%);
   --rw-shadow-glow: 0 0 36px rgb(52 211 153 / 28%), 0 12px 32px rgb(0 0 0 / 45%);
