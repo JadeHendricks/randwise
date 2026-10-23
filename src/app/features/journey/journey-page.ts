@@ -169,12 +169,10 @@ export class JourneyPage {
 
   protected readonly budgetNote = computed(() => {
     const budget = this.context.journeyBudgetContext();
-    if (!budget) return null;
-    const take =
-      budget.netMonthly === null
-        ? ''
-        : `Your budget has ${formatRand(budget.netMonthly)} a month to spend. `;
-    return `${take}${formatRand(budget.emergencyMonthly)} a month goes to your emergency fund. The journey does not use these figures.`;
+    // Why null: without a good Budget estimate there are no figures to describe, and the emergency
+    // amount would read as R 0,00 a month.
+    if (!budget || budget.netMonthly === null) return null;
+    return `Your budget has ${formatRand(budget.netMonthly)} a month to spend. ${formatRand(budget.emergencyMonthly)} a month goes to your emergency fund. The journey does not use these figures.`;
   });
 
   protected readonly result = computed(() => {

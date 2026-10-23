@@ -260,6 +260,18 @@ describe('JourneyPage', () => {
     expect(root.querySelector('.journey__results > .journey__text')).toBeNull();
   });
 
+  it('shows no Budget note when the Budget had no good estimate', async () => {
+    const { fixture, root } = await render();
+    TestBed.inject(PlanContextStore).send('journey', 'budget', {
+      ...SALARY,
+      tfsaTopUpMonthly: 2_000,
+      budgetNetMonthly: null,
+    });
+    await fixture.whenStable();
+    expect(text(root.querySelector('rw-handoff-chip rw-chip'))).toBe('From Budget');
+    expect(root.querySelector('.journey__results > .journey__text')).toBeNull();
+  });
+
   it('resets to the example', async () => {
     const { fixture, root } = await render();
     await type(fixture, 'Monthly TFSA top-up', 3_000);
