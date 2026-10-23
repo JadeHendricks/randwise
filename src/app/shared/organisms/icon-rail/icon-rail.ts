@@ -39,13 +39,18 @@ export class IconRail {
   protected readonly items = NAV_ITEMS;
 
   /**
-   * Why: the mobile bar scrolls sideways, so the current page's link can sit
-   * off screen. Bring it into view (instant, so reduced motion is respected).
-   * Optional call because jsdom has no scrollIntoView.
+   * Why: the mobile bar scrolls sideways, so the current page's link can sit off screen. Scroll
+   * the nav itself (instant, so reduced motion is respected). Element.scrollIntoView would also
+   * move the browser's Tab starting point to this link, so the first Tab press after a page load
+   * would skip the skip link and every nav link before it.
    */
   protected onActiveChange(active: boolean, link: HTMLElement): void {
-    if (active) {
-      link.scrollIntoView?.({ block: 'nearest', inline: 'center' });
-    }
+    const nav = link.closest('nav');
+    if (!active || !nav) return;
+    const box = nav.getBoundingClientRect();
+    const rect = link.getBoundingClientRect();
+    nav.scrollLeft += rect.left + rect.width / 2 - (box.left + box.width / 2);
+    if (rect.top < box.top) nav.scrollTop -= box.top - rect.top;
+    else if (rect.bottom > box.bottom) nav.scrollTop += rect.bottom - box.bottom;
   }
 }

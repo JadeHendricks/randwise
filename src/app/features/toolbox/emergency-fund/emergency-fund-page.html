@@ -80,7 +80,7 @@
 
   <section class="tool__results" aria-label="Results">
     <!-- Always rendered so screen readers pick up changes when an input is edited. -->
-    <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+    <rw-live-region [text]="announcement()" />
     @if (failure(); as message) {
       <p class="tool__error" role="alert">{{ message }}</p>
     } @else if (result(); as r) {

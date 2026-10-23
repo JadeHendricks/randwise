@@ -33,6 +33,7 @@ import { Card } from '../../shared/atoms/card/card';
 import { Chip } from '../../shared/atoms/chip/chip';
 import { DotColumn, DotMatrix } from '../../shared/atoms/dot-matrix/dot-matrix';
 import { Icon } from '../../shared/atoms/icon/icon';
+import { LiveRegion } from '../../shared/atoms/live-region/live-region';
 import { Money } from '../../shared/atoms/money/money';
 import { RingGauge } from '../../shared/atoms/ring-gauge/ring-gauge';
 import { formatPercent, formatRand } from '../../shared/format/format-rand';
@@ -135,6 +136,7 @@ const round2 = (value: number) => Math.round(value * 100) / 100;
     DownloadPdf,
     HandoffChip,
     Icon,
+    LiveRegion,
     Money,
     RingGauge,
     SegmentedControl,

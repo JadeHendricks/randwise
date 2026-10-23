@@ -43,23 +43,34 @@ describe('IconRail', () => {
     expect(hrefs).toEqual(NAV_ITEMS.map((item) => (item.path === '' ? '/' : `/${item.path}`)));
   });
 
-  it('scrolls the active link into view when the route changes', async () => {
+  it('centres the active link in the scrolling nav when the route changes', async () => {
+    const { fixture, root } = await setup();
+    const nav = root.querySelector('nav') as HTMLElement;
+    nav.getBoundingClientRect = () => ({ left: 0, width: 300, top: 0, bottom: 72 }) as DOMRect;
+    const journey = Array.from(root.querySelectorAll('a')).find((a) => a.textContent?.includes('Journey'))!;
+    journey.getBoundingClientRect = () => ({ left: 500, width: 64, top: 4, bottom: 68 }) as DOMRect;
+    nav.scrollLeft = 0;
+    await TestBed.inject(Router).navigateByUrl('/journey');
+    await fixture.whenStable();
+    expect(root.querySelector('[aria-current="page"]')).toBe(journey);
+    // The link centre (532) moves to the nav centre (150).
+    expect(nav.scrollLeft).toBe(382);
+  });
+
+  // Element.scrollIntoView moves the browser's Tab starting point, so Tab after a load would skip
+  // the skip link and the nav links before the active one.
+  it('never calls scrollIntoView, so Tab still starts at the top of the page', async () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
     try {
-      const { fixture, root } = await setup();
-      scrollIntoView.mockClear();
+      const { fixture } = await setup();
       await TestBed.inject(Router).navigateByUrl('/journey');
       await fixture.whenStable();
-      const active = root.querySelector('[aria-current="page"]');
-      expect(active?.textContent).toContain('Journey');
-      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'center' });
-      expect(scrollIntoView.mock.contexts.at(-1)).toBe(active);
+      expect(scrollIntoView).not.toHaveBeenCalled();
     } finally {
       delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
     }
   });
-
   it('marks only the active link with aria-current', async () => {
     const { fixture, root } = await setup();
     await TestBed.inject(Router).navigateByUrl('/ra');

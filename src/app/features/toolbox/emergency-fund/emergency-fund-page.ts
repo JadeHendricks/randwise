@@ -23,6 +23,7 @@ import { Card } from '../../../shared/atoms/card/card';
 import { Chip } from '../../../shared/atoms/chip/chip';
 import { Icon } from '../../../shared/atoms/icon/icon';
 import { LineChart, LinePoint, LineSeries } from '../../../shared/atoms/line-chart/line-chart';
+import { LiveRegion } from '../../../shared/atoms/live-region/live-region';
 import { Money } from '../../../shared/atoms/money/money';
 import { RingGauge } from '../../../shared/atoms/ring-gauge/ring-gauge';
 import { formatPercent, formatRand, formatRandCompact } from '../../../shared/format/format-rand';
@@ -70,6 +71,7 @@ function spanText(months: number): string {
     DownloadPdf,
     Icon,
     LineChart,
+    LiveRegion,
     Money,
     RingGauge,
     RouterLink,

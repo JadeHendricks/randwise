@@ -18,6 +18,7 @@ import { Button } from '../../shared/atoms/button/button';
 import { Card } from '../../shared/atoms/card/card';
 import { Chip } from '../../shared/atoms/chip/chip';
 import { LineChart, LineMarker, LineSeries } from '../../shared/atoms/line-chart/line-chart';
+import { LiveRegion } from '../../shared/atoms/live-region/live-region';
 import { Money } from '../../shared/atoms/money/money';
 import { RingGauge } from '../../shared/atoms/ring-gauge/ring-gauge';
 import { ChartTone } from '../../shared/charts/chart-tone';
@@ -80,6 +81,7 @@ interface TableRow {
     Chip,
     DownloadPdf,
     LineChart,
+    LiveRegion,
     Money,
     RingGauge,
     SegmentedControl,

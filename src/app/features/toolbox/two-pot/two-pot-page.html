@@ -96,7 +96,7 @@
 
   <section class="tool__results" aria-label="Results">
     <!-- Always rendered so screen readers pick up changes when an input is edited. -->
-    <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+    <rw-live-region [text]="announcement()" />
     @if (store.twoPotEstimate() === null) {
       <rw-card class="tool__unavailable" padding="lg">
         <p>Tax data is unavailable, so the tax on a withdrawal cannot be worked out.</p>

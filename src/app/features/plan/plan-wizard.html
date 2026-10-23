@@ -196,5 +196,5 @@
   </div>
 
   <!-- Always rendered so screen readers pick up the new step after Back and Next. -->
-  <p class="rw-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+  <rw-live-region [text]="announcement()" />
 </form>

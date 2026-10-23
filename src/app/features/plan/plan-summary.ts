@@ -15,6 +15,7 @@ import type { PlanFigure, PlanStep } from '../../core/plan/plan-builder';
 import { PlanBuilderStore } from '../../core/plan/plan-builder.store';
 import { Button } from '../../shared/atoms/button/button';
 import { Card } from '../../shared/atoms/card/card';
+import { LiveRegion } from '../../shared/atoms/live-region/live-region';
 import { formatRandWhole } from '../../shared/format/format-rand';
 import { DownloadPdf } from '../../shared/molecules/download-pdf/download-pdf';
 import { PlanStepCard, PlanStepDetail } from '../../shared/molecules/plan-step/plan-step';
@@ -49,7 +50,7 @@ const detailOf = (figure: PlanFigure): PlanStepDetail => ({
  */
 @Component({
   selector: 'rw-plan-summary',
-  imports: [Button, Card, DownloadPdf, PlanStepCard],
+  imports: [Button, Card, DownloadPdf, LiveRegion, PlanStepCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './plan-summary.html',
   styleUrl: './plan-summary.scss',

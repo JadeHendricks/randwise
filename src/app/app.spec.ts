@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 
 import { NAV_ITEMS } from './core/navigation/nav-items';
+import { LIVE_REGION_SETTLE_MS } from './shared/atoms/live-region/live-region';
 import { FakeMatchMedia, installFakeMatchMedia } from './testing/fake-match-media';
 import { provideTestData } from './testing/tax-data-fixtures';
 import { App } from './app';
@@ -14,7 +15,11 @@ describe('App shell', () => {
   async function configure(today: string) {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(routes), provideTestData({ today })],
+      providers: [
+        provideRouter(routes),
+        provideTestData({ today }),
+        { provide: LIVE_REGION_SETTLE_MS, useValue: 0 },
+      ],
     }).compileComponents();
   }
 
@@ -26,6 +31,9 @@ describe('App shell', () => {
     fake.uninstall();
     document.documentElement.removeAttribute('data-theme');
   });
+
+  const routeAnnouncement = (root: HTMLElement) =>
+    root.querySelector('.rw-app-shell__content > rw-live-region p')?.textContent?.trim();
 
   async function setup(today = '2026-10-22') {
     await configure(today);
@@ -87,6 +95,29 @@ describe('App shell', () => {
     const banner = root.querySelector('rw-data-banner') as HTMLElement;
     expect(banner.previousElementSibling?.tagName).toBe('RW-APP-HEADER');
     expect(banner.nextElementSibling?.tagName).toBe('MAIN');
+  });
+
+  it('announces nothing when the app first loads', async () => {
+    const { root } = await setup();
+    expect(routeAnnouncement(root)).toBe('');
+  });
+
+  it('announces the new page politely after a route change without moving focus', async () => {
+    const { fixture, root } = await setup();
+    document.body.appendChild(root);
+    const link = root.querySelector('.rw-skip-link') as HTMLAnchorElement;
+    link.focus();
+    await TestBed.inject(Router).navigateByUrl('/ra');
+    await fixture.whenStable();
+    expect(routeAnnouncement(root)).toBe('Retirement annuity page');
+    expect(root.querySelector('.rw-app-shell__content > rw-live-region p')?.getAttribute('aria-live')).toBe(
+      'polite',
+    );
+    expect(document.activeElement).toBe(link);
+    await TestBed.inject(Router).navigateByUrl('/toolbox/home-loan');
+    await fixture.whenStable();
+    expect(routeAnnouncement(root)).toBe('Home loan page');
+    root.remove();
   });
 
   it('updates the heading on navigation', async () => {

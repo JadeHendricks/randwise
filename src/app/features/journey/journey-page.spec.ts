@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 
 import { TODAY } from '../../core/data/data-source';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
+import { LIVE_REGION_SETTLE_MS } from '../../shared/atoms/live-region/live-region';
 import { FakeMatchMedia, installFakeMatchMedia } from '../../testing/fake-match-media';
 import { provideTestData } from '../../testing/tax-data-fixtures';
 import { normaliseSpaces } from '../../testing/text';
@@ -31,6 +32,7 @@ describe('JourneyPage', () => {
   async function render(withData = true) {
     TestBed.configureTestingModule({
       providers: [
+        { provide: LIVE_REGION_SETTLE_MS, useValue: 0 },
         provideRouter([]),
         withData
           ? { provide: TODAY, useValue: () => new Date(TODAY_PINNED) }

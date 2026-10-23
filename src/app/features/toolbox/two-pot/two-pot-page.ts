@@ -14,6 +14,7 @@ import { Button } from '../../../shared/atoms/button/button';
 import { Card } from '../../../shared/atoms/card/card';
 import { Chip } from '../../../shared/atoms/chip/chip';
 import { Icon } from '../../../shared/atoms/icon/icon';
+import { LiveRegion } from '../../../shared/atoms/live-region/live-region';
 import { Money } from '../../../shared/atoms/money/money';
 import { formatPercent, formatRand, formatRandWhole } from '../../../shared/format/format-rand';
 import { DownloadPdf } from '../../../shared/molecules/download-pdf/download-pdf';
@@ -53,6 +54,7 @@ const yearsText = (years: number): string => `${years} ${years === 1 ? 'year' : 
     Chip,
     DownloadPdf,
     Icon,
+    LiveRegion,
     Money,
     RouterLink,
     StatCard,
