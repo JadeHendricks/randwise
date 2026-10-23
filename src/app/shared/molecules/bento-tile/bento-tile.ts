@@ -21,6 +21,7 @@ import { Icon } from '../../atoms/icon/icon';
       <span class="rw-bento-tile__icon"><rw-icon [name]="item().icon" size="lg" /></span>
       <h2 class="rw-bento-tile__heading">{{ item().heading }}</h2>
       <p class="rw-bento-tile__text">{{ item().description }}</p>
+      <ng-content />
       <a rw-button variant="ghost" size="sm" class="rw-bento-tile__link" [routerLink]="'/' + item().path">
         Open {{ item().label }}
         <rw-icon name="arrow-right" size="sm" />

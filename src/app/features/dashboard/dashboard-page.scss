@@ -45,6 +45,16 @@
     margin-top: var(--rw-space-2);
   }
 
+  &__ra-label {
+    color: var(--rw-color-text-muted);
+    font-size: var(--rw-text-xs);
+    font-weight: var(--rw-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  &__ra-figure {
+    font-size: var(--rw-text-sm);
+  }
   &__privacy {
     display: flex;
     flex-direction: column;

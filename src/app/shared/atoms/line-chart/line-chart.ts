@@ -101,6 +101,12 @@ const TICKS = 5;
           @if (area() && view().areaPath) {
             <path class="rw-line-chart__area" [attr.d]="view().areaPath" />
           }
+          @if (secondArea() && view().secondAreaPath) {
+            <path
+              class="rw-line-chart__area rw-line-chart__area--secondary"
+              [attr.d]="view().secondAreaPath"
+            />
+          }
           @if (view().secondPath) {
             <path
               class="rw-line-chart__line rw-line-chart__line--secondary"
@@ -189,6 +195,8 @@ export class LineChart {
   readonly formatYTick = input<((y: number) => string) | null>(null);
   /** Fill under the first series. */
   readonly area = input(true);
+  /** Fill under the second series too; drawn after the first area, so it overlaps it. */
+  readonly secondArea = input(false);
 
   protected readonly view = computed(() => {
     const first = cleanPoints(this.series().points);
@@ -215,6 +223,7 @@ export class LineChart {
         path: '',
         areaPath: '',
         secondPath: '',
+        secondAreaPath: '',
         marker: null as { x: number; y: number; label: string } | null,
         summary: '',
         legend: [] as LegendItem[],
@@ -236,7 +245,10 @@ export class LineChart {
 
     const path = toPath(first);
     const baseline = py(0).toFixed(2);
-    const areaPath = `${path} L${px(first[first.length - 1].x).toFixed(2)} ${baseline} L${px(first[0].x).toFixed(2)} ${baseline} Z`;
+    // Closes a line down to the zero line so it can be filled.
+    const toAreaPath = (points: readonly LinePoint[], line: string) =>
+      `${line} L${px(points[points.length - 1].x).toFixed(2)} ${baseline} L${px(points[0].x).toFixed(2)} ${baseline} Z`;
+    const areaPath = toAreaPath(first, path);
 
     const steps = Array.from({ length: TICKS }, (_, i) => i / (TICKS - 1));
     const tickX = this.formatXTick() ?? formatX;
@@ -267,6 +279,7 @@ export class LineChart {
       path,
       areaPath,
       secondPath: second.length >= 2 ? toPath(second) : '',
+      secondAreaPath: second.length >= 2 ? toAreaPath(second, toPath(second)) : '',
       marker: showMarker ? { x: px(m.x), y: Math.min(HEIGHT, Math.max(0, py(m.y))), label: m.label } : null,
       summary,
       // Only a second series that is actually drawn gets a legend entry.

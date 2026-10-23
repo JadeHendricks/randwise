@@ -232,4 +232,29 @@ describe('LineChart', () => {
     expect((await create(NET)).querySelector('.rw-line-chart__area')).not.toBeNull();
     expect((await create(NET, { area: false })).querySelector('.rw-line-chart__area')).toBeNull();
   });
+
+  describe('secondArea', () => {
+    it('draws exactly one area by default, even with a second series', async () => {
+      const el = await create(NET, { secondSeries: GROSS });
+      expect(el.querySelectorAll('.rw-line-chart__area')).toHaveLength(1);
+      expect(el.querySelector('.rw-line-chart__area--secondary')).toBeNull();
+    });
+
+    it('fills under the second series after the first area and before the lines', async () => {
+      const el = await create(NET, { secondSeries: GROSS, secondArea: true });
+      const paths = Array.from(el.querySelectorAll('svg path'));
+      const secondary = el.querySelector('.rw-line-chart__area--secondary');
+      expect(secondary).not.toBeNull();
+      expect(secondary?.getAttribute('d')).toMatch(/^M.* Z$/);
+      expect(paths.indexOf(secondary as Element)).toBe(1);
+      expect(paths[0].classList).toContain('rw-line-chart__area');
+      expect(paths[2].classList).toContain('rw-line-chart__line--secondary');
+    });
+
+    it('draws no second area without a second series', async () => {
+      const el = await create(NET, { secondArea: true });
+      expect(el.querySelector('.rw-line-chart__area--secondary')).toBeNull();
+      expect(el.querySelectorAll('.rw-line-chart__area')).toHaveLength(1);
+    });
+  });
 });

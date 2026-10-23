@@ -1,0 +1,12 @@
+// Molecule: handoff chip. "From Salary" status with an Undo button.
+.rw-handoff-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rw-space-2);
+  min-width: 0;
+
+  &__undo {
+    flex: none;
+  }
+}

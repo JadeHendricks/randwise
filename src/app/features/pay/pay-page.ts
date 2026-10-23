@@ -5,6 +5,8 @@ import { taxYearLabel } from '../../core/data/tax-calendar';
 import { TaxYearStatus } from '../../core/data/tax-year.schema';
 import { TaxYearService } from '../../core/data/tax-year.service';
 import { PayPeriod, PayslipAmounts, roundRand } from '../../core/engine';
+import type { SendTargetId } from '../../core/plan/handoff';
+import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { BreakdownKey } from '../../core/salary/estimate-salary';
 import { SalaryEstimator } from '../../core/salary/salary-estimator';
 import { AmountBasis, SALARY_LIMITS, SalaryInputs } from '../../core/salary/salary-inputs';
@@ -23,6 +25,7 @@ import {
   SegmentedControl,
   SegmentedOption,
 } from '../../shared/molecules/segmented-control/segmented-control';
+import { SendTo } from '../../shared/molecules/send-to/send-to';
 import { StatCard } from '../../shared/molecules/stat-card/stat-card';
 
 // Field limits. Money steps are 1 so a typed amount is never snapped to a coarser step.
@@ -76,6 +79,7 @@ interface TableRow {
     Money,
     RingGauge,
     SegmentedControl,
+    SendTo,
     StatCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,6 +90,7 @@ export class PayPage {
   protected readonly store = inject(SalaryInputsStore);
   protected readonly estimator = inject(SalaryEstimator);
   private readonly taxYears = inject(TaxYearService);
+  private readonly context = inject(PlanContextStore);
 
   protected readonly limits = SALARY_LIMITS;
   protected readonly step = MONEY_STEP;
@@ -208,6 +213,11 @@ export class PayPage {
 
   protected rand(amount: number): string {
     return formatRand(amount);
+  }
+
+  // The send-to row emits before it navigates, so the figures are in the store when the page opens.
+  protected sendTo(target: SendTargetId): void {
+    this.context.sendFromSalary(target);
   }
 
   protected set(field: NumberField, value: number): void {

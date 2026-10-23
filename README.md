@@ -6,7 +6,7 @@ Estimates only, not financial advice.
 
 Randwise helps salaried South Africans explore their money in rand (ZAR). It is a frontend-only Angular app: no backend, database or API keys, and nothing is persisted. The theme follows your system setting, the toggle overrides it in memory only, and a reload starts fresh.
 
-So far it has the app shell and design system (a left icon rail, a bento dashboard, lazy feature routes, and light and dark themes), the tax-year and rates data layer behind a status badge in the header, and the Pay page, which turns a salary into take-home pay. The dashboard's yellow card shows the same estimate. RA, Retire at 55, Budget, Journey, Plan and Toolbox still show themed "coming soon" cards.
+So far it has the app shell and design system (a left icon rail, a bento dashboard, lazy feature routes, and light and dark themes), the tax-year and rates data layer behind a status badge in the header, the Pay page, which turns a salary into take-home pay, and the RA calculator, which projects a retirement annuity and its tax saving. The dashboard's yellow card shows the same take-home estimate, and its RA tile shows live headroom and tax saving. Pay can send your salary figures to the RA page. Retire at 55, Budget, Journey, Plan and Toolbox still show themed "coming soon" cards.
 
 ## Requirements
 
@@ -61,6 +61,18 @@ Tax rules and interest rates are plain JSON, checked at startup. Nothing is fetc
 - Dashboard: the yellow hero card shows the same net pay, labelled "Example take-home pay" until you edit the inputs and "Your take-home pay" afterwards, with a dot matrix of the gross split and a link to the Pay page. Without tax data it shows text instead of a figure.
 - Chart atoms live in `shared/atoms` and are plain SVG with no chart library: `rw-breakdown-bar`, `rw-ring-gauge`, `rw-line-chart` and `rw-dot-matrix`. Each draws an `svg` with `role="img"` and a full `aria-label`, and sits beside a visually hidden data table with the same numbers. Negative, NaN and infinite values are clamped to 0 and positive values always stay visible. Colours come from the `--rw-chart-*` tokens (at least 3:1 against the surface in both themes) and animations switch off with reduced motion.
 - Nothing is persisted: inputs live in memory and a reload returns to the example.
+## RA calculator and handoff
+- The RA page (`/ra`) projects a retirement annuity: tax-deductible room this year, the tax saving from a monthly contribution, and the balance at retirement in future and today's money, with a growth chart, a two-pot split and a year-by-year table. It starts from an example (R2 000 a month, rising 5% a year, retiring at 55) until you change something.
+- Engine: `core/engine/ra.ts` is pure TypeScript. Rates are effective annual rates, converted to a monthly rate with `(1 + R)^(1/12) - 1`. Contributions are paid at the end of each month and rise once a year. Today's money is nominal / (1 + inflation)^t.
+- Headroom comes from the s11F deduction (the same calculation as the Pay page). The tax saving is the PAYE difference with and without the RA, worked out with `payslip`. A quick estimate (contribution x marginal rate) is shown when it differs, which happens when the contribution crosses a bracket or when rebates and the medical credit already reduce your tax.
+- Contributions over the limit get no deduction this year. The excess is shown as carried forward, but using it in later years is not modelled.
+- Retirement age runs from 55 to 80. Below 55 the projection stops at 55 and a warning shows; at or past the chosen age it shows today's balance.
+- Two-pot: new contributions are split between the savings and retirement pots using the shares in the tax-year file. Your opening balance is treated as the vested pot and is not split, which is a simplification. No withdrawals are modelled.
+- Assumptions come from the rates data: inflation is CPI, the return is CPI plus 5 percentage points, and "Use cash return" switches to the repo rate. If rates are unavailable both start at 0.
+- `PlanContextStore` (`core/plan`) is where calculators share figures. Its profile wraps the Salary inputs and estimate and stays live. A "Send to" handoff carries the Salary figures, with their source, to the RA page, which shows a "From Salary" chip and an Undo button that restores your earlier RA figures. Outputs (RA headroom and tax saving) feed the dashboard.
+- `rw-send-to` appears on Pay and RA results. Only Retirement annuity works; Retire at 55, Budget and Journey show "Coming soon".
+- Dashboard: the RA tile reads the store and is labelled "Illustrative RA" until you change or send figures, then "Your RA". It is plain text, so the dashboard still has one money figure.
+- Nothing is persisted: the handoff and RA edits live in memory and a reload returns to the examples. Estimates only.
 ## Styling rules
 
 - Atomic design: atoms, molecules, organisms, then page blocks.

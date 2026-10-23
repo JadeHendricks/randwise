@@ -20,3 +20,25 @@ export { payslip } from './payslip';
 export type { PayPeriod, Payslip, PayslipAmounts, PayslipInput, RetirementLine } from './payslip';
 export { grossFromNet } from './gross-from-net';
 export type { GrossFromNetInputs } from './gross-from-net';
+export {
+  MAX_RA_RETIREMENT_AGE,
+  raCalculator,
+  raHeadroom,
+  raProjection,
+  raRetirementAges,
+  raTaxSaving,
+  toRaRules,
+} from './ra';
+export type {
+  RaHeadroom,
+  RaInput,
+  RaProjection,
+  RaProjectionInput,
+  RaResult,
+  RaRetirementAges,
+  RaRules,
+  RaSalary,
+  RaTaxSaving,
+  RaTwoPot,
+  RaYear,
+} from './ra';

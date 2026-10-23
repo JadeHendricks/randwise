@@ -29,7 +29,23 @@
   </rw-card>
 
   @for (item of tiles; track item.path) {
-    <rw-bento-tile [item]="item" />
+    @if (item.path === 'ra') {
+      <rw-bento-tile class="dashboard__ra" [item]="item">
+        @if (raFigures(); as ra) {
+          <p class="dashboard__ra-label">{{ context.raIsExample() ? 'Illustrative RA' : 'Your RA' }}</p>
+          <p class="dashboard__ra-figure">
+            {{ ra.headroomAnnual }} a year ({{ ra.headroomMonthly }} a month) of tax-deductible room
+          </p>
+          <p class="dashboard__ra-figure">
+            {{ ra.contribution }} a month saves about {{ ra.saving }} tax a year
+          </p>
+        } @else {
+          <p class="dashboard__ra-figure">Tax data is unavailable.</p>
+        }
+      </rw-bento-tile>
+    } @else {
+      <rw-bento-tile [item]="item" />
+    }
   }
 
   <rw-card class="dashboard__privacy" variant="dark">

@@ -139,6 +139,12 @@
     }
   }
 
+  // Fill under the second series, drawn over the primary area so the gap between the lines reads
+  // as the difference (for the RA chart: growth).
+  &__area--secondary {
+    fill: var(--rw-chart-area-secondary);
+  }
+
   &__line {
     fill: none;
     stroke-linecap: round;
@@ -148,6 +154,12 @@
     @include mixins.motion-safe {
       animation: rw-line-chart-in var(--rw-duration-slow) var(--rw-ease-out) both;
     }
+  }
+
+  // Fill under the second series, drawn over the primary area so the gap between the lines reads
+  // as the difference (for the RA chart: growth).
+  &__area--secondary {
+    fill: var(--rw-chart-area-secondary);
   }
 
   &__line--primary {
