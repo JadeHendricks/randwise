@@ -25,10 +25,23 @@ export type RaHandoffPayload = RaHandoffValues & Partial<RaPlanFields>;
  */
 export type RetireHandoffPayload = RaHandoffValues & Partial<RetirePlanFields>;
 
-/** Values each target receives. Later tasks add budget and journey entries. */
+/**
+ * What a handoff to the Budget carries: the Salary figures, the other deductions (a budget needs
+ * them for take-home pay), and optionally the monthly RA and TFSA lines and the TFSA
+ * contributions already made.
+ */
+export type BudgetHandoffPayload = RaHandoffValues & {
+  readonly otherDeductionsMonthly?: number;
+  readonly raMonthly?: number;
+  readonly tfsaMonthly?: number;
+  readonly tfsaLifetimeUsed?: number;
+};
+
+/** Values each target receives. The journey entry arrives with the Journey page. */
 export interface HandoffValuesByTarget {
   readonly ra: RaHandoffPayload;
   readonly retire: RetireHandoffPayload;
+  readonly budget: BudgetHandoffPayload;
 }
 
 export type HandoffTarget = keyof HandoffValuesByTarget;

@@ -132,12 +132,15 @@ describe('PlanContextStore', () => {
       expect(plan.raHandoff()).toBeNull();
     });
 
-    it.each(['ra', 'budget', 'journey'] as const)('returns false for %s and sends nothing', (id) => {
-      const { plan } = setup();
-      expect(plan.sendFromRa(id)).toBe(false);
-      expect(plan.retireHandoff()).toBeNull();
-      expect(plan.raHandoff()).toBeNull();
-    });
+    it.each(['ra', 'budget', 'journey'] as const)(
+      'returns false for %s and sends nothing',
+      (id) => {
+        const { plan } = setup();
+        expect(plan.sendFromRa(id)).toBe(false);
+        expect(plan.retireHandoff()).toBeNull();
+        expect(plan.raHandoff()).toBeNull();
+      },
+    );
   });
 
   describe('sendFromRetire', () => {
@@ -485,6 +488,251 @@ describe('PlanContextStore', () => {
       plan.updateRetire({ goalNetMonthly: 20_000 });
       plan.undoRetire();
       plan.resetRetire();
+      for (const spy of calls) expect(spy).not.toHaveBeenCalled();
+    });
+  });
+  describe('budget', () => {
+    const salaryValues = {
+      grossMonthly: 50_000,
+      age: 40,
+      medicalMembers: 0,
+      employeeRetirementMonthly: 0,
+      employerRetirementMonthly: 0,
+    };
+
+    function lines(plan: PlanContextStore) {
+      const estimate = plan.budgetEstimate();
+      if (!estimate?.ok) throw new Error('no budget estimate');
+      return estimate.categories;
+    }
+    const amountOf = (plan: PlanContextStore, id: string) =>
+      lines(plan).find((line) => line.id === id)?.amount;
+
+    it('starts as the example: Salary income, 50/30/20 of R25 141,88', () => {
+      const { plan } = setup();
+      expect(plan.budgetIsExample()).toBe(true);
+      expect(plan.budgetFrom()).toBeNull();
+      expect(plan.budgetCanUndo()).toBe(false);
+      expect(plan.budgetPresetId()).toBe('50-30-20');
+      expect(plan.budgetSettings()).toEqual({
+        emergencyMonths: 3,
+        emergencySaved: 0,
+        tfsaLifetimeUsed: 0,
+      });
+      expect(plan.tfsaRules()).toEqual({
+        annualLimit: 46_000,
+        lifetimeLimit: 500_000,
+        penaltyRate: 0.4,
+      });
+      const outputs = plan.budgetOutputs();
+      expect(outputs?.netMonthly).toBeCloseTo(25_141.88, 2);
+      expect(outputs?.status).toBe('balanced');
+      expect(outputs?.groupPercents.needs).toBeCloseTo(50, 6);
+      expect(outputs?.groupPercents.wants).toBeCloseTo(30, 6);
+      expect(outputs?.groupPercents.savings).toBeCloseTo(20, 6);
+      // 25 141.88 x 0.2 = 5 028.376 for savings; RA takes 0.3 (1 508.5128), emergency 0.2.
+      expect(outputs?.raMonthly).toBeCloseTo(1_508.5128, 4);
+      expect(outputs?.tfsaMonthly).toBeCloseTo(1_508.5128, 4);
+      expect(outputs?.emergencyMonthly).toBeCloseTo(1_005.6752, 4);
+    });
+
+    it('follows the Salary inputs live while nothing is edited', () => {
+      const { plan, salary } = setup();
+      expect(plan.budgetIncome().amount).toBe(30_000);
+      salary.update({ amount: 40_000 });
+      expect(plan.budgetIncome().amount).toBe(40_000);
+      // 480 000: 79 998 + 0.31 x 96 900 = 110 037 - 17 820 = 92 217 -> 7 684.75; 40 000 - 7 684.75 - 177.12.
+      expect(plan.budgetOutputs()?.netMonthly).toBeCloseTo(32_138.13, 2);
+      expect(plan.budgetIsExample()).toBe(true);
+      expect(amountOf(plan, 'housing')).toBeCloseTo(32_138.13 * 0.5 * 0.4, 2);
+    });
+
+    it('keeps its own income apart from Salary once edited', () => {
+      const { plan, salary } = setup();
+      plan.updateBudgetIncome({ amount: 40_000 });
+      salary.update({ amount: 60_000 });
+      expect(plan.budgetIncome().amount).toBe(40_000);
+      expect(plan.budgetIsExample()).toBe(false);
+      expect(salary.inputs().amount).toBe(60_000);
+    });
+
+    it('turns the example into saved lines on the first edit', () => {
+      const { plan, salary } = setup();
+      plan.setBudgetAmount('housing', 6_000);
+      expect(plan.budgetIsExample()).toBe(false);
+      expect(plan.budgetPresetId()).toBe('custom');
+      expect(amountOf(plan, 'housing')).toBe(6_000);
+      // Saved lines no longer move with the Salary take-home.
+      const groceries = amountOf(plan, 'groceries');
+      salary.update({ amount: 40_000 });
+      expect(amountOf(plan, 'groceries')).toBe(groceries);
+      expect(plan.budgetIsExample()).toBe(false);
+    });
+
+    it('sets a line from a percent of take-home', () => {
+      const { plan } = setup();
+      plan.setBudgetPercent('housing', 10);
+      // 10% of 25 141.88 = 2 514.188
+      expect(amountOf(plan, 'housing')).toBeCloseTo(2_514.188, 6);
+    });
+
+    it('applies a preset, keeping the proportions inside each group (engine B4)', () => {
+      const { plan } = setup();
+      plan.applyBudgetPreset('60-20-20');
+      expect(plan.budgetPresetId()).toBe('60-20-20');
+      // 25 141.88 x 0.6 x 0.4 = 6 034.0512
+      expect(amountOf(plan, 'housing')).toBeCloseTo(6_034.0512, 4);
+      expect(amountOf(plan, 'wants')).toBeCloseTo(5_028.376, 4);
+      expect(plan.budgetOutputs()?.status).toBe('balanced');
+    });
+
+    it('adds, renames and removes a custom line and keeps the other ids', () => {
+      const { plan } = setup();
+      const builtIn = lines(plan).map((line) => line.id);
+      plan.addBudgetLine('needs');
+      plan.addBudgetLine('wants');
+      expect(lines(plan).map((line) => line.id)).toEqual([...builtIn, 'custom-1', 'custom-2']);
+      plan.renameBudgetLine('custom-1', '  Pet food ');
+      expect(lines(plan).find((line) => line.id === 'custom-1')?.name).toBe('Pet food');
+      plan.renameBudgetLine('housing', 'Rent');
+      expect(lines(plan).find((line) => line.id === 'housing')?.name).toBe('Housing');
+      plan.removeBudgetLine('custom-1');
+      plan.removeBudgetLine('housing');
+      expect(lines(plan).map((line) => line.id)).toEqual([...builtIn, 'custom-2']);
+      plan.addBudgetLine('needs');
+      expect(lines(plan).at(-1)?.id).toBe('custom-3');
+    });
+
+    it('changes the settings and flags the budget as edited', () => {
+      const { plan } = setup();
+      plan.updateBudgetSettings({ emergencyMonths: 6 });
+      expect(plan.budgetSettings().emergencyMonths).toBe(6);
+      expect(plan.budgetIsExample()).toBe(false);
+    });
+
+    it('switches basis and period without changing the person', () => {
+      const { plan } = setup();
+      plan.switchBudgetBasis('net');
+      expect(plan.budgetIncome()).toMatchObject({ basis: 'net', amount: 25_141.88 });
+      expect(plan.budgetOutputs()?.netMonthly).toBeCloseTo(25_141.88, 2);
+      plan.setBudgetPeriod('annual');
+      expect(plan.budgetIncome()).toMatchObject({ period: 'annual', amount: 301_702.56 });
+      expect(plan.budgetOutputs()?.netMonthly).toBeCloseTo(25_141.88, 2);
+    });
+
+    it('takes a handoff: sets the income and the chip, and Undo restores the earlier state', () => {
+      const { plan, salary } = setup();
+      plan.setBudgetAmount('housing', 6_000);
+      plan.send('budget', 'salary', salaryValues);
+      expect(plan.budgetFrom()).toBe('salary');
+      expect(plan.budgetCanUndo()).toBe(true);
+      expect(plan.budgetIsExample()).toBe(false);
+      expect(plan.budgetIncome()).toMatchObject({ basis: 'gross', amount: 50_000, age: 40 });
+      // The sent income is a snapshot: Salary changes no longer move it.
+      salary.update({ amount: 45_000 });
+      expect(plan.budgetIncome().amount).toBe(50_000);
+
+      plan.undoBudget();
+      expect(plan.budgetFrom()).toBeNull();
+      expect(plan.budgetHandoff()).toBeNull();
+      expect(plan.budgetCanUndo()).toBe(false);
+      expect(plan.budgetIncome().amount).toBe(45_000);
+      expect(amountOf(plan, 'housing')).toBe(6_000);
+
+      plan.undoBudget();
+      expect(amountOf(plan, 'housing')).toBe(6_000);
+    });
+
+    it('returns to the example on Undo when nothing was edited before the send', () => {
+      const { plan } = setup();
+      plan.send('budget', 'salary', salaryValues);
+      plan.undoBudget();
+      expect(plan.budgetIsExample()).toBe(true);
+      expect(plan.budgetIncome().amount).toBe(30_000);
+    });
+
+    it('applies RA and TFSA amounts and TFSA contributions made, carried by a handoff', () => {
+      const { plan } = setup();
+      plan.send('budget', 'ra', {
+        ...salaryValues,
+        raMonthly: 3_000,
+        tfsaMonthly: 2_000,
+        tfsaLifetimeUsed: 120_000,
+      });
+      expect(plan.budgetOutputs()?.raMonthly).toBe(3_000);
+      expect(plan.budgetOutputs()?.tfsaMonthly).toBe(2_000);
+      expect(plan.budgetSettings().tfsaLifetimeUsed).toBe(120_000);
+      expect(plan.budgetPresetId()).toBe('custom');
+      expect(plan.budgetFrom()).toBe('ra');
+      plan.undoBudget();
+      expect(plan.budgetOutputs()?.raMonthly).toBeCloseTo(1_508.5128, 4);
+      expect(plan.budgetSettings().tfsaLifetimeUsed).toBe(0);
+      expect(plan.budgetPresetId()).toBe('50-30-20');
+    });
+
+    it('resetBudget clears the handoff, the edits and the chip', () => {
+      const { plan } = setup();
+      plan.setBudgetAmount('housing', 6_000);
+      plan.send('budget', 'salary', salaryValues);
+      plan.resetBudget();
+      expect(plan.budgetIsExample()).toBe(true);
+      expect(plan.budgetHandoff()).toBeNull();
+      expect(plan.budgetFrom()).toBeNull();
+      expect(plan.budgetIncome().amount).toBe(30_000);
+    });
+
+    it('keeps its slice apart from RA and Retire', () => {
+      const { plan } = setup();
+      plan.send('budget', 'salary', salaryValues);
+      expect(plan.raHandoff()).toBeNull();
+      expect(plan.retireHandoff()).toBeNull();
+      expect(plan.ra().grossMonthly).toBe(30_000);
+      expect(plan.raIsExample()).toBe(true);
+    });
+
+    it('sends nothing yet: sendFromBudget returns false for every target', () => {
+      const { plan } = setup();
+      for (const id of ['ra', 'retire', 'budget', 'journey'] as const) {
+        expect(plan.sendFromBudget(id)).toBe(false);
+      }
+      expect(plan.raHandoff()).toBeNull();
+      expect(plan.retireHandoff()).toBeNull();
+    });
+
+    it('has an estimate that fails, no outputs and edits that do nothing for a take-home that is too high', () => {
+      const { plan } = setup();
+      plan.updateBudgetIncome({ basis: 'net', amount: 5e9 });
+      expect(plan.budgetEstimate()?.ok).toBe(false);
+      expect(plan.budgetOutputs()).toBeNull();
+      plan.setBudgetAmount('housing', 100);
+      plan.addBudgetLine('needs');
+      plan.applyBudgetPreset('70-20-10');
+      plan.updateBudgetIncome({ basis: 'gross', amount: 30_000 });
+      expect(plan.budgetIsExample()).toBe(false);
+      expect(amountOf(plan, 'housing')).toBeCloseTo(25_141.88 * 0.5 * 0.4, 2);
+    });
+
+    it('has no rules, estimate or outputs without tax data', () => {
+      TestBed.configureTestingModule({
+        providers: provideTestData({ taxYears: [], today: TODAY_PINNED }),
+      });
+      const plan = TestBed.inject(PlanContextStore);
+      expect(plan.tfsaRules()).toBeNull();
+      expect(plan.budgetEstimate()).toBeNull();
+      expect(plan.budgetOutputs()).toBeNull();
+    });
+
+    it('touches no storage', () => {
+      const calls = [
+        vi.spyOn(Storage.prototype, 'getItem'),
+        vi.spyOn(Storage.prototype, 'setItem'),
+        vi.spyOn(Storage.prototype, 'removeItem'),
+        vi.spyOn(Storage.prototype, 'clear'),
+      ];
+      const { plan } = setup();
+      plan.setBudgetAmount('housing', 6_000);
+      plan.undoBudget();
+      plan.resetBudget();
       for (const spy of calls) expect(spy).not.toHaveBeenCalled();
     });
   });

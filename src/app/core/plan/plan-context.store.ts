@@ -1,7 +1,41 @@
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { RatesService } from '../data/rates.service';
 import { TaxYearService } from '../data/tax-year.service';
-import { type RaRules, type RetireRules, roundRand, toRaRules, toRetireRules } from '../engine';
+import type { BudgetSettings } from '../budget/budget-inputs';
+import {
+  type BudgetSlice,
+  addLine,
+  editCategories,
+  editIncome,
+  editSettings,
+  effectiveBudgetIncome,
+  freshBudgetSlice,
+  nextBudgetSlice,
+  removeLine,
+  switchIncomeBasis,
+  switchIncomePeriod,
+  undoBudget as undoBudgetSlice,
+} from '../budget/budget-slice';
+import { type BudgetEstimate, estimateBudget } from '../budget/estimate-budget';
+import {
+  type BudgetCategory,
+  type BudgetGroup,
+  type BudgetPresetId,
+  type BudgetStatus,
+  type PayPeriod,
+  type RaRules,
+  type RetireRules,
+  type TfsaRules,
+  applyPreset,
+  distributeToGroups,
+  renameCategory,
+  roundRand,
+  setCategoryAmount,
+  setCategoryPercent,
+  toRaRules,
+  toRetireRules,
+  toTfsaRules,
+} from '../engine';
 import { type RaEstimate, estimateRa } from '../ra/estimate-ra';
 import type { RaInputs } from '../ra/ra-inputs';
 import { raPlanDefaults } from '../ra/ra-inputs';
@@ -25,6 +59,7 @@ import {
   undoRetire as undoRetireSlice,
 } from '../retire/retire-slice';
 import { SalaryEstimator } from '../salary/salary-estimator';
+import type { AmountBasis, SalaryInputs } from '../salary/salary-inputs';
 import { SalaryInputsStore } from '../salary/salary-inputs.store';
 import type {
   Handoff,
@@ -79,13 +114,30 @@ export interface RetireOutputs {
   readonly goalNetMonthly: number;
 }
 
+/**
+ * What the dashboard (and later Journey) reads from the Budget. Full precision; round at the edge.
+ * Separate from `PlanOutputs` for the same reason as `RetireOutputs`.
+ */
+export interface BudgetOutputs {
+  /** Take-home pay a month: the base of the budget. */
+  readonly netMonthly: number;
+  /** net - total; negative when over. */
+  readonly unallocated: number;
+  readonly status: BudgetStatus;
+  /** Each group as a percent of take-home (0 to 100). */
+  readonly groupPercents: Readonly<Record<BudgetGroup, number>>;
+  /** The RA, TFSA and emergency-fund lines, rands a month. */
+  readonly raMonthly: number;
+  readonly tfsaMonthly: number;
+  readonly emergencyMonthly: number;
+}
 type Handoffs = { readonly [T in HandoffTarget]?: Handoff<T> };
 
 /**
  * The one place calculators share figures. It reads the Salary situation, carries "Send to"
- * handoffs, and holds each calculator's slice (RA and Retire at 55). The slice logic lives in pure
- * files under `core/ra` and `core/retire`, so this store is only wiring. In memory only: nothing
- * is persisted.
+ * handoffs, and holds each calculator's slice (RA, Retire at 55 and Budget). The slice logic lives
+ * in pure files under `core/ra`, `core/retire` and `core/budget`, so this store is only wiring. In
+ * memory only: nothing is persisted.
  */
 @Injectable({ providedIn: 'root' })
 export class PlanContextStore {
@@ -153,15 +205,12 @@ export class PlanContextStore {
     };
   });
 
-  readonly retireHandoff = computed<Handoff<'retire'> | null>(
-    () => this.handoffs().retire ?? null,
-  );
+  readonly retireHandoff = computed<Handoff<'retire'> | null>(() => this.handoffs().retire ?? null);
 
   // Same shape as `raSlice`: a new Retire handoff resets local salary edits to the sent values.
   private readonly retireSlice = linkedSignal<Handoff<'retire'> | null, RetireSlice>({
     source: this.retireHandoff,
-    computation: (handoff, previous) =>
-      nextRetireSlice(handoff, previous, this.retirePlanDefaults),
+    computation: (handoff, previous) => nextRetireSlice(handoff, previous, this.retirePlanDefaults),
   });
 
   /** The inputs the Retire at 55 page works from: the Salary profile live until overridden. */
@@ -204,6 +253,72 @@ export class PlanContextStore {
     };
   });
 
+  readonly budgetHandoff = computed<Handoff<'budget'> | null>(() => this.handoffs().budget ?? null);
+
+  // Same shape as `raSlice`: a new Budget handoff resets the local income to the sent values.
+  private readonly budgetSlice = linkedSignal<Handoff<'budget'> | null, BudgetSlice>({
+    source: this.budgetHandoff,
+    computation: (handoff, previous) => nextBudgetSlice(handoff, previous),
+  });
+
+  /** The income the Budget page works from: the Salary inputs live until overridden. */
+  readonly budgetIncome = computed<SalaryInputs>(() =>
+    effectiveBudgetIncome(this.budgetSlice(), this.salary.inputs()),
+  );
+  /** Who sent the figures in use, for the "From ..." chip. */
+  readonly budgetFrom = computed<HandoffSource | null>(() => this.budgetSlice().from);
+  readonly budgetCanUndo = computed(() => this.budgetSlice().undo !== null);
+  /** True while the Budget is the untouched example: Salary income, 50/30/20 lines, nothing sent. */
+  readonly budgetIsExample = computed(() => {
+    const slice = this.budgetSlice();
+    return (
+      !slice.edited && slice.income === null && slice.categories === null && slice.from === null
+    );
+  });
+  /** The preset the lines were last set to, or 'custom' once they are not a preset. */
+  readonly budgetPresetId = computed<BudgetPresetId | 'custom'>(() => this.budgetSlice().presetId);
+  readonly budgetSettings = computed<BudgetSettings>(() => this.budgetSlice().settings);
+
+  /** TFSA limits and penalty rate from the selected tax year; null without tax data. */
+  readonly tfsaRules = computed<TfsaRules | null>(() => {
+    const data = this.taxYears.taxYear();
+    return data ? toTfsaRules(data) : null;
+  });
+
+  /** Null only when there is no tax data; a figure the engine rejects comes back as `ok: false`. */
+  readonly budgetEstimate = computed<BudgetEstimate | null>(() => {
+    const tables = this.estimator.tables();
+    const rules = this.tfsaRules();
+    if (!tables || !rules) return null;
+    const { categories, sentLines, settings } = this.budgetSlice();
+    return estimateBudget(
+      { income: this.budgetIncome(), categories, sentLines, settings },
+      tables,
+      rules,
+    );
+  });
+
+  /** Figures the dashboard can show; null when there is no tax data or the figures fail. */
+  readonly budgetOutputs = computed<BudgetOutputs | null>(() => {
+    const estimate = this.budgetEstimate();
+    if (!estimate?.ok) return null;
+    const { summary, limits } = estimate;
+    const percentOf = (group: BudgetGroup) =>
+      summary.groups.find((entry) => entry.group === group)?.percent ?? 0;
+    return {
+      netMonthly: estimate.net,
+      unallocated: summary.unallocated,
+      status: summary.status,
+      groupPercents: {
+        needs: percentOf('needs'),
+        wants: percentOf('wants'),
+        savings: percentOf('savings'),
+      },
+      raMonthly: limits.ra.monthly,
+      tfsaMonthly: limits.tfsa.monthly,
+      emergencyMonthly: limits.emergency.monthly,
+    };
+  });
   /** Sends figures to a calculator. Each call is a new handoff, even with identical values. */
   send<T extends HandoffTarget>(
     target: T,
@@ -254,7 +369,8 @@ export class PlanContextStore {
     const required = this.retireOutputs()?.requiredMonthly;
     this.send('ra', 'retire', {
       ...salaryFields(retire),
-      contributionMonthly: required === undefined ? retire.contributionMonthly : roundRand(required),
+      contributionMonthly:
+        required === undefined ? retire.contributionMonthly : roundRand(required),
       escalationPercent: retire.escalationPercent,
       startingBalance: retire.startingBalance,
       returnPercent: retire.returnPercent,
@@ -264,6 +380,14 @@ export class PlanContextStore {
     return true;
   }
 
+  /**
+   * Sends the Budget figures. Returns false, and changes nothing, for every target until the
+   * handoffs are connected.
+   */
+  sendFromBudget(target: SendTargetId): boolean {
+    void target;
+    return false;
+  }
   dismiss(target: HandoffTarget): void {
     this.handoffs.update((all) => ({ ...all, [target]: undefined }));
   }
@@ -306,5 +430,103 @@ export class PlanContextStore {
   resetRetire(): void {
     this.dismiss('retire');
     this.retireSlice.set(freshRetireSlice(this.retirePlanDefaults));
+  }
+
+  /** The lines in use and the take-home they are measured against; null while there is no good estimate. */
+  private currentBudget(): {
+    readonly categories: readonly BudgetCategory[];
+    readonly net: number;
+  } | null {
+    const estimate = this.budgetEstimate();
+    return estimate?.ok ? { categories: estimate.categories, net: estimate.net } : null;
+  }
+
+  updateBudgetIncome(patch: Partial<SalaryInputs>): void {
+    this.budgetSlice.update((slice) => editIncome(slice, patch, this.salary.inputs()));
+  }
+
+  /** Switches between gross and take-home, keeping the same person (see `switchIncomeBasis`). */
+  switchBudgetBasis(basis: AmountBasis): void {
+    const estimate = this.budgetEstimate();
+    this.updateBudgetIncome(
+      switchIncomeBasis(this.budgetIncome(), estimate?.ok ? estimate.salary : null, basis),
+    );
+  }
+
+  setBudgetPeriod(period: PayPeriod): void {
+    this.updateBudgetIncome(switchIncomePeriod(this.budgetIncome(), period));
+  }
+
+  setBudgetAmount(id: string, amount: number): void {
+    const current = this.currentBudget();
+    if (!current) return;
+    this.budgetSlice.update((slice) =>
+      editCategories(slice, setCategoryAmount(current.categories, id, amount), 'custom'),
+    );
+  }
+
+  setBudgetPercent(id: string, percent: number): void {
+    const current = this.currentBudget();
+    if (!current) return;
+    this.budgetSlice.update((slice) =>
+      editCategories(
+        slice,
+        setCategoryPercent(current.categories, id, percent, current.net),
+        'custom',
+      ),
+    );
+  }
+
+  /** Spreads a preset over the lines, keeping the proportions inside each group. */
+  applyBudgetPreset(preset: BudgetPresetId): void {
+    const current = this.currentBudget();
+    if (!current) return;
+    this.budgetSlice.update((slice) =>
+      editCategories(
+        slice,
+        distributeToGroups(current.categories, applyPreset(current.net, preset)),
+        preset,
+      ),
+    );
+  }
+
+  addBudgetLine(group: BudgetGroup): void {
+    const current = this.currentBudget();
+    if (!current) return;
+    this.budgetSlice.update((slice) => addLine(slice, current.categories, group));
+  }
+
+  renameBudgetLine(id: string, name: string): void {
+    const current = this.currentBudget();
+    if (!current) return;
+    this.budgetSlice.update((slice) =>
+      editCategories(slice, renameCategory(current.categories, id, name), slice.presetId),
+    );
+  }
+
+  removeBudgetLine(id: string): void {
+    const current = this.currentBudget();
+    if (!current) return;
+    this.budgetSlice.update((slice) => removeLine(slice, current.categories, id));
+  }
+
+  updateBudgetSettings(patch: Partial<BudgetSettings>): void {
+    this.budgetSlice.update((slice) => editSettings(slice, patch));
+  }
+
+  undoBudget(): void {
+    const slice = this.budgetSlice();
+    if (!slice.undo) return;
+    const restored = undoBudgetSlice(slice);
+    // Why this order: dismissing changes the linkedSignal source, which queues a recomputation
+    // that would keep the sent values. Setting AFTER the dismissal makes the restored state win,
+    // because a linkedSignal `set` first brings the signal up to date and then overwrites it.
+    this.dismiss('budget');
+    this.budgetSlice.set(restored);
+  }
+
+  resetBudget(): void {
+    this.dismiss('budget');
+    this.budgetSlice.set(freshBudgetSlice());
   }
 }
