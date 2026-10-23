@@ -1,0 +1,61 @@
+@use 'mixins';
+
+// Route-only layout for the Plan Builder wizard: progress, one question card, then the buttons.
+.plan-wizard {
+  display: grid;
+  gap: var(--rw-space-5);
+  max-width: 44rem;
+  margin-inline: auto;
+
+  &__card,
+  &__group,
+  &__fields {
+    display: grid;
+    gap: var(--rw-space-4);
+  }
+
+  &__heading {
+    font-size: var(--rw-text-xl);
+    line-height: var(--rw-line-tight);
+
+    // A heading focused by code, not by Tab: the group label is enough, so no ring.
+    &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
+      @include mixins.focus-ring;
+    }
+  }
+
+  &__lead,
+  &__derived,
+  &__note {
+    font-size: var(--rw-text-sm);
+  }
+
+  &__lead,
+  &__note {
+    color: var(--rw-color-text-muted);
+  }
+
+  &__error {
+    padding: var(--rw-space-3) var(--rw-space-4);
+    border: 1px solid var(--rw-color-danger-border);
+    border-radius: var(--rw-radius-sm);
+    background: var(--rw-color-danger-surface);
+    color: var(--rw-color-danger-text);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--rw-space-3);
+  }
+
+  &__spacer {
+    flex: 1;
+  }
+}

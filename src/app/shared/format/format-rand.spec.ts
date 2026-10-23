@@ -1,5 +1,5 @@
 import { normaliseSpaces } from '../../testing/text';
-import { formatPercent, formatRand, formatRandCompact } from './format-rand';
+import { formatPercent, formatRand, formatRandCompact, formatRandWhole } from './format-rand';
 
 describe('format-rand', () => {
   it('formats rand with a space thousands separator and decimal comma', () => {
@@ -11,6 +11,13 @@ describe('format-rand', () => {
   it('formats negative rand', () => {
     expect(normaliseSpaces(formatRand(-50))).toContain('50,00');
     expect(normaliseSpaces(formatRand(-50))).toContain('-');
+  });
+
+  it('formats whole rand without cents', () => {
+    expect(normaliseSpaces(formatRandWhole(0))).toBe('R 0');
+    expect(normaliseSpaces(formatRandWhole(8_250))).toBe('R 8 250');
+    expect(normaliseSpaces(formatRandWhole(75_425.64))).toBe('R 75 426');
+    expect(normaliseSpaces(formatRandWhole(1_234_567.4))).toBe('R 1 234 567');
   });
 
   it('formats compact rand for chart axes', () => {

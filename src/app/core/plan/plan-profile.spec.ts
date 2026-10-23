@@ -99,6 +99,7 @@ describe('SEND_TARGETS', () => {
       retire: 'Retire at 55',
       budget: 'Budget',
       journey: 'Journey',
+      plan: 'Plan',
     });
   });
 });

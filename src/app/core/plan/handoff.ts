@@ -5,7 +5,7 @@ import type { RetirePlanFields } from '../retire/retire-inputs';
 import type { RaHandoffValues } from './plan-profile';
 
 /** Where a handoff came from. */
-export type HandoffSource = 'salary' | 'ra' | 'retire' | 'budget' | 'journey';
+export type HandoffSource = 'salary' | 'ra' | 'retire' | 'budget' | 'journey' | 'plan';
 
 /** The word shown in the "From ..." chip. */
 export const HANDOFF_SOURCE_LABELS: Record<HandoffSource, string> = {
@@ -14,6 +14,7 @@ export const HANDOFF_SOURCE_LABELS: Record<HandoffSource, string> = {
   retire: 'Retire at 55',
   budget: 'Budget',
   journey: 'Journey',
+  plan: 'Plan',
 };
 
 /**
@@ -31,13 +32,17 @@ export type RetireHandoffPayload = RaHandoffValues & Partial<RetirePlanFields>;
 /**
  * What a handoff to the Budget carries: the Salary figures, the other deductions (a budget needs
  * them for take-home pay), and optionally the monthly RA and TFSA lines and the TFSA
- * contributions already made.
+ * contributions already made. The Plan Builder also sends the emergency-fund choices: months to
+ * cover, rands already saved and the monthly line.
  */
 export type BudgetHandoffPayload = RaHandoffValues & {
   readonly otherDeductionsMonthly?: number;
   readonly raMonthly?: number;
   readonly tfsaMonthly?: number;
   readonly tfsaLifetimeUsed?: number;
+  readonly emergencyMonths?: number;
+  readonly emergencySaved?: number;
+  readonly emergencyMonthly?: number;
 };
 
 /**

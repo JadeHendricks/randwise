@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 
 import { TODAY } from '../../core/data/data-source';
 import { roundRand } from '../../core/engine';
+import { PlanBuilderStore } from '../../core/plan/plan-builder.store';
 import { PlanContextStore } from '../../core/plan/plan-context.store';
 import { SalaryInputsStore } from '../../core/salary/salary-inputs.store';
 import { formatRand } from '../../shared/format/format-rand';
@@ -253,6 +254,46 @@ describe('DashboardPage', () => {
     expect(tile).toContain('Saves about R 22 751,40 in tax by 55');
     expect(tile).toContain('TFSA at 55: R 58 751,40');
   });
+  const planTile = (root: HTMLElement) => root.querySelector('.dashboard__plan') as HTMLElement;
+
+  it('invites you to start the Plan Builder', async () => {
+    const root = (await render()).nativeElement as HTMLElement;
+    const tile = planTile(root);
+    expect(normaliseSpaces(tile.querySelector('.dashboard__plan-label')?.textContent)).toBe(
+      'Plan Builder',
+    );
+    expect(normaliseSpaces(tile.querySelector('.dashboard__plan-text')?.textContent)).toBe(
+      'Answer a few short questions and get a step-by-step plan.',
+    );
+    const link = tile.querySelector('a') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/plan');
+    expect(normaliseSpaces(link.textContent)).toBe('Start the Plan Builder');
+  });
+
+  it('offers to continue once the Plan Builder has answers', async () => {
+    const fixture = await render();
+    TestBed.inject(PlanBuilderStore).update({ age: 40 });
+    await fixture.whenStable();
+    const tile = planTile(fixture.nativeElement as HTMLElement);
+    expect(normaliseSpaces(tile.querySelector('.dashboard__plan-text')?.textContent)).toMatch(
+      /^Step \d+ of \d+ is waiting for you\.$/,
+    );
+    expect(normaliseSpaces(tile.querySelector('a')?.textContent)).toBe('Continue your plan');
+  });
+
+  it('offers to view the plan once the summary is reached', async () => {
+    const fixture = await render();
+    const store = TestBed.inject(PlanBuilderStore);
+    store.update({ goal: 'buy-home' });
+    store.finish();
+    await fixture.whenStable();
+    const tile = planTile(fixture.nativeElement as HTMLElement);
+    expect(normaliseSpaces(tile.querySelector('.dashboard__plan-text')?.textContent)).toMatch(
+      /^Your plan has \d+ steps\.$/,
+    );
+    expect(normaliseSpaces(tile.querySelector('a')?.textContent)).toBe('View your plan');
+  });
+
   it('links to every other lazy route and keeps the privacy card', async () => {
     const root = (await render()).nativeElement as HTMLElement;
     const hrefs = Array.from(root.querySelectorAll('a')).map((a) => a.getAttribute('href'));
@@ -294,5 +335,15 @@ describe('DashboardPage without tax data', () => {
         'Tax data is unavailable.',
       );
     }
+  });
+
+  it('does not claim a plan with 0 steps on the Plan tile', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    const store = TestBed.inject(PlanBuilderStore);
+    store.update({ goal: 'buy-home' });
+    store.finish();
+    await fixture.whenStable();
+    const text = fixture.nativeElement.querySelector('.dashboard__plan-text')?.textContent;
+    expect(normaliseSpaces(text)).toBe('Your plan could not be worked out yet.');
   });
 });

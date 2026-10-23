@@ -59,7 +59,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
     path: 'plan',
     label: 'Plan',
     heading: 'Plan',
-    description: 'Pull your choices into one plan.',
+    description: 'Answer a few questions and get a step-by-step plan.',
     icon: 'plan',
   },
   {

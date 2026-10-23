@@ -1,0 +1,43 @@
+@use 'mixins';
+
+// Molecule: step progress. Text plus a bar; the fill width comes from --rw-step-fill.
+.rw-step-progress {
+  display: grid;
+  gap: var(--rw-space-2);
+  min-width: 0;
+
+  &__text {
+    font-size: var(--rw-text-sm);
+    font-weight: var(--rw-weight-bold);
+  }
+
+  &__track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: var(--rw-radius-pill);
+    background: var(--rw-color-track);
+  }
+
+  &__fill {
+    display: block;
+    width: var(--rw-step-fill, 0%);
+    height: 100%;
+    border-radius: var(--rw-radius-pill);
+    background: var(--rw-color-ink);
+
+    @include mixins.motion-safe {
+      transition: width var(--rw-duration-base) var(--rw-ease-out);
+    }
+  }
+
+  // Forced-colours mode drops backgrounds, so draw the fill as a system-colour block.
+  @media (forced-colors: active) {
+    &__track {
+      border: 1px solid CanvasText;
+    }
+
+    &__fill {
+      background: Highlight;
+    }
+  }
+}

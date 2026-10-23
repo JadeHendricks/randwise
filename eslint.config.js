@@ -53,6 +53,29 @@ module.exports = defineConfig([
     },
   },
   {
+    // Plan composition is pure so it can be unit-tested without Angular. The store that wraps it
+    // (plan-builder.store.ts) is not listed here.
+    files: [
+      'src/app/core/plan/plan-answers.ts',
+      'src/app/core/plan/plan-builder.ts',
+      'src/app/core/plan/plan-steps.ts',
+    ],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@angular/*', 'rxjs', 'rxjs/*'],
+              message: 'plan composition is pure TypeScript: no Angular or RxJS imports.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],
     rules: {},
