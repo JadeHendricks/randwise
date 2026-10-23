@@ -6,7 +6,8 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test --watch=false",
+    "test": "ng test --watch=false && npm run test:scripts",
+    "test:scripts": "vitest run --config vitest.scripts.config.mjs",
     "lint": "ng lint"
   },
   "private": true,
