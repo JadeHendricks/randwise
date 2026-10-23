@@ -32,9 +32,7 @@
     @if (item.path === 'ra') {
       <rw-bento-tile class="dashboard__ra" [item]="item">
         @if (raFigures(); as ra) {
-          <p class="dashboard__ra-label">
-            {{ context.raIsExample() ? 'Illustrative RA' : 'Your RA' }}
-          </p>
+          <p class="dashboard__ra-label">{{ context.raIsExample() ? 'Illustrative RA' : 'Your RA' }}</p>
           <p class="dashboard__ra-figure">
             {{ ra.headroomAnnual }} a year ({{ ra.headroomMonthly }} a month) of tax-deductible room
           </p>
@@ -52,8 +50,8 @@
             {{ context.retireIsExample() ? 'Illustrative plan' : 'Your plan' }}
           </p>
           <p class="dashboard__retire-figure">
-            {{ retire.required }} a month to retire at {{ retire.age }} on {{ retire.goal }} a month
-            (today's money)
+            {{ retire.required }} a month to retire at {{ retire.age }} on {{ retire.goal }} a
+            month (today's money)
           </p>
           <p class="dashboard__retire-figure">On track: {{ retire.onTrack }}</p>
         } @else {

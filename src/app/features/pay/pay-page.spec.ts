@@ -141,16 +141,13 @@ describe('PayPage', () => {
     [1, 'R 376,00', 'R 4 305,00', '1 member'],
     [2, 'R 752,00', 'R 3 929,00', '2 members'],
     [3, 'R 1 006,00', 'R 3 675,00', '3 members'],
-  ])(
-    'medical aid with %i member(s) gives credit %s and PAYE %s',
-    async (n, credit, paye, words) => {
-      const { fixture, root } = await render();
-      await type(fixture, 'People on your medical aid', n);
-      expect(statMoney(root, 'Medical credit')).toBe(credit);
-      expect(statMoney(root, 'PAYE')).toBe(paye);
-      expect(text(stat(root, 'Medical credit').querySelector('.rw-stat-card__hint'))).toBe(words);
-    },
-  );
+  ])('medical aid with %i member(s) gives credit %s and PAYE %s', async (n, credit, paye, words) => {
+    const { fixture, root } = await render();
+    await type(fixture, 'People on your medical aid', n);
+    expect(statMoney(root, 'Medical credit')).toBe(credit);
+    expect(statMoney(root, 'PAYE')).toBe(paye);
+    expect(text(stat(root, 'Medical credit').querySelector('.rw-stat-card__hint'))).toBe(words);
+  });
 
   it('shows retirement headroom for an RA of R5 000 a month', async () => {
     const { fixture, root } = await render();
@@ -245,6 +242,7 @@ describe('PayPage', () => {
       'Journey',
     ]);
   });
+
   it('hides Send to in the alert and unavailable states', async () => {
     const { fixture, root } = await render();
     TestBed.inject(SalaryInputsStore).update({ basis: 'net', amount: 5e9 });
@@ -263,7 +261,8 @@ describe('PayPage', () => {
     const inputs = Array.from(root.querySelectorAll('input'));
     expect(inputs.length).toBeGreaterThan(10);
     for (const input of inputs) {
-      const named = (input.labels?.length ?? 0) > 0 || !!input.getAttribute('aria-label')?.trim();
+      const named =
+        (input.labels?.length ?? 0) > 0 || !!input.getAttribute('aria-label')?.trim();
       expect(named, `${input.type} input`).toBe(true);
     }
     expect(Array.from(root.querySelectorAll('legend')).map((l) => text(l))).toEqual([
@@ -280,12 +279,12 @@ describe('PayPage', () => {
       expect(svgs[0].getAttribute('aria-label')?.trim(), block).toBeTruthy();
       expect(root.querySelector(`${block} .rw-visually-hidden table`), block).not.toBeNull();
     }
-    expect(
-      normaliseSpaces(root.querySelector('rw-line-chart svg')?.getAttribute('aria-label')),
-    ).toContain('Your gross pay of R 30 000,00 gives R 25 141,88 net.');
-    expect(
-      normaliseSpaces(root.querySelector('rw-breakdown-bar svg')?.getAttribute('aria-label')),
-    ).toContain('Net pay R 25 141,88');
+    expect(normaliseSpaces(root.querySelector('rw-line-chart svg')?.getAttribute('aria-label'))).toContain(
+      'Your gross pay of R 30 000,00 gives R 25 141,88 net.',
+    );
+    expect(normaliseSpaces(root.querySelector('rw-breakdown-bar svg')?.getAttribute('aria-label'))).toContain(
+      'Net pay R 25 141,88',
+    );
   });
 
   it('names both lines of the net-vs-gross chart in a visible legend', async () => {
