@@ -6,7 +6,7 @@ Estimates only, not financial advice.
 
 Randwise helps salaried South Africans explore their money in rand (ZAR). It is a frontend-only Angular app: no backend, database or API keys, and nothing is persisted. The theme follows your system setting, the toggle overrides it in memory only, and a reload starts fresh.
 
-So far it has the app shell and design system (a left icon rail, a bento dashboard, lazy feature routes, and light and dark themes), the tax-year and rates data layer behind a status badge in the header, the Pay page, which turns a salary into take-home pay, and the RA calculator, which projects a retirement annuity and its tax saving. The dashboard's yellow card shows the same take-home estimate, and its RA, Retire at 55, Budget and Journey tiles show live figures. Retire at 55 is live too: it works out the monthly contribution needed to retire on a target income and how that income holds up through retirement. Budget turns your take-home pay into a spending plan with RA, TFSA and emergency-fund checks, and Journey follows an RA contribution, its tax refund and a TFSA year by year to retirement. Pay, RA, Retire at 55, Budget and Journey can send figures to each other. Plan and Toolbox still show themed "coming soon" cards.
+So far it has the app shell and design system (a left icon rail, a bento dashboard, lazy feature routes, and light and dark themes), the tax-year and rates data layer behind a status badge in the header, the Pay page, which turns a salary into take-home pay, and the RA calculator, which projects a retirement annuity and its tax saving. The dashboard's yellow card shows the same take-home estimate, and its RA, Retire at 55, Budget and Journey tiles show live figures. Retire at 55 is live too: it works out the monthly contribution needed to retire on a target income and how that income holds up through retirement. Budget turns your take-home pay into a spending plan with RA, TFSA and emergency-fund checks, and Journey follows an RA contribution, its tax refund and a TFSA year by year to retirement. Pay, RA, Retire at 55, Budget and Journey can send figures to each other. Plan is live too: the guided Plan Builder asks a few questions and turns them into an ordered, step-by-step plan. Only Toolbox still shows a themed "coming soon" card.
 
 ## Requirements
 
@@ -114,6 +114,20 @@ Tax rules and interest rates are plain JSON, checked at startup. Nothing is fetc
 - Handoffs: Journey sends the salary side and the RA plan to RA and Retire at 55, and its RA and TFSA amounts to the Budget. A Budget send adds a note about the budget that is shown but not used in the maths.
 - Dashboard: the Budget and Journey tiles read the store, are labelled "Illustrative" until you change or send figures, then "Your budget" and "Your journey", and are plain text, so the dashboard still has one money figure.
 - Estimates only; nothing is persisted.
+## Plan Builder
+
+- The Plan Builder (`/plan`) is a short wizard. It asks your age, income (gross or take-home, per month or per year) and a goal: retire early, pay less tax, build tax-free savings, build an emergency fund or plan for a home. It then asks only what that goal needs, up to 6 questions: how much you can put away each month (a suggested amount is used if you skip it), your risk comfort, and goal details such as retirement age and income, a TFSA target and monthly amount, emergency-fund months and savings, and existing RA or TFSA balances. You can go back, change an answer from the summary, or start again.
+- The summary lists the steps in order, each with a key figure and a short reason. Take-home pay always comes first.
+  - Retire early: take-home, the monthly amount needed to retire on your target income, RA tax deduction, TFSA refund, budget fit.
+  - Pay less tax: take-home, RA tax deduction, putting the refund into a TFSA, budget fit.
+  - Build tax-free savings: take-home, the TFSA plan (age the target is reached), budget fit.
+  - Emergency fund: take-home, the emergency-fund target and how long it takes, budget fit.
+  - Buy a home: take-home and what housing can cost in your budget.
+- Assumptions (listed on the summary): no medical aid and no other deductions. The risk choice maps to CPI plus 2, 5 or 7 percentage points and can be changed in the calculators. The retirement return is the lower of that and CPI plus 3. Essentials are taken as 50% of take-home pay. The TFSA balance you enter is treated as contributions already made. Planning horizons depend on the goal.
+- Open in X: each step opens a calculator with the figures filled in. Retire at 55, RA, Budget and Journey receive them through `PlanContextStore` handoffs, with a "From Plan" chip and Undo. Pay has no chip because Pay owns the inputs, so "Open in Pay" sets the Salary inputs directly.
+- Buy a home is information only until a home-loan calculator exists. It shows the housing share of your budget and has no calculator to open.
+- Answers live in memory only. The dashboard Plan tile shows where you are (start, continue or view your plan) and contains no money figures. Estimates only; nothing is persisted.
+
 ## Styling rules
 
 - Atomic design: atoms, molecules, organisms, then page blocks.
