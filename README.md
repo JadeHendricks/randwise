@@ -16,11 +16,15 @@ So far it has the app shell and design system (a left icon rail, a bento dashboa
 
 ```
 npm install
-npm start        # dev server at http://localhost:4200
-npm test         # unit tests, single run (Vitest)
+npm start        # dev server at http://localhost:4200 (runs the tax-season check first)
+npm test         # app unit tests, then the script tests, single run (Vitest)
+npm run test:scripts            # only the tax-season script tests
+npm run tax:scout -- --year 2028   # build a tax-year file from the SARS pages
 npm run lint     # ESLint (angular-eslint)
 npm run build    # production build into dist/
 ```
+
+In PowerShell, run npm scripts that take options as `cmd /c "npm run tax:scout -- --year 2028"`.
 
 ## Folder layout
 
@@ -35,13 +39,28 @@ npm run build    # production build into dist/
 Tax rules and interest rates are plain JSON, checked at startup. Nothing is fetched at runtime.
 
 - Tax years: `src/assets/data/tax-years/<YYYY>.json`, named after the year the tax year ends (`2027.json` is 1 March 2026 to 28 February 2027). Rates: `src/assets/data/rates.json`.
-- The files are bundled with static imports in `src/app/core/data/bundled-data.ts`, not served as assets. To add a year, drop in the new file and add one import and one entry there.
+- The files are bundled with static imports in `src/app/core/data/bundled-data.ts`, not served as assets. The tax-season scout registers the files it writes there for you; a year you make by hand still needs one import and one entry.
 - Money is whole rands and rates are decimal fractions (`0.18` is 18%). Every value is a field of the form `{ "value": ..., "carriedForward": false, "source": "https://..." }`. `source` is the official page it was confirmed on and must also be listed in the file's `sources`. `carriedForward: true` means it could not be confirmed for that year, so the last official value is used.
-- `status` is `verified` (every field confirmed), `verified-auto` (reserved for the automated tax-season check) or `draft` (at least one field carried forward). `verifiedOn` is the day the values were checked.
+- `status` is `verified` (every field confirmed), `verified-auto` (written by the tax-season scout when it scraped every field and every check passed) or `draft` (at least one field carried forward). A `verified` or `verified-auto` file with any carried-forward field is rejected, so the scout writes `draft` whenever it had to carry a value forward. `verifiedOn` is the day the values were checked.
 - The validator reports every problem at once and rejects a file for: missing or mistyped fields, a source that is not an https URL listed in `sources`, a file name that does not match its year, a period that is not 1 March to the last day of February, invalid dates, negative numbers, rates outside 0 to 1, bracket tables with gaps, overlaps, falling rates or a wrong cumulative base (more than R1 off), thresholds that do not match the rebates, and two-pot shares that do not add up to 1. An invalid file is left out and shown in the banner instead of being used.
 - `TaxYearService` picks the file that covers today, or the nearest year when none does. `RatesService` holds the SARB snapshot. `ratesAsOf` is the day that snapshot was taken (`fetchedOn`); each rate also has its own `asOf` date.
 - Default planning assumptions are derived from the rates: inflation is CPI, cash return is the repo rate, and the growth portfolio is CPI plus 5 percentage points. They are labelled as assumptions and listed read-only in the badge panel.
-- The header badge shows the tax year, when it was verified and the rates date, with a status chip (Verified, Verified (auto), Draft or Unavailable). It opens a panel with the period, sources, carried-forward fields, rates and assumptions. The banner under the header warns about invalid data (alert), draft data and an ended tax year (status). Dismissing a notice lasts until the page reloads.
+- The header badge shows the tax year, when it was verified and the rates date, with a status chip (Verified, Verified (auto), Draft, Out of date or Unavailable). It opens a panel with the period, sources, carried-forward fields, rates and assumptions. The banner under the header warns about invalid data (alert), draft data and an ended tax year (status). Dismissing a notice lasts until the page reloads.
+
+## How the data updates each tax season
+
+The app never fetches data itself. Two Node scripts in `scripts/tax-season` update the local JSON files for you.
+
+- **On `npm start`**, `prestart` runs `scripts/tax-season/check.mjs` first. It does two things.
+  1. It refreshes `src/assets/data/rates.json` from the SARB HomePageRates endpoint when `fetchedOn` is more than 7 days old. The new rates are validated before anything is written.
+  2. On or after 20 February, if next year's `src/assets/data/tax-years/<YYYY>.json` is missing or `draft`, it runs the scout for it, at most once a day.
+
+  It prints a short summary. If anything fails (no network, SARS or SARB changed a page) it warns and carries on, and it never blocks the dev server. It changes tracked JSON, so commit the refreshed files if you want to keep them.
+- **By hand**, run `npm run tax:scout -- --year 2028` (PowerShell: `cmd /c "npm run tax:scout -- --year 2028"`). The scout reads the SARS pages listed in `scripts/tax-season/sources.json` and parses them. It then runs the consistency checks: each bracket base equals the tax on the lower brackets (within R1), each threshold equals its rebate divided by the lowest rate (within R1), brackets are contiguous with strictly rising rates, and every value is within 25% of last year's. Then it writes the new file, registers it in `bundled-data.ts`, prints a diff against last year and writes `scripts/tax-season/last-report.md` (gitignored).
+- **Statuses.** `verified` means a person confirmed every value. `verified-auto` means the scout scraped every value and every check passed. `draft` means at least one value could not be scraped or failed a check, so it is copied from last year with `carriedForward: true`. The scout never guesses and never overwrites a verified file.
+- **Known limit.** There is no HTML source today for the retirement deduction, the living-annuity drawdown limits, the earliest RA age and the CGT inclusion rate, so scout output stays `draft` until you confirm those by hand: edit the file, set `carriedForward: false` and the real `source` on each, then set `status` to `verified`.
+- **When SARS moves a page.** Open the page in a browser and copy the new address into the matching key in `scripts/tax-season/sources.json`. Run the scout for the current year with `--year` and read `last-report.md`. If a field now shows as "not found", the page layout changed: fix the matching extractor in `scripts/tax-season/lib/parse-sars.mjs` and update the fixture in `scripts/tax-season/__fixtures__`.
+- **Privacy.** Nothing is sent anywhere. The scripts only read public SARS and SARB pages and rewrite local JSON.
 
 ## Tax engine
 
