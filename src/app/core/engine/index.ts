@@ -77,6 +77,31 @@ export type {
 } from './retire';
 export { tfsaContribution, toTfsaRules } from './tfsa';
 export type { TfsaContribution, TfsaContributionInput, TfsaRules } from './tfsa';
+export { twoPotWithdrawal } from './two-pot';
+export type {
+  TwoPotAccepted,
+  TwoPotBand,
+  TwoPotRejected,
+  TwoPotRules,
+  TwoPotWithdrawalInput,
+  TwoPotWithdrawalResult,
+} from './two-pot';
+export {
+  cgtOnDisposal,
+  dividendTax,
+  interestExemption,
+  interestTax,
+  toInvestmentTaxRules,
+} from './investment-tax';
+export type { InvestmentTaxRules } from './investment-tax';
+export { MAX_COMPARISON_YEARS, compareTfsaDiscretionary } from './tfsa-vs-discretionary';
+export type {
+  ComparisonYear,
+  InvestmentComparison,
+  InvestmentComparisonInput,
+  ReturnSplit,
+  ScenarioTax,
+} from './tfsa-vs-discretionary';
 export {
   BUDGET_GROUPS,
   BUDGET_PRESETS,
