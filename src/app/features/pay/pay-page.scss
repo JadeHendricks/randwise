@@ -123,12 +123,7 @@
   }
 
   &__scroll {
-    overflow-x: auto;
-
-    // The region takes focus so the keyboard can scroll it; show the project ring, not the UA one.
-    &:focus-visible {
-      @include mixins.focus-ring;
-    }
+    @include mixins.data-scroll-region;
   }
 
   &__table {
@@ -153,6 +148,7 @@
   }
 
   &__cell--label {
+    @include mixins.data-table-label-cell;
     font-weight: var(--rw-weight-medium);
     text-align: start;
     white-space: normal;

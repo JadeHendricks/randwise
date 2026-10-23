@@ -22,6 +22,7 @@
   --rw-color-focus: #0d0f0e;
   --rw-color-glow: transparent;
   --rw-color-track: rgb(15 26 21 / 18%);
+  --rw-scroll-shadow: rgb(15 26 21 / 24%);
 
   // Status colours are opaque so contrast can be measured exactly. Each tone
   // is a surface, the text on it and a border (>= 3:1 against both).
@@ -123,6 +124,7 @@
   --rw-color-focus: #a7f3d0;
   --rw-color-glow: rgb(52 211 153 / 35%);
   --rw-color-track: rgb(167 243 208 / 22%);
+  --rw-scroll-shadow: rgb(0 0 0 / 55%);
   --rw-color-success-surface: #0f3b2a;
   --rw-color-success-text: #a7f3d0;
   --rw-color-success-border: #34a275;
