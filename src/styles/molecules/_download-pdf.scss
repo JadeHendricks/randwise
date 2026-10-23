@@ -1,0 +1,45 @@
+@use 'mixins';
+
+// Molecule: download PDF. A secondary button with a busy spinner and an inline error.
+.rw-download-pdf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rw-space-3);
+  min-width: 0;
+
+  // Layout only. Focus ring, hover and disabled styles come from .rw-button.
+  &__button {
+    flex: none;
+  }
+
+  // A static ring by default; it only spins when the user has not asked for reduced motion.
+  &__spinner {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentcolor;
+    border-inline-end-color: transparent;
+    border-radius: var(--rw-radius-pill);
+
+    @include mixins.motion-safe {
+      animation: rw-download-pdf-spin 0.8s linear infinite;
+    }
+  }
+
+  &__error {
+    min-width: 0;
+    padding: var(--rw-space-2) var(--rw-space-3);
+    border: 1px solid var(--rw-color-danger-border);
+    border-radius: var(--rw-radius-sm);
+    background: var(--rw-color-danger-surface);
+    color: var(--rw-color-danger-text);
+    font-size: var(--rw-text-sm);
+  }
+}
+
+@keyframes rw-download-pdf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
