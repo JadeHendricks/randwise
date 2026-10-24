@@ -103,50 +103,54 @@
   --rw-tap-target-min: 44px;
 }
 
+// Dark theme: neutral charcoal (near-black) with a restrained slate/steel-blue
+// accent for a professional finance look. The yellow hero stays as the brand
+// signal. Contrast of text/border/status/chart tokens is kept at WCAG AA
+// against the charcoal surfaces.
 [data-theme='dark'] {
-  --rw-color-bg-start: #04110c;
-  --rw-color-bg-end: #0b1f18;
-  --rw-color-surface-glass: rgb(16 44 34 / 55%);
-  --rw-color-surface-solid: #102a20;
-  --rw-color-border-glass: rgb(110 231 183 / 18%);
-  --rw-color-border-strong: rgb(167 243 208 / 40%);
-  --rw-color-border-control: #5e7e6f;
-  --rw-color-text: #e8f6ef;
-  --rw-color-text-muted: #a3c2b3;
-  --rw-color-accent: #34d399;
-  --rw-color-accent-soft: rgb(52 211 153 / 14%);
-  --rw-color-hero: #0f5c41;
-  --rw-color-hero-end: #0a3f2d;
-  --rw-color-on-hero: #eafff4;
-  --rw-color-ink: #34d399;
-  --rw-color-on-ink: #03130c;
-  --rw-color-card-dark: #07160f;
-  --rw-color-on-card-dark: #e8f6ef;
-  --rw-color-focus: #a7f3d0;
-  --rw-color-glow: rgb(52 211 153 / 35%);
-  --rw-color-track: rgb(167 243 208 / 22%);
-  --rw-scroll-shadow: rgb(0 0 0 / 55%);
-  --rw-color-success-surface: #0f3b2a;
-  --rw-color-success-text: #a7f3d0;
-  --rw-color-success-border: #34a275;
-  --rw-color-warning-surface: #3d2f07;
-  --rw-color-warning-text: #fcd977;
-  --rw-color-warning-border: #b8902a;
-  --rw-color-danger-surface: #3f1513;
-  --rw-color-danger-text: #fecaca;
-  --rw-color-danger-border: #d4635c;
-  --rw-chart-accent: #34d399;
-  --rw-chart-sun: #fcd977;
-  --rw-chart-sky: #7cb7ff;
-  --rw-chart-rose: #ff8f88;
+  --rw-color-bg-start: #0b0d10;
+  --rw-color-bg-end: #141821;
+  --rw-color-surface-glass: rgb(30 35 44 / 60%);
+  --rw-color-surface-solid: #1a1f29;
+  --rw-color-border-glass: rgb(226 232 240 / 14%);
+  --rw-color-border-strong: rgb(226 232 240 / 34%);
+  --rw-color-border-control: #7a8595;
+  --rw-color-text: #eceff4;
+  --rw-color-text-muted: #a8b2c1;
+  --rw-color-accent: #7aa2d8;
+  --rw-color-accent-soft: rgb(122 162 216 / 16%);
+  --rw-color-hero: #ffe45c;
+  --rw-color-hero-end: #ffd23a;
+  --rw-color-on-hero: #111;
+  --rw-color-ink: #e9edf4;
+  --rw-color-on-ink: #0b0d10;
+  --rw-color-card-dark: #0d1014;
+  --rw-color-on-card-dark: #eceff4;
+  --rw-color-focus: #a9c6ef;
+  --rw-color-glow: transparent;
+  --rw-color-track: rgb(226 232 240 / 18%);
+  --rw-scroll-shadow: rgb(0 0 0 / 60%);
+  --rw-color-success-surface: #14301f;
+  --rw-color-success-text: #9fe3bd;
+  --rw-color-success-border: #3a9b6c;
+  --rw-color-warning-surface: #362a0c;
+  --rw-color-warning-text: #f3d079;
+  --rw-color-warning-border: #ad8526;
+  --rw-color-danger-surface: #3a1613;
+  --rw-color-danger-text: #f7b3ad;
+  --rw-color-danger-border: #cf5c54;
+  --rw-chart-accent: #7aa2d8;
+  --rw-chart-sun: #f3d079;
+  --rw-chart-sky: #78c2e8;
+  --rw-chart-rose: #f29089;
   --rw-chart-violet: #b79cff;
-  --rw-chart-muted: #8fa89b;
-  --rw-chart-grid: rgb(167 243 208 / 18%);
-  --rw-chart-area: rgb(52 211 153 / 20%);
-  --rw-chart-area-secondary: rgb(143 168 155 / 14%);
-  --rw-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
-  --rw-shadow-md: 0 12px 32px rgb(0 0 0 / 45%);
-  --rw-shadow-glow: 0 0 36px rgb(52 211 153 / 28%), 0 12px 32px rgb(0 0 0 / 45%);
+  --rw-chart-muted: #9aa5b4;
+  --rw-chart-grid: rgb(226 232 240 / 14%);
+  --rw-chart-area: rgb(122 162 216 / 20%);
+  --rw-chart-area-secondary: rgb(154 165 180 / 16%);
+  --rw-shadow-sm: 0 1px 2px rgb(0 0 0 / 45%);
+  --rw-shadow-md: 0 14px 34px rgb(0 0 0 / 50%);
+  --rw-shadow-glow: 0 14px 34px rgb(0 0 0 / 50%);
 }
 
 @include mixins.reduced-motion {
